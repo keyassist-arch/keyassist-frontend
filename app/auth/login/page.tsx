@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLoginMutation, useResendVerificationMutation } from "@/store/routes/unified-commerce-api";
 import { useAppDispatch } from "@/store/hooks";
@@ -22,8 +22,10 @@ export default function LoginPage() {
   const [resend, { isLoading: resendLoading }] = useResendVerificationMutation();
   const [formError, setFormError] = useState("");
   const verificationToastShown = useRef(false);
+  const [resendReadyIn, setResendReadyIn] = useState(0);
 
   const notVerified = isError ? getEmailNotVerifiedPayload(error) : null;
+  const notVerifiedKey = notVerified ? `${notVerified.email ?? ""}:${notVerified.message}` : null;
 
   useEffect(() => {
     if (isSuccess) {
@@ -35,8 +37,24 @@ export default function LoginPage() {
   useEffect(() => {
     if (!notVerified?.verificationEmailSent || verificationToastShown.current) return;
     verificationToastShown.current = true;
-    toast.success("We sent another confirmation link to your inbox.");
+    toast.success("Check your inbox—we sent a confirmation link.");
   }, [notVerified?.verificationEmailSent]);
+
+  useLayoutEffect(() => {
+    if (!notVerifiedKey) {
+      setResendReadyIn(0);
+      return;
+    }
+    setResendReadyIn(60);
+  }, [notVerifiedKey]);
+
+  useEffect(() => {
+    if (!notVerifiedKey) return;
+    const id = window.setInterval(() => {
+      setResendReadyIn((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [notVerifiedKey]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,6 +84,7 @@ export default function LoginPage() {
     try {
       const data = await resend({ email }).unwrap();
       toast.success(data.message);
+      setResendReadyIn(60);
     } catch (err) {
       const msg = getErrorMessage(err);
       if ((err as { status?: number }).status === 429) {
@@ -88,25 +107,36 @@ export default function LoginPage() {
           {isLoading ? <LoadingState label="Signing in…" /> : null}
           {isSuccess ? <SuccessState message="Signed in. Redirecting…" /> : null}
           {notVerified ? (
-            <div className="space-y-3 rounded-lg border border-shop-accent/40 bg-shop-accent-soft p-4 text-sm text-shop-ink">
-              <p className="font-medium">Verify your email</p>
-              <p>{notVerified.message}</p>
+            <div className="space-y-3 rounded-lg border border-black/10 bg-black/[0.02] p-4 text-sm text-black/80">
+              <p className="font-medium text-shop-ink">Verify your email to sign in</p>
+              <p className="leading-relaxed">{notVerified.message}</p>
               {notVerified.email ? (
-                <button
-                  type="button"
-                  className="btn-secondary w-full"
-                  onClick={onResend}
-                  disabled={resendLoading}
-                >
-                  {resendLoading ? "Sending…" : "Resend confirmation email"}
-                </button>
+                <p className="text-xs text-black/55">
+                  {resendReadyIn > 0 ? (
+                    <>
+                      Optional: request another link in{" "}
+                      <span className="tabular-nums font-medium text-shop-ink">
+                        {Math.floor(resendReadyIn / 60)}:{String(resendReadyIn % 60).padStart(2, "0")}
+                      </span>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-shop-accent underline decoration-shop-accent/40 underline-offset-2 transition hover:decoration-shop-accent disabled:opacity-50"
+                      onClick={onResend}
+                      disabled={resendLoading}
+                    >
+                      {resendLoading ? "Sending…" : "Send another confirmation email"}
+                    </button>
+                  )}
+                </p>
               ) : null}
-              <p className="text-xs text-black/60">
-                Wrong inbox? Use{" "}
-                <Link href="/auth/check-email" className="font-medium text-shop-accent hover:underline">
-                  check your email
+              <p className="text-xs text-black/50">
+                Wrong address?{" "}
+                <Link href="/auth/check-email" className="text-shop-accent hover:underline">
+                  Open the check-email page
                 </Link>{" "}
-                to enter your address.
+                to enter your email.
               </p>
             </div>
           ) : null}
