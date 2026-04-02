@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "store.storeimages.cdn-apple.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.apple.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.mzstatic.com", pathname: "/**" },
+      { protocol: "https", hostname: "m.media-amazon.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.media-amazon.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.ssl-images-amazon.com", pathname: "/**" },
+    ],
+  },
 };
 
 export default nextConfig;

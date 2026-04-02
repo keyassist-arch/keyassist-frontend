@@ -1,26 +1,151 @@
 @import "tailwindcss";
 
+/* Woodisa-inspired palette (full-page reference) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Full-bleed content width (Woodisa-style; was ~1280px / max-w-7xl) */
+  --shop-layout-max: 1680px;
+  --background: #f5f5f5;
+  --foreground: #1a1a1a;
+  --shop-surface: #f5f5f5;
+  --shop-white: #ffffff;
+  --shop-ink: #1a1a1a;
+  --shop-muted: #666666;
+  --shop-border: #e8e8e8;
+  /* Primary actions: charcoal (SHOP NOW, SUBSCRIBE) */
+  --shop-primary: #1a1a1a;
+  --shop-primary-hover: #333333;
+  /* Accent: sage (promo band, soft UI) */
+  --shop-accent: #8ea296;
+  --shop-accent-hover: #758a7f;
+  --shop-accent-soft: #eef1ef;
+  /* Footer / top bar */
+  --shop-dark: #1a1a1a;
+  --shop-dark-soft: #2d3436;
+  /* Promo triptych + feature banner */
+  --shop-promo-peach: #f7e7dc;
+  --shop-promo-sage: #8ea296;
+  --shop-promo-tan: #e5ded5;
+  --shop-promo-slate: #2d3436;
+  /* Product UI */
+  --shop-sale: #e53e3e;
+  --shop-star: #f6ad55;
+  /* Legacy aliases (older components) */
+  --shop-cream: #f5f5f5;
+  --shop-ink-soft: #2d3436;
+  --shop-green: #8ea296;
+  --shop-green-hover: #758a7f;
+  --shop-green-soft: #eef1ef;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-shop-ink: var(--shop-ink);
+  --color-shop-muted: var(--shop-muted);
+  --color-shop-accent: var(--shop-accent);
+  --color-shop-accent-hover: var(--shop-accent-hover);
+  --color-shop-accent-soft: var(--shop-accent-soft);
+  --color-shop-primary: var(--shop-primary);
+  --color-shop-primary-hover: var(--shop-primary-hover);
+  --color-shop-sale: var(--shop-sale);
+  --color-shop-star: var(--shop-star);
+  --color-shop-surface: var(--shop-surface);
+  --color-shop-promo-peach: var(--shop-promo-peach);
+  --color-shop-promo-sage: var(--shop-promo-sage);
+  --color-shop-promo-tan: var(--shop-promo-tan);
+  --color-shop-promo-slate: var(--shop-promo-slate);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.card {
+  @apply rounded-2xl border p-6;
+  border-color: var(--shop-border);
+  background: var(--shop-white);
+}
+
+.btn-primary {
+  @apply rounded-none px-6 py-2.5 text-sm font-medium text-white transition;
+  background: var(--shop-primary);
+}
+
+.btn-primary:hover {
+  background: var(--shop-primary-hover);
+}
+
+.btn-secondary {
+  @apply rounded-none border px-6 py-2.5 text-sm font-medium transition;
+  border-color: rgba(26, 26, 26, 0.2);
+  color: var(--shop-ink);
+}
+
+.btn-secondary:hover {
+  background: var(--shop-accent-soft);
+}
+
+/* Text fields, selects, textareas — sharp corners to match buttons */
+.input {
+  @apply w-full rounded-none border border-black/10 bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-black/40 focus:border-black/30;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+input.input[type="search"]::-webkit-search-decoration,
+input.input[type="search"]::-webkit-search-cancel-button,
+input.input[type="search"]::-webkit-search-results-button,
+input.input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.shop-surface {
+  background: var(--shop-surface);
+  color: var(--shop-ink);
+}
+
+.shop-white {
+  background: var(--shop-white);
+}
+
+.shop-dark-section {
+  background: var(--shop-dark);
+  color: var(--shop-white);
+}
+
+.shop-dark-card {
+  background: var(--shop-dark-soft);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--shop-white);
+}
+
+.shop-muted-card {
+  background: #ebeae8;
+}
+
+@keyframes hero-content-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-slide-enter {
+  animation: hero-content-fade 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide-enter {
+    animation: none;
+  }
 }

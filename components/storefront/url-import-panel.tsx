@@ -1,0 +1,69 @@
+"use client";
+
+import Link from "next/link";
+import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+
+export function UrlImportPanel() {
+  const {
+    url,
+    setUrl,
+    onSubmit,
+    hasApiBase,
+    importing,
+    importErr,
+    importError,
+    effective,
+    failed,
+    waiting,
+    waitCopy,
+    importId,
+  } = useProductImportFromUrl();
+
+  if (!hasApiBase) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Product import isn’t available until the storefront is connected to our services. Please try again later or contact support.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          className="input flex-1"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.jumia.com.ng/..."
+          aria-label="Marketplace product URL"
+        />
+        <button type="submit" className="btn-primary shrink-0" disabled={importing || (Boolean(importId) && waiting)}>
+          {importing || (importId && waiting) ? "Adding…" : "Add from link"}
+        </button>
+      </form>
+      {importErr && <ErrorState error={importError} title="Import failed" />}
+      {failed && (
+        <ErrorState error={effective?.message ?? effective?.errorMessage ?? "Import failed"} title="Import failed" />
+      )}
+      {importId && waiting ? (
+        <div className="space-y-2 rounded-2xl border border-black/10 bg-shop-surface px-4 py-3 text-sm text-shop-muted">
+          <LoadingState label={effective?.userMessage ?? "Working on your import…"} />
+          {effective?.phase ? (
+            <p className="text-xs capitalize text-black/50">
+              Step: <span className="font-medium text-shop-ink">{effective.phase}</span>
+            </p>
+          ) : null}
+          <p className="text-xs text-black/50">{waitCopy}</p>
+        </div>
+      ) : null}
+      <p className="text-xs text-black/50">
+        Heavy use may be slowed to keep imports reliable. Questions? See our{" "}
+        <Link href="/faq" className="text-shop-accent underline">
+          FAQ
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
