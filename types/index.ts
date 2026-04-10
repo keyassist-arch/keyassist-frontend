@@ -8,7 +8,10 @@ export type Marketplace =
   | "Jumia"
   | "Nike"
   | "Shopify Partner"
-  | "Partner";
+  | "Partner"
+  | "GOAT"
+  | "Zara"
+  | "Converse";
 
 export interface ProductVariant {
   id: string;

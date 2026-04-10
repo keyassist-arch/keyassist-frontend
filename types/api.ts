@@ -65,11 +65,6 @@ export interface VerifyEmailRequest {
   localCart?: LocalCartLine[];
 }
 
-/** `POST /auth/verify-email` success — same as login; optional `cart` when `localCart` was non-empty. */
-export type VerifyEmailResponse = TokenResponse & {
-  cart?: CartResponse;
-};
-
 export interface ResendVerificationRequest {
   email: string;
 }
@@ -113,8 +108,16 @@ export interface PatchMeRequest {
   defaultShippingAddress?: ShippingAddress;
 }
 
-/** Public catalog / PDP `source` field (lowercase enum from API). */
-export type ProductSource = "jumia" | "amazon" | "nike" | "apple" | "generic";
+/** Public catalog / PDP `source` field (lowercase enum from API; more values may appear at runtime). */
+export type ProductSource =
+  | "jumia"
+  | "amazon"
+  | "nike"
+  | "apple"
+  | "generic"
+  | "goat"
+  | "zara"
+  | "converse";
 
 /** One variant dimension; `variantSelection` keys must match `name`. */
 export interface ApiProductVariantDimension {
@@ -123,15 +126,29 @@ export interface ApiProductVariantDimension {
 }
 
 /**
- * Per-configuration prices when the scraper provides them (e.g. Apple metrics SKUs).
- * Distinct from top-level `originalPrice` / `salePrice` on the listing; there is no separate `compareAtPrice` field on the product JSON.
+ * Per-configuration prices when the scraper provides them (Apple, GOAT, Zara, etc.).
+ * Match rows to `variants` via `variantAxis` + `optionValue` when building cart `variantSelection`.
+ * See integration guide: store-agnostic product details → configurationPrices.
  */
 export interface ApiConfigurationPrice {
-  label: string;
+  /** Fallback label when `displayLabel` is absent. */
+  label?: string;
   originalPrice?: string | number;
   salePrice?: string | number;
   partNumber?: string;
   sku?: string;
+  /** Matches a `variants[].name` axis when the API tags rows (e.g. Size, Color). */
+  variantAxis?: string;
+  /** Matches the chosen option on that axis. */
+  optionValue?: string;
+  /** Row-level currency when it differs from product `currency`. */
+  currency?: string;
+  /** When false, treat line as out of stock for that configuration. */
+  available?: boolean;
+  /** Preferred human-readable cell label (e.g. "10 — from USD 425.00"). */
+  displayLabel?: string;
+  /** Opaque store-specific hints (e.g. GOAT `sizeValue`). */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -215,6 +232,16 @@ export interface CartResponse {
   id: string;
   items: CartItemResponse[];
 }
+
+/** `POST /auth/login` — tokens plus optional merged `cart` when `localCart` was sent and non-empty. */
+export type LoginResponse = TokenResponse & {
+  cart?: CartResponse;
+};
+
+/** `POST /auth/verify-email` success — same as login; optional `cart` when `localCart` was non-empty. */
+export type VerifyEmailResponse = TokenResponse & {
+  cart?: CartResponse;
+};
 
 export interface AddCartItemRequest {
   productId: string;

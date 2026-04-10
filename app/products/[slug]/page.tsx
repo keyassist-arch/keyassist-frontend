@@ -84,8 +84,18 @@ function stableViewingCount(productId: string) {
   return 18 + base;
 }
 
+function configurationRowLabel(row: ApiConfigurationPrice): string {
+  const primary = row.displayLabel?.trim() || row.label?.trim();
+  if (primary) return primary;
+  if (row.variantAxis?.trim() && row.optionValue?.trim()) {
+    return `${row.variantAxis}: ${row.optionValue}`;
+  }
+  return "—";
+}
+
 function ConfigurationPricesTable({ rows, currency }: { rows: ApiConfigurationPrice[]; currency: string }) {
   const showSkuCol = rows.some((r) => Boolean(r.partNumber?.trim() || r.sku?.trim()));
+  const showOos = rows.some((r) => r.available === false);
   return (
     <table className="w-full min-w-[min(100%,320px)] border-collapse text-left text-sm">
       <thead>
@@ -95,6 +105,7 @@ function ConfigurationPricesTable({ rows, currency }: { rows: ApiConfigurationPr
             <th className="py-2 pr-3 font-medium">Part / SKU</th>
           ) : null}
           <th className="py-2 font-medium">Price</th>
+          {showOos ? <th className="py-2 pl-2 font-medium">Stock</th> : null}
         </tr>
       </thead>
       <tbody>
@@ -104,18 +115,25 @@ function ConfigurationPricesTable({ rows, currency }: { rows: ApiConfigurationPr
           const sale = coerceNumber(saleRaw, 0);
           const showStrike = orig > 0 && sale > 0 && !pricesAreEqual(row.originalPrice, row.salePrice);
           const sku = row.partNumber?.trim() || row.sku?.trim();
+          const rowCurrency = row.currency?.trim() || currency;
+          const title = configurationRowLabel(row);
           return (
             <tr key={i} className="border-b border-black/5 last:border-b-0">
-              <td className="py-2.5 pr-3 align-top text-shop-ink">{row.label}</td>
+              <td className="py-2.5 pr-3 align-top text-shop-ink">{title}</td>
               {showSkuCol ? (
                 <td className="py-2.5 pr-3 align-top tabular-nums text-black/70">{sku ?? "—"}</td>
               ) : null}
               <td className="py-2.5 align-top tabular-nums">
                 {showStrike ? (
-                  <span className="mr-2 text-black/40 line-through">{formatApiMoney(row.originalPrice, currency)}</span>
+                  <span className="mr-2 text-black/40 line-through">{formatApiMoney(row.originalPrice, rowCurrency)}</span>
                 ) : null}
-                <span className="font-medium text-shop-ink">{formatApiMoney(saleRaw, currency)}</span>
+                <span className="font-medium text-shop-ink">{formatApiMoney(saleRaw, rowCurrency)}</span>
               </td>
+              {showOos ? (
+                <td className="py-2.5 pl-2 align-top text-xs text-shop-muted">
+                  {row.available === false ? <span className="text-amber-800">Out of stock</span> : "—"}
+                </td>
+              ) : null}
             </tr>
           );
         })}
@@ -223,7 +241,11 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const freshLine = api ? formatFreshLine(api) : null;
 
   const configurationPricesSlot = useMemo(() => {
-    const rows = api?.configurationPrices?.filter((r) => r.label?.trim());
+    const rows = api?.configurationPrices?.filter((r) => {
+      if ((r.displayLabel ?? r.label)?.trim()) return true;
+      if (r.variantAxis?.trim() && r.optionValue?.trim()) return true;
+      return r.salePrice != null || r.originalPrice != null;
+    });
     if (!rows?.length) return undefined;
     return <ConfigurationPricesTable rows={rows} currency={currency} />;
   }, [api, currency]);

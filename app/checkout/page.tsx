@@ -150,41 +150,99 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-semibold">Shipping</h2>
             <p className="text-xs text-black/60">We’ll pre-fill from your saved address when you have one. You can change anything below.</p>
 
-            <input
-              className="input"
-              name="fullName"
-              placeholder="Full name"
-              required
-              defaultValue={me?.defaultShippingAddress?.fullName ?? ""}
-            />
-            <input
-              className="input"
-              name="line1"
-              placeholder="Address line 1"
-              required
-              defaultValue={me?.defaultShippingAddress?.line1 ?? ""}
-            />
-            <input className="input" name="line2" placeholder="Address line 2 (optional)" defaultValue={me?.defaultShippingAddress?.line2 ?? ""} />
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Full name</span>
+              <input
+                className="input w-full"
+                name="fullName"
+                placeholder="Jane Doe"
+                required
+                defaultValue={me?.defaultShippingAddress?.fullName ?? ""}
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Address line 1</span>
+              <input
+                className="input w-full"
+                name="line1"
+                placeholder="Street, building, unit"
+                required
+                defaultValue={me?.defaultShippingAddress?.line1 ?? ""}
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Address line 2 (optional)</span>
+              <input
+                className="input w-full"
+                name="line2"
+                placeholder="Apt, suite, etc."
+                defaultValue={me?.defaultShippingAddress?.line2 ?? ""}
+              />
+            </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input className="input" name="city" placeholder="City" required defaultValue={me?.defaultShippingAddress?.city ?? ""} />
-              <input className="input" name="state" placeholder="State / region" defaultValue={me?.defaultShippingAddress?.state ?? ""} />
+              <label className="block space-y-1 text-sm">
+                <span className="text-black/70">City</span>
+                <input
+                  className="input w-full"
+                  name="city"
+                  placeholder="City"
+                  required
+                  defaultValue={me?.defaultShippingAddress?.city ?? ""}
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-black/70">State / region</span>
+                <input
+                  className="input w-full"
+                  name="state"
+                  placeholder="State or region"
+                  defaultValue={me?.defaultShippingAddress?.state ?? ""}
+                />
+              </label>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input className="input" name="country" placeholder="Country code (e.g. NG)" defaultValue={me?.defaultShippingAddress?.country ?? "NG"} />
-              <input className="input" name="postalCode" placeholder="Postal code" defaultValue={me?.defaultShippingAddress?.postalCode ?? ""} />
+              <label className="block space-y-1 text-sm">
+                <span className="text-black/70">Country code</span>
+                <input
+                  className="input w-full"
+                  name="country"
+                  placeholder="e.g. NG"
+                  defaultValue={me?.defaultShippingAddress?.country ?? "NG"}
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-black/70">Postal code</span>
+                <input
+                  className="input w-full"
+                  name="postalCode"
+                  placeholder="Postal or ZIP"
+                  defaultValue={me?.defaultShippingAddress?.postalCode ?? ""}
+                />
+              </label>
             </div>
-            <input className="input" name="phone" type="tel" placeholder="Phone" defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""} />
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Phone</span>
+              <input
+                className="input w-full"
+                name="phone"
+                type="tel"
+                placeholder="+234 …"
+                defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""}
+              />
+            </label>
 
             <h2 className="pt-4 text-lg font-semibold">Payment provider</h2>
-            <select
-              className="input"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value as PaymentProvider)}
-              aria-label="Payment provider"
-            >
-              <option value="paystack">Paystack</option>
-              <option value="stripe">Stripe Checkout</option>
-            </select>
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Provider</span>
+              <select
+                className="input w-full"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as PaymentProvider)}
+              >
+                <option value="paystack">Paystack</option>
+                <option value="stripe">Stripe Checkout</option>
+              </select>
+            </label>
 
             {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
 

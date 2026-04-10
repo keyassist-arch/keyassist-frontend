@@ -43,7 +43,17 @@ export default function ForgotPasswordPage() {
             {isLoading ? <LoadingState label="Sending…" /> : null}
             {(isError || formError) && <ErrorState error={formError || error} title="Request failed" />}
 
-            <input className="input" name="email" type="email" autoComplete="email" placeholder="Email" required />
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Email</span>
+              <input
+                className="input w-full"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                required
+              />
+            </label>
             <button className="btn-primary w-full" type="submit" disabled={isLoading}>
               {isLoading ? "Sending…" : "Send reset link"}
             </button>

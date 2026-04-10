@@ -80,16 +80,19 @@ function CheckEmailContent() {
 
           <form onSubmit={onResend} className="space-y-3">
             {!emailFromUrl ? (
-              <input
-                className="input"
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="Your email address"
-                value={emailInput}
-                onChange={(ev) => setEmailInput(ev.target.value)}
-                required
-              />
+              <label className="block space-y-1 text-sm">
+                <span className="text-black/70">Email</span>
+                <input
+                  className="input w-full"
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={emailInput}
+                  onChange={(ev) => setEmailInput(ev.target.value)}
+                  required
+                />
+              </label>
             ) : null}
             <button
               type="submit"

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useId } from "react";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
@@ -19,6 +20,7 @@ export function UrlImportPanel() {
     waitCopy,
     importId,
   } = useProductImportFromUrl();
+  const importUrlId = useId();
 
   if (!hasApiBase) {
     return (
@@ -30,14 +32,17 @@ export function UrlImportPanel() {
 
   return (
     <div className="space-y-3">
-      <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          className="input flex-1"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.jumia.com.ng/..."
-          aria-label="Marketplace product URL"
-        />
+      <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <label htmlFor={importUrlId} className="min-w-0 flex-1 space-y-1 text-sm">
+          <span className="text-black/70">Product URL</span>
+          <input
+            id={importUrlId}
+            className="input w-full"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://www.jumia.com.ng/..."
+          />
+        </label>
         <button type="submit" className="btn-primary shrink-0" disabled={importing || (Boolean(importId) && waiting)}>
           {importing || (importId && waiting) ? "Adding…" : "Add from link"}
         </button>

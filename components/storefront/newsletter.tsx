@@ -19,7 +19,17 @@ export function Newsletter() {
           <p className="mt-6 text-sm font-medium text-shop-accent">Thanks — you&apos;re on the list.</p>
         ) : (
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <input name="email" type="email" required placeholder="Email address" className="input max-w-md sm:min-w-[280px]" />
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="newsletter-email"
+              name="email"
+              type="email"
+              required
+              placeholder="Email address"
+              className="input max-w-md w-full sm:min-w-[280px]"
+            />
             <button type="submit" className="btn-primary uppercase tracking-wide">
               Subscribe
             </button>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SearchInput } from "@/components/product/search-input";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
+import { siteContext } from "@/lib/site-context";
 
 export function MarketingHero() {
   return (
@@ -9,7 +10,7 @@ export function MarketingHero() {
 
       <div className="max-w-4xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/60">
-          Unified Commerce
+          {siteContext.brand}
         </p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
           Discover products across marketplaces.

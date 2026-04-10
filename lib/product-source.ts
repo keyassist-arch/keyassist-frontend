@@ -7,6 +7,9 @@ const SOURCE_LABELS: Record<ProductSource, string> = {
   nike: "Nike",
   apple: "Apple",
   generic: "Partner",
+  goat: "GOAT",
+  zara: "Zara",
+  converse: "Converse",
 };
 
 /** Display name for “View on {retailer}”. */
@@ -30,6 +33,12 @@ export function marketplaceFromApiSource(source: string | undefined, brand?: str
       return "Nike";
     case "generic":
       return "Partner";
+    case "goat":
+      return "GOAT";
+    case "zara":
+      return "Zara";
+    case "converse":
+      return "Converse";
     default: {
       const b = brand?.trim();
       if (b && ["Amazon", "Apple", "Jumia", "Nike", "Shopify Partner"].includes(b)) return b as Marketplace;

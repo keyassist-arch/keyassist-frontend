@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unified Commerce — multi-marketplace storefront",
+  title: "Key Assist — multi-marketplace storefront",
   description:
-    "Shop and track products from multiple marketplaces in one cart: paste URLs, compare listings, and check out in one flow.",
+    "Key Assist: shop and track products from multiple marketplaces in one cart—paste URLs, compare listings, and check out in one flow.",
 };
 
 export default function RootLayout({

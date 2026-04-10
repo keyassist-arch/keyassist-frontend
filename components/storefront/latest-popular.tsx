@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Product } from "@/types";
 import { productDetailPath } from "@/lib/product-detail-path";
 import { formatApiMoney } from "@/lib/format-price";
+import { siteContext } from "@/lib/site-context";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 
 function MiniList({ title, items }: { title: string; items: Product[] }) {
@@ -38,7 +39,7 @@ export function LatestPopular({ products }: { products: Product[] }) {
         >
           <h3 className="text-xl font-semibold">Commerce with clarity</h3>
           <p className="mt-3 text-sm text-white/80">
-            Unified Commerce aggregates listings from major marketplaces so you can shop and track orders without juggling tabs.
+            {siteContext.brand} aggregates listings from major marketplaces so you can shop and track orders without juggling tabs.
           </p>
           <OpenCartTrigger className="mt-6 inline-flex w-fit bg-shop-primary px-6 py-2.5 text-sm font-medium text-white transition hover:bg-shop-primary-hover">
             View cart

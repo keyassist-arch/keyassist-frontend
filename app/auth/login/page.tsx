@@ -144,11 +144,22 @@ export default function LoginPage() {
             <ErrorState error={formError || error} title="Sign-in failed" />
           ) : null}
 
-          <input className="input" name="email" type="email" autoComplete="email" placeholder="Email" required />
+          <label className="block space-y-1 text-sm">
+            <span className="text-black/70">Email</span>
+            <input
+              className="input w-full"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+            />
+          </label>
           <PasswordField
+            label="Password"
             name="password"
             autoComplete="current-password"
-            placeholder="Password"
+            placeholder="Enter your password"
             required
           />
           <button className="btn-primary w-full" type="submit" disabled={isLoading}>

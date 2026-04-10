@@ -99,14 +99,17 @@ function DrawerLineItem({
           <h3 className="mt-0.5 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
           {variantLine ? <p className="mt-1 text-xs text-black/50">{variantLine}</p> : null}
           <p className="mt-1 text-xs text-black/50 tabular-nums">{unitLabel}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <ProductQuantityStepper
-              value={quantity}
-              onChange={onQuantityChange}
-              min={1}
-              max={maxQty}
-              disabled={disabled}
-            />
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-black/60">Quantity</span>
+              <ProductQuantityStepper
+                value={quantity}
+                onChange={onQuantityChange}
+                min={1}
+                max={maxQty}
+                disabled={disabled}
+              />
+            </div>
             <button
               type="button"
               onClick={onRemove}
@@ -365,14 +368,18 @@ function GuestCartSection({
                     Remove
                   </button>
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <input
-                    className="input max-w-24"
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                  />
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <label htmlFor={`qty-guest-${item.id}`} className="flex flex-col gap-1 text-sm text-black/70">
+                    <span>Quantity</span>
+                    <input
+                      id={`qty-guest-${item.id}`}
+                      className="input max-w-24"
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                    />
+                  </label>
                   <p className="text-sm font-semibold tabular-nums">
                     {item.currency} {(item.price * item.quantity).toFixed(2)}
                   </p>
@@ -489,15 +496,19 @@ function ApiCartSection({
                     Remove
                   </button>
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <input
-                    className="input max-w-24"
-                    type="number"
-                    min={0}
-                    value={item.quantity}
-                    disabled={busy}
-                    onChange={(e) => onQuantityChange(item.id, Number(e.target.value))}
-                  />
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <label htmlFor={`qty-api-${item.id}`} className="flex flex-col gap-1 text-sm text-black/70">
+                    <span>Quantity</span>
+                    <input
+                      id={`qty-api-${item.id}`}
+                      className="input max-w-24"
+                      type="number"
+                      min={0}
+                      value={item.quantity}
+                      disabled={busy}
+                      onChange={(e) => onQuantityChange(item.id, Number(e.target.value))}
+                    />
+                  </label>
                   <p className="text-sm font-semibold tabular-nums">
                     {currency} {linePrice(item).toFixed(2)}
                   </p>

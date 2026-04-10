@@ -72,16 +72,18 @@ export function ResetPasswordClient() {
             {(isError || formError) && <ErrorState error={formError || error} title="Reset failed" />}
 
             <PasswordField
+              label="New password"
               name="password"
               autoComplete="new-password"
-              placeholder="New password (min. 8 characters)"
+              placeholder="At least 8 characters"
               required
               minLength={8}
             />
             <PasswordField
+              label="Confirm new password"
               name="confirm"
               autoComplete="new-password"
-              placeholder="Confirm new password"
+              placeholder="Re-enter password"
               required
               minLength={8}
             />

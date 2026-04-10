@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { ErrorState } from "@/components/feedback/query-state";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
@@ -24,6 +24,7 @@ export function ShopImportFromUrl() {
     importId,
     isImportBlocking,
   } = useProductImportFromUrl();
+  const importUrlId = useId();
 
   useEffect(() => {
     if (!hasApiBase || !isImportBlocking) return;
@@ -69,15 +70,18 @@ export function ShopImportFromUrl() {
         <p className="mt-1 text-sm text-black/65">
           Paste a product URL from a supported marketplace. We&apos;ll fetch it and open the listing when it&apos;s ready.
         </p>
-        <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
-          <input
-            className="input flex-1"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.jumia.com.ng/..."
-            aria-label="Marketplace product URL"
-            disabled={isImportBlocking}
-          />
+        <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label htmlFor={importUrlId} className="min-w-0 flex-1 space-y-1 text-sm">
+            <span className="text-black/70">Product URL</span>
+            <input
+              id={importUrlId}
+              className="input w-full"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.jumia.com.ng/..."
+              disabled={isImportBlocking}
+            />
+          </label>
           <button type="submit" className="btn-primary shrink-0 px-8 sm:w-auto" disabled={isImportBlocking}>
             {importing || (importId && waiting) ? "Importing…" : "Import product"}
           </button>

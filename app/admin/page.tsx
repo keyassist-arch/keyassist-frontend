@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector } from "@/store/hooks";
@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewJson, setPreviewJson] = useState<string | null>(null);
+  const previewUrlFieldId = useId();
 
   if (!token) {
     return (
@@ -160,13 +161,16 @@ export default function AdminPage() {
             Fetch a read-only snapshot from a product URL. Nothing is saved to the catalog until you import from the storefront.
           </p>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onScrapePreview}>
-            <input
-              className="input flex-1"
-              value={previewUrl}
-              onChange={(e) => setPreviewUrl(e.target.value)}
-              placeholder="https://..."
-              aria-label="Product URL to preview"
-            />
+            <label htmlFor={previewUrlFieldId} className="min-w-0 flex-1 space-y-1 text-sm">
+              <span className="text-black/70">Product URL</span>
+              <input
+                id={previewUrlFieldId}
+                className="input w-full"
+                value={previewUrl}
+                onChange={(e) => setPreviewUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </label>
             <button type="submit" className="btn-secondary shrink-0" disabled={scraping}>
               {scraping ? "Fetching…" : "Run preview"}
             </button>
@@ -200,13 +204,12 @@ export default function AdminPage() {
                   <p className="mt-2 text-sm text-black/70">
                     Total {currency} {amount.toFixed(2)} · {order.items.length} lines
                   </p>
-                  <div className="mt-3 flex flex-wrap items-end gap-2">
-                    <label className="text-xs font-medium text-black/60">Status</label>
+                  <label className="mt-3 block max-w-xs space-y-1 text-xs">
+                    <span className="font-medium text-black/60">Order status</span>
                     <select
-                      className="input max-w-xs text-sm"
+                      className="input w-full text-sm"
                       value={order.status}
                       disabled={patching}
-                      aria-label={`Status for ${order.id}`}
                       onChange={(e) => {
                         const v = e.target.value as OrderStatus;
                         void onPatch(order.id, { status: v });
@@ -218,15 +221,26 @@ export default function AdminPage() {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </label>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <input
-                      className="input text-sm"
-                      placeholder="Tracking #"
-                      defaultValue=""
-                      id={`track-${order.id}`}
-                    />
-                    <input className="input text-sm" placeholder="Carrier (e.g. DHL)" defaultValue="" id={`carrier-${order.id}`} />
+                    <label className="block space-y-1 text-xs">
+                      <span className="font-medium text-black/60">Tracking number</span>
+                      <input
+                        className="input w-full text-sm"
+                        placeholder="e.g. 1Z999…"
+                        defaultValue=""
+                        id={`track-${order.id}`}
+                      />
+                    </label>
+                    <label className="block space-y-1 text-xs">
+                      <span className="font-medium text-black/60">Carrier</span>
+                      <input
+                        className="input w-full text-sm"
+                        placeholder="e.g. DHL"
+                        defaultValue=""
+                        id={`carrier-${order.id}`}
+                      />
+                    </label>
                   </div>
                   <button
                     type="button"

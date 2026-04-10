@@ -57,32 +57,52 @@ export default function RegisterPage() {
           {(isError || formError) && <ErrorState error={formError || error} title="Registration failed" />}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <input
-              className="input"
-              name="firstName"
-              type="text"
-              autoComplete="given-name"
-              placeholder="First name"
-              required
-            />
-            <input
-              className="input"
-              name="lastName"
-              type="text"
-              autoComplete="family-name"
-              placeholder="Last name"
-              required
-            />
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">First name</span>
+              <input
+                className="input w-full"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                placeholder="Jane"
+                required
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span className="text-black/70">Last name</span>
+              <input
+                className="input w-full"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                placeholder="Doe"
+                required
+              />
+            </label>
           </div>
-          <input className="input" name="email" type="email" autoComplete="email" placeholder="Email" required />
+          <label className="block space-y-1 text-sm">
+            <span className="text-black/70">Email</span>
+            <input
+              className="input w-full"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+            />
+          </label>
           <PasswordField
+            label="Password"
             name="password"
             autoComplete="new-password"
-            placeholder="Password (min 8 characters)"
+            placeholder="At least 8 characters"
             required
             minLength={8}
           />
-          <input className="input" name="phone" type="tel" autoComplete="tel" placeholder="Phone (optional)" />
+          <label className="block space-y-1 text-sm">
+            <span className="text-black/70">Phone (optional)</span>
+            <input className="input w-full" name="phone" type="tel" autoComplete="tel" placeholder="+1 …" />
+          </label>
 
           <button className="btn-primary w-full" type="submit" disabled={isLoading}>
             {isLoading ? "Please wait…" : "Register"}

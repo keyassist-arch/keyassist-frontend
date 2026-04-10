@@ -11,6 +11,7 @@ import type {
   ForgotPasswordResponse,
   InitializePaymentRequest,
   LoginRequest,
+  LoginResponse,
   MeResponse,
   OrderResponse,
   PatchAdminOrderRequest,
@@ -71,12 +72,26 @@ export const unifiedCommerceApi = createApi({
       },
     }),
 
-    login: builder.mutation<TokenResponse, LoginRequest>({
-      queryFn: async (body, api, extra) => postAuthJson("/auth/login", body, api, extra),
+    login: builder.mutation<LoginResponse, LoginRequest>({
+      queryFn: async (body, api, extra) => {
+        const result = await refreshBaseQuery({ url: "/auth/login", method: "POST", body }, api, extra);
+        if (result.error) return { error: result.error };
+        return { data: result.data as LoginResponse };
+      },
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          dispatch(credentialsReceived({ ...data, email: arg.email }));
+          dispatch(
+            credentialsReceived({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              expiresIn: data.expiresIn,
+              email: arg.email,
+            })
+          );
+          if (data.cart) {
+            dispatch(unifiedCommerceApi.util.invalidateTags(["Cart"]));
+          }
         } catch {
           /* handled by hook */
         }

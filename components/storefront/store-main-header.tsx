@@ -119,7 +119,7 @@ export function StoreMainHeader() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search or paste Amazon, Nike, Apple, Jumia URL…"
-            className="input min-h-11 flex-1 rounded-none border-neutral-200"
+            className="input min-h-11 min-w-0 flex-1 rounded-none border-neutral-200"
             style={{ borderColor: "var(--shop-border)", borderRadius: 0 }}
           />
           <button type="submit" className="btn-primary shrink-0 px-5 py-2.5 text-sm">

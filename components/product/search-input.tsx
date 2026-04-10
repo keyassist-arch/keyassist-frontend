@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 const allowedSources = ["jumia", "nike", "amazon", "apple"];
 
@@ -11,6 +11,7 @@ interface SearchInputProps {
 
 export function SearchInput({ onSearch, variant = "default" }: SearchInputProps) {
   const [value, setValue] = useState("");
+  const inputId = useId();
 
   const sourceHint = useMemo(() => {
     const lower = value.toLowerCase();
@@ -22,15 +23,13 @@ export function SearchInput({ onSearch, variant = "default" }: SearchInputProps)
 
   return (
     <div className={wrapper}>
-      {variant === "default" ? (
-        <label htmlFor="url-search" className="text-sm font-medium">
-          Search or paste marketplace URL
-        </label>
-      ) : null}
+      <label htmlFor={inputId} className="sr-only">
+        Search or paste marketplace URL
+      </label>
 
       <div className={variant === "hero" ? "flex flex-col gap-2 sm:flex-row" : "flex flex-col gap-2 sm:flex-row"}>
         <input
-          id="url-search"
+          id={inputId}
           type="search"
           enterKeyHint="search"
           className={variant === "hero" ? "input flex-1 rounded-none" : "input rounded-none"}

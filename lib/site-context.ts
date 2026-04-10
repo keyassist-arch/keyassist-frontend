@@ -1,9 +1,9 @@
 /**
- * Unified Commerce — storefront copy and positioning (reference: full-page marketplace layout).
+ * Key Assist — storefront copy and positioning (reference: full-page marketplace layout).
  * Single source for hero, nav labels, and trust messaging.
  */
 export const siteContext = {
-  brand: "Unified Commerce",
+  brand: "Key Assist",
   tagline: "One cart. Many marketplaces.",
   topBar: {
     left: "Track orders in your dashboard · Paste product URLs to add from Amazon, Apple, Jumia, Nike & more",
