@@ -132,14 +132,22 @@ function formatDrawerSubtotal(amount: number, currency: string) {
   return `${currency} ${amount.toFixed(2)}`;
 }
 
+type TotalsSnapshot = {
+  subtotal: number;
+  serviceCharge: number;
+  discount: number;
+  fees: number;
+  total: number;
+};
+
 function DrawerFooter({
-  subtotal,
+  totals,
   currencyLabel,
   ctaDisabled,
   onCheckoutNavigate,
   signInHint,
 }: {
-  subtotal: number;
+  totals: TotalsSnapshot;
   currencyLabel: string;
   ctaDisabled: boolean;
   onCheckoutNavigate?: () => void;
@@ -174,7 +182,7 @@ function DrawerFooter({
       </button>
       {open ? (
         <textarea
-          className="input mt-1 min-h-[5.5rem] resize-y text-shop-ink"
+          className="input mt-1 min-h-22 resize-y text-shop-ink"
           rows={3}
           placeholder="Gift message, delivery notes…"
           aria-label="Order special instructions"
@@ -183,7 +191,23 @@ function DrawerFooter({
 
       <div className="mt-4 flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium text-shop-ink">Subtotal</span>
-        <span className="text-sm font-bold tabular-nums text-shop-ink">{formatDrawerSubtotal(subtotal, currencyLabel)}</span>
+        <span className="text-sm font-bold tabular-nums text-shop-ink">
+          {formatDrawerSubtotal(totals.subtotal, currencyLabel)}
+        </span>
+      </div>
+      <div className="mt-2 space-y-1 text-xs text-black/55">
+        <div className="flex items-center justify-between">
+          <span>Service charge</span>
+          <span>{formatDrawerSubtotal(totals.serviceCharge, currencyLabel)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span>Discount</span>
+          <span>-{formatDrawerSubtotal(totals.discount, currencyLabel)}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-black/10 pt-1 font-semibold text-shop-ink">
+          <span>Total</span>
+          <span>{formatDrawerSubtotal(totals.total, currencyLabel)}</span>
+        </div>
       </div>
       <p className="mt-2 text-xs text-black/50">Taxes and shipping calculated at checkout</p>
 
@@ -232,8 +256,12 @@ export function CartPanelBody({
   const [deleteItem, { isLoading: isDeleting }] = useDeleteCartItemMutation();
 
   const apiItems = apiCart?.items ?? [];
-  const apiSubtotal = apiItems.reduce((sum, li) => sum + linePrice(li), 0);
-  const apiCurrency = apiItems[0] ? lineCurrency(apiItems[0]) : "USD";
+  const apiCurrency = apiCart?.currency ?? (apiItems[0] ? lineCurrency(apiItems[0]) : "USD");
+  const apiSubtotal = coerceNumber(apiCart?.subtotal, apiItems.reduce((sum, li) => sum + linePrice(li), 0));
+  const apiServiceCharge = coerceNumber(apiCart?.serviceCharge, 0);
+  const apiDiscount = coerceNumber(apiCart?.discount, 0);
+  const apiFees = coerceNumber(apiCart?.fees, apiServiceCharge - apiDiscount);
+  const apiTotal = coerceNumber(apiCart?.total, apiSubtotal + apiFees);
 
   const gridClass =
     layout === "drawer" ? "flex min-h-0 flex-1 flex-col" : "grid gap-6 lg:grid-cols-[1.5fr_1fr]";
@@ -264,7 +292,13 @@ export function CartPanelBody({
             <div className={gridClass}>
               <ApiCartSection
                 items={apiItems}
-                subtotal={apiSubtotal}
+                totals={{
+                  subtotal: apiSubtotal,
+                  serviceCharge: apiServiceCharge,
+                  discount: apiDiscount,
+                  fees: apiFees,
+                  total: apiTotal,
+                }}
                 currency={apiCurrency}
                 onQuantityChange={(itemId, qty) => patchItem({ itemId, quantity: qty })}
                 onRemove={(itemId) => deleteItem(itemId)}
@@ -331,7 +365,13 @@ function GuestCartSection({
           )}
         </div>
         <DrawerFooter
-          subtotal={subtotal}
+          totals={{
+            subtotal,
+            serviceCharge: 0,
+            discount: 0,
+            fees: 0,
+            total: subtotal,
+          }}
           currencyLabel={currency}
           ctaDisabled={items.length === 0}
           onCheckoutNavigate={onCheckoutNavigate}
@@ -391,7 +431,13 @@ function GuestCartSection({
       </section>
       <SummarySection
         count={items.length}
-        subtotal={subtotal}
+        totals={{
+          subtotal,
+          serviceCharge: 0,
+          discount: 0,
+          fees: 0,
+          total: subtotal,
+        }}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}
         onCheckoutNavigate={onCheckoutNavigate}
@@ -402,7 +448,7 @@ function GuestCartSection({
 
 function ApiCartSection({
   items,
-  subtotal,
+  totals,
   currency,
   onQuantityChange,
   onRemove,
@@ -411,7 +457,7 @@ function ApiCartSection({
   onCheckoutNavigate,
 }: {
   items: CartItemResponse[];
-  subtotal: number;
+  totals: TotalsSnapshot;
   currency: string;
   onQuantityChange: (itemId: string, qty: number) => void;
   onRemove: (itemId: string) => void;
@@ -457,7 +503,7 @@ function ApiCartSection({
           )}
         </div>
         <DrawerFooter
-          subtotal={subtotal}
+          totals={totals}
           currencyLabel={currency}
           ctaDisabled={items.length === 0}
           onCheckoutNavigate={onCheckoutNavigate}
@@ -520,7 +566,7 @@ function ApiCartSection({
       </section>
       <SummarySection
         count={items.length}
-        subtotal={subtotal}
+        totals={totals}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}
         onCheckoutNavigate={onCheckoutNavigate}
@@ -531,18 +577,17 @@ function ApiCartSection({
 
 function SummarySection({
   count,
-  subtotal,
+  totals,
   currencyLabel,
   ctaDisabled,
   onCheckoutNavigate,
 }: {
   count: number;
-  subtotal: number;
+  totals: TotalsSnapshot;
   currencyLabel: string;
   ctaDisabled: boolean;
   onCheckoutNavigate?: () => void;
 }) {
-  const shipping = 8;
   return (
     <section className="card h-fit">
       <h2 className="text-lg font-semibold">Order summary</h2>
@@ -551,17 +596,31 @@ function SummarySection({
         <div className="flex items-center justify-between gap-2">
           <span>Subtotal</span>
           <span className="font-medium tabular-nums">
-            {currencyLabel} {subtotal.toFixed(2)}
+            {currencyLabel} {totals.subtotal.toFixed(2)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span>Estimated shipping</span>
-          <span className="font-medium tabular-nums">USD {shipping.toFixed(2)}</span>
+          <span>Service charge</span>
+          <span className="font-medium tabular-nums">
+            {currencyLabel} {totals.serviceCharge.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span>Discount</span>
+          <span className="font-medium tabular-nums">
+            -{currencyLabel} {totals.discount.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span>Fees</span>
+          <span className="font-medium tabular-nums">
+            {currencyLabel} {totals.fees.toFixed(2)}
+          </span>
         </div>
         <div className="flex items-center justify-between border-t border-black/10 pt-2 text-base font-semibold">
           <span>Total</span>
           <span className="tabular-nums">
-            {currencyLabel} {(subtotal + shipping).toFixed(2)}
+            {currencyLabel} {totals.total.toFixed(2)}
           </span>
         </div>
       </div>

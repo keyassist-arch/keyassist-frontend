@@ -6,10 +6,15 @@ import { sortOrdersNewestFirst } from "@/lib/dashboard-orders";
 import { useGetOrdersQuery } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { useMemo } from "react";
+import { useOrderRealtime } from "@/hooks/use-order-realtime";
 
 export default function DashboardOrdersPage() {
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { data: orders, isLoading, isError, error } = useGetOrdersQuery(undefined, { skip: !token });
+  const { data: orders, isLoading, isError, error, refetch } = useGetOrdersQuery(undefined, { skip: !token });
+
+  useOrderRealtime(token, () => {
+    void refetch();
+  });
 
   const sorted = useMemo(() => (orders ? sortOrdersNewestFirst(orders) : []), [orders]);
 

@@ -3,6 +3,7 @@
 import { Steps } from "@/components/ui/steps";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { CartPanelBody } from "@/components/cart/cart-content";
+import { PendingOrderBanner } from "@/components/cart/pending-order-banner";
 
 export default function CartPage() {
   return (
@@ -27,6 +28,7 @@ export default function CartPage() {
           </div>
         </section>
 
+        <PendingOrderBanner />
         <CartPanelBody layout="page" />
       </div>
     </InnerShell>

@@ -12,9 +12,10 @@ import {
   usePatchAdminOrderMutation,
   usePostAdminScrapePreviewMutation,
 } from "@/store/routes/unified-commerce-api";
-import type { OrderResponse, OrderStatus, PatchAdminOrderRequest } from "@/types/api";
+import type { OrderStatus, PatchAdminOrderRequest } from "@/types/api";
 import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { orderTotal } from "@/lib/dashboard-orders";
 
 const ADMIN_STATUSES: OrderStatus[] = [
   "PENDING",
@@ -25,12 +26,6 @@ const ADMIN_STATUSES: OrderStatus[] = [
   "DELIVERED",
   "CANCELLED",
 ];
-
-function orderTotal(order: OrderResponse): { amount: number; currency: string } {
-  const currency = order.items[0]?.currency ?? "—";
-  const amount = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  return { amount, currency };
-}
 
 export default function AdminPage() {
   const token = useAppSelector((s) => s.auth.accessToken);
@@ -181,7 +176,7 @@ export default function AdminPage() {
             </div>
           ) : null}
           {previewJson ? (
-            <pre className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 bg-black/[0.03] p-4 text-xs">
+            <pre className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 bg-black/3 p-4 text-xs">
               {previewJson}
             </pre>
           ) : null}

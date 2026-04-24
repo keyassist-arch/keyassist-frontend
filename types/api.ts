@@ -38,6 +38,26 @@ export interface LoginRequest {
   localCart?: LocalCartLine[];
 }
 
+/** `POST /auth/login/2fa` — complete sign-in after password step returned `requiresTwoFactor`. */
+export interface Login2faRequest {
+  preAuthToken: string;
+  code: string;
+  localCart?: LocalCartLine[];
+}
+
+/** First login step when TOTP is enabled — do not store as session until TOTP succeeds. */
+export interface TwoFactorPreAuthResponse {
+  requiresTwoFactor: true;
+  errorCode?: "TWO_FACTOR_REQUIRED";
+  preAuthToken: string;
+  expiresIn: string;
+}
+
+/** `POST /auth/login` returns either JWTs or a 2FA challenge. */
+export type LoginResult =
+  | (TokenResponse & { cart?: CartResponse })
+  | TwoFactorPreAuthResponse;
+
 export interface RefreshRequest {
   refreshToken: string;
 }
@@ -98,6 +118,10 @@ export interface MeResponse {
   role: JwtRole;
   /** Present after login / verify-email; use for settings UI. */
   emailVerified?: boolean;
+  twoFactor?: {
+    enabled: boolean;
+    setupPending: boolean;
+  };
   defaultShippingAddress?: ShippingAddress | null;
 }
 
@@ -106,6 +130,29 @@ export interface PatchMeRequest {
   lastName?: string;
   phone?: string;
   defaultShippingAddress?: ShippingAddress;
+}
+
+/** `GET /me/2fa` */
+export interface Me2faStatusResponse {
+  enabled: boolean;
+  setupPending: boolean;
+}
+
+/** `POST /me/2fa/setup` */
+export interface Me2faSetupResponse {
+  qrCodeDataUrl: string;
+  otpauthUrl: string;
+  secret: string;
+  issuer: string;
+}
+
+export interface Me2faEnableRequest {
+  code: string;
+}
+
+export interface Me2faDisableRequest {
+  password: string;
+  code: string;
 }
 
 /** Public catalog / PDP `source` field (lowercase enum from API; more values may appear at runtime). */
@@ -231,9 +278,15 @@ export interface CartItemResponse {
 export interface CartResponse {
   id: string;
   items: CartItemResponse[];
+  subtotal?: string | number;
+  serviceCharge?: string | number;
+  discount?: string | number;
+  fees?: string | number;
+  total?: string | number;
+  currency?: string;
 }
 
-/** `POST /auth/login` — tokens plus optional merged `cart` when `localCart` was sent and non-empty. */
+/** @deprecated use `LoginResult` — response may be tokens or 2FA pre-auth. */
 export type LoginResponse = TokenResponse & {
   cart?: CartResponse;
 };
@@ -267,13 +320,35 @@ export interface OrderItemSnapshot {
   variant?: unknown;
 }
 
+/** Machine-readable checkout hint on every `GET /orders/:id` response. */
+export interface OrderCheckoutHint {
+  /** True when the user may call `POST /payments/initialize` (same as unpaid / `status === "PENDING"` in normal flows). */
+  canInitializePayment: boolean;
+  /** `initialize_payment` while payment is still required; `none` otherwise. */
+  nextStep: "initialize_payment" | "none" | string;
+}
+
 export interface OrderResponse {
   id: string;
   status: OrderStatus;
   items: OrderItemSnapshot[];
+  /** Next checkout action; present on `GET /orders/:id` (and related order payloads). */
+  checkout?: OrderCheckoutHint;
+  /** Present on `GET /orders/:id` for checkout / order detail UIs. */
+  shippingAddress?: ShippingAddress | null;
+  subtotal?: string | number;
+  serviceCharge?: string | number;
+  discount?: string | number;
+  fees?: string | number;
+  total?: string | number;
+  currency?: string;
   payment?: {
     provider?: string;
-    methodDetails?: unknown;
+    methodDetails?: {
+      checkoutId?: string;
+      checkoutProvider?: string;
+      [key: string]: unknown;
+    };
     paystackReference?: string;
     stripeCheckoutSessionId?: string;
     stripePaymentIntentId?: string;
@@ -282,11 +357,35 @@ export interface OrderResponse {
   userEmail?: string;
 }
 
+/** `GET /orders/pending-payment` — most recent unpaid order for banners / resume checkout. */
+export interface PendingPaymentResponse {
+  order: OrderResponse | null;
+}
+
+/** Socket.IO `order.updated` event payload. */
+export interface OrderUpdatedEvent {
+  orderId: string;
+  status: OrderStatus | string;
+}
+
 export interface CreateOrderRequest {
   shippingAddress?: ShippingAddress;
 }
 
-export type PaymentProvider = "paystack" | "stripe";
+export type PaymentProvider = "paystack" | "stripe" | "paypal" | "myaza";
+
+export type PaymentMethodReason = "not_configured" | "temporarily_disabled" | string | null;
+
+export interface PaymentMethodEntry {
+  provider: PaymentProvider;
+  available: boolean;
+  reason: PaymentMethodReason;
+}
+
+export interface PaymentMethodsResponse {
+  methods: PaymentMethodEntry[];
+  updatedAt?: string;
+}
 
 export interface InitializePaymentRequest {
   orderId: string;
@@ -295,6 +394,10 @@ export interface InitializePaymentRequest {
   stripePaymentMethodTypes?: string[];
   stripeSuccessUrl?: string;
   stripeCancelUrl?: string;
+  paypalReturnUrl?: string;
+  paypalCancelUrl?: string;
+  myazaReturnUrl?: string;
+  myazaCancelUrl?: string;
 }
 
 export type PaymentInitResponse =
@@ -310,7 +413,30 @@ export type PaymentInitResponse =
       sessionId: string;
       url: string;
       paymentMethodTypes?: string[];
+    }
+  | {
+      provider: "paypal";
+      paypalOrderId: string;
+      approvalUrl: string;
+    }
+  | {
+      provider: "myaza";
+      paymentId: string;
+      sessionId: string;
+      checkoutUrl: string;
+      depositAddress: string;
+      qrCode: string;
+      chain: string;
+      token: string;
+      amount: string;
+      status: string;
+      expiresAt?: string;
     };
+
+export interface PaypalCaptureRequest {
+  orderId: string;
+  paypalOrderId: string;
+}
 
 export interface PatchAdminOrderRequest {
   status?: OrderStatus | string;

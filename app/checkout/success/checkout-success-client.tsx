@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector } from "@/store/hooks";
 import { useGetOrderQuery } from "@/store/routes/unified-commerce-api";
 import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { isUuid } from "@/lib/uuid";
+import { useOrderRealtime } from "@/hooks/use-order-realtime";
+import { clearPendingCheckoutOrderId } from "@/lib/pending-checkout-order";
 
 export function CheckoutSuccessClient() {
   const searchParams = useSearchParams();
@@ -26,10 +28,23 @@ export function CheckoutSuccessClient() {
 
   const validId = orderId && isUuid(orderId);
 
-  const { data: order, isLoading, isError, error } = useGetOrderQuery(orderId, {
+  const { data: order, isLoading, isError, error, refetch } = useGetOrderQuery(orderId, {
     skip: !token || !validId,
     pollingInterval: 3000,
   });
+
+  useOrderRealtime(token, (event) => {
+    if (event.orderId === orderId) {
+      void refetch();
+    }
+  });
+
+  useEffect(() => {
+    if (!order) return;
+    if (order.status === "PAID") {
+      clearPendingCheckoutOrderId();
+    }
+  }, [order]);
 
   if (!token) {
     return (

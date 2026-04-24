@@ -7,9 +7,11 @@ import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatApiMoney } from "@/lib/format-price";
 import { orderLineTotal, orderTotal } from "@/lib/dashboard-orders";
+import { orderCanInitializePayment } from "@/lib/order-checkout";
 import { isUuid } from "@/lib/uuid";
 import { useGetOrderQuery } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
+import { useOrderRealtime } from "@/hooks/use-order-realtime";
 
 export default function DashboardOrderDetailPage() {
   const params = useParams();
@@ -17,8 +19,14 @@ export default function DashboardOrderDetailPage() {
   const token = useAppSelector((s) => s.auth.accessToken);
   const valid = Boolean(id && isUuid(id));
 
-  const { data: order, isLoading, isError, error } = useGetOrderQuery(id, {
+  const { data: order, isLoading, isError, error, refetch } = useGetOrderQuery(id, {
     skip: !token || !valid,
+  });
+
+  useOrderRealtime(token, (event) => {
+    if (event.orderId === id) {
+      void refetch();
+    }
   });
 
   if (!valid) {
@@ -61,12 +69,29 @@ export default function DashboardOrderDetailPage() {
         <StatusBadge status={order.status} />
       </div>
 
+      {orderCanInitializePayment(order) ? (
+        <section className="card border-amber-200/80 bg-amber-50/80">
+          <h2 className="text-sm font-semibold text-shop-ink">Complete payment</h2>
+          <p className="mt-1 text-sm text-black/70">
+            This order is unpaid. Your cart was already applied — finish payment to complete checkout.
+          </p>
+          <Link href={`/checkout?resume=${order.id}`} className="btn-primary mt-3 inline-block">
+            Pay now
+          </Link>
+        </section>
+      ) : null}
+
       {order.payment?.provider ? (
         <section className="card border-shop-border/80">
           <h2 className="text-sm font-semibold text-shop-ink">Payment</h2>
           <p className="mt-2 text-sm text-black/70">
             Provider: <span className="font-medium text-shop-ink">{order.payment.provider}</span>
           </p>
+          {order.payment.methodDetails && typeof order.payment.methodDetails.checkoutId === "string" ? (
+            <p className="mt-1 break-all text-xs text-black/55">
+              <span className="font-medium text-black/70">Checkout id:</span> {order.payment.methodDetails.checkoutId}
+            </p>
+          ) : null}
         </section>
       ) : null}
 

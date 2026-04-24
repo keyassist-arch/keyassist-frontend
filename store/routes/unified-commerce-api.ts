@@ -2,6 +2,7 @@ import type { BaseQueryApi, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth, refreshBaseQuery } from "@/store/routes/base-query";
 import { credentialsReceived, profileSynced, tokensRefreshed } from "@/store/slices/authSlice";
+import { isTokenLoginResult } from "@/lib/auth-login-guards";
 import type {
   AddCartItemRequest,
   ApiProduct,
@@ -10,13 +11,22 @@ import type {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   InitializePaymentRequest,
+  Login2faRequest,
   LoginRequest,
-  LoginResponse,
+  LoginResult,
+  Me2faSetupResponse,
+  Me2faStatusResponse,
+  Me2faDisableRequest,
+  Me2faEnableRequest,
   MeResponse,
   OrderResponse,
+  OrderStatus,
+  PendingPaymentResponse,
   PatchAdminOrderRequest,
   PatchMeRequest,
   PaymentInitResponse,
+  PaymentMethodsResponse,
+  PaypalCaptureRequest,
   ProductImportResponse,
   RefreshRequest,
   RegisterRequest,
@@ -72,11 +82,38 @@ export const unifiedCommerceApi = createApi({
       },
     }),
 
-    login: builder.mutation<LoginResponse, LoginRequest>({
+    login: builder.mutation<LoginResult, LoginRequest>({
       queryFn: async (body, api, extra) => {
         const result = await refreshBaseQuery({ url: "/auth/login", method: "POST", body }, api, extra);
         if (result.error) return { error: result.error };
-        return { data: result.data as LoginResponse };
+        return { data: result.data as LoginResult };
+      },
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (!isTokenLoginResult(data)) return;
+          dispatch(
+            credentialsReceived({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              expiresIn: data.expiresIn,
+              email: arg.email,
+            })
+          );
+          if (data.cart) {
+            dispatch(unifiedCommerceApi.util.invalidateTags(["Cart"]));
+          }
+        } catch {
+          /* handled by hook */
+        }
+      },
+    }),
+
+    login2fa: builder.mutation<TokenResponse & { cart?: CartResponse }, Login2faRequest>({
+      queryFn: async (body, api, extra) => {
+        const result = await refreshBaseQuery({ url: "/auth/login/2fa", method: "POST", body }, api, extra);
+        if (result.error) return { error: result.error };
+        return { data: result.data as TokenResponse & { cart?: CartResponse } };
       },
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
@@ -86,7 +123,6 @@ export const unifiedCommerceApi = createApi({
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
               expiresIn: data.expiresIn,
-              email: arg.email,
             })
           );
           if (data.cart) {
@@ -168,6 +204,31 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["Me"],
     }),
 
+    getMe2fa: builder.query<Me2faStatusResponse, void>({
+      query: () => ({ url: "/me/2fa", method: "GET" }),
+      providesTags: ["Me"],
+    }),
+
+    postMe2faSetup: builder.mutation<Me2faSetupResponse, void>({
+      query: () => ({ url: "/me/2fa/setup", method: "POST", body: {} }),
+      invalidatesTags: ["Me"],
+    }),
+
+    postMe2faEnable: builder.mutation<MeResponse, Me2faEnableRequest>({
+      query: (body) => ({ url: "/me/2fa/enable", method: "POST", body }),
+      invalidatesTags: ["Me"],
+    }),
+
+    postMe2faSetupCancel: builder.mutation<void, void>({
+      query: () => ({ url: "/me/2fa/setup/cancel", method: "POST", body: {} }),
+      invalidatesTags: ["Me"],
+    }),
+
+    postMe2faDisable: builder.mutation<MeResponse, Me2faDisableRequest>({
+      query: (body) => ({ url: "/me/2fa/disable", method: "POST", body }),
+      invalidatesTags: ["Me"],
+    }),
+
     /* ---------- Products (public import + get) ---------- */
     importProduct: builder.mutation<ProductImportResponse, { url: string }>({
       query: (body) => ({ url: "/products/import", method: "POST", body }),
@@ -230,8 +291,20 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["Cart", "Orders"],
     }),
 
-    getOrders: builder.query<OrderResponse[], void>({
-      query: () => ({ url: "/orders", method: "GET" }),
+    getOrders: builder.query<OrderResponse[], { status?: OrderStatus } | void>({
+      query: (arg) => {
+        const status = arg && typeof arg === "object" && arg.status ? arg.status : undefined;
+        return {
+          url: status ? `/orders?status=${encodeURIComponent(status)}` : "/orders",
+          method: "GET",
+        };
+      },
+      providesTags: ["Orders"],
+    }),
+
+    /** Most recent `PENDING` order — prefer over scanning `getOrders` for “complete payment” UX. */
+    getPendingPayment: builder.query<PendingPaymentResponse, void>({
+      query: () => ({ url: "/orders/pending-payment", method: "GET" }),
       providesTags: ["Orders"],
     }),
 
@@ -241,9 +314,18 @@ export const unifiedCommerceApi = createApi({
     }),
 
     /* ---------- Payments ---------- */
+    getPaymentMethods: builder.query<PaymentMethodsResponse, void>({
+      query: () => ({ url: "/payments/methods", method: "GET" }),
+    }),
+
     initializePayment: builder.mutation<PaymentInitResponse, InitializePaymentRequest>({
       query: (body) => ({ url: "/payments/initialize", method: "POST", body }),
-      invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }],
+      invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }, "Orders"],
+    }),
+
+    capturePaypal: builder.mutation<OrderResponse, PaypalCaptureRequest>({
+      query: (body) => ({ url: "/payments/paypal/capture", method: "POST", body }),
+      invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }, "Orders"],
     }),
 
     /* ---------- Admin routes ---------- */
@@ -273,6 +355,7 @@ export const {
   useRegisterMutation,
   useResendVerificationMutation,
   useLoginMutation,
+  useLogin2faMutation,
   useRefreshMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
@@ -280,6 +363,11 @@ export const {
   useGetMeQuery,
   useLazyGetMeQuery,
   usePatchMeMutation,
+  useGetMe2faQuery,
+  usePostMe2faSetupMutation,
+  usePostMe2faEnableMutation,
+  usePostMe2faSetupCancelMutation,
+  usePostMe2faDisableMutation,
   useImportProductMutation,
   useGetImportStatusQuery,
   useLazyGetImportStatusQuery,
@@ -293,9 +381,12 @@ export const {
   useSyncCartMutation,
   useCreateOrderMutation,
   useGetOrdersQuery,
+  useGetPendingPaymentQuery,
   useGetOrderQuery,
   useLazyGetOrderQuery,
+  useGetPaymentMethodsQuery,
   useInitializePaymentMutation,
+  useCapturePaypalMutation,
   useGetAdminOrdersQuery,
   usePatchAdminOrderMutation,
   useGetAdminProductsQuery,
