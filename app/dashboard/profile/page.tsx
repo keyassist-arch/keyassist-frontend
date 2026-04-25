@@ -22,11 +22,11 @@ export default function DashboardProfilePage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-shop-ink">Profile</h1>
         <p className="mt-1 text-sm text-black/70">
-          Manage personal details, shipping, and saved payment methods (Stripe &amp; PayPal).
+          Manage your personal details, shipping addresses, and saved payment methods.
         </p>
         {isError ? (
           <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-2">
-            Could not sync account from the server — showing sample data until the API is available.
+            We couldn't load your account details. Some information may be out of date.
           </p>
         ) : null}
       </div>

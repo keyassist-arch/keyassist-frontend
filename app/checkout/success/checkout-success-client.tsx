@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { InnerShell } from "@/components/layout/inner-shell";
@@ -50,8 +51,8 @@ export function CheckoutSuccessClient() {
     return (
       <InnerShell>
         <section className="card max-w-2xl">
-          <h1 className="text-2xl font-semibold">Payment return</h1>
-          <p className="mt-2 text-sm text-black/70">Sign in to see your order status and confirmation details.</p>
+          <h1 className="text-2xl font-semibold">Payment complete</h1>
+          <p className="mt-2 text-sm text-black/70">Sign in to view your order and confirmation details.</p>
           <Link href="/auth/login" className="btn-primary mt-4 inline-block">
             Sign in
           </Link>
@@ -113,6 +114,11 @@ export function CheckoutSuccessClient() {
   return (
     <InnerShell>
       <section className="card max-w-2xl space-y-4">
+        {paid ? (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50">
+            <CheckCircle2 className="h-6 w-6 text-emerald-600" aria-hidden />
+          </div>
+        ) : null}
         <p className="text-xs uppercase tracking-[0.14em] text-shop-accent">Order</p>
         <h1 className="text-3xl font-semibold">{paid ? "Payment confirmed" : "Waiting for payment"}</h1>
         <p className="text-sm text-black/70">
@@ -137,14 +143,14 @@ export function CheckoutSuccessClient() {
           ) : null}
           {stripeSessionId ? (
             <p className="text-xs text-black/50">
-              <span className="font-semibold text-black/70">Checkout session:</span>{" "}
+              <span className="font-semibold text-black/70">Payment reference:</span>{" "}
               <span className="break-all font-mono">{stripeSessionId}</span>
             </p>
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard" className="btn-primary">
-            Account
+          <Link href="/dashboard/orders" className="btn-primary">
+            View my orders
           </Link>
           <Link href="/" className="btn-secondary">
             Continue shopping

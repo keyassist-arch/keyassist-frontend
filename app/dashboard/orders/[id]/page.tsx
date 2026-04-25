@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AlertCircle } from "lucide-react";
 import { useParams } from "next/navigation";
 import { TrackingSection } from "@/components/dashboard/tracking-section";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
@@ -71,13 +72,18 @@ export default function DashboardOrderDetailPage() {
 
       {orderCanInitializePayment(order) ? (
         <section className="card border-amber-200/80 bg-amber-50/80">
-          <h2 className="text-sm font-semibold text-shop-ink">Complete payment</h2>
-          <p className="mt-1 text-sm text-black/70">
-            This order is unpaid. Your cart was already applied — finish payment to complete checkout.
-          </p>
-          <Link href={`/checkout?resume=${order.id}`} className="btn-primary mt-3 inline-block">
-            Pay now
-          </Link>
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+            <div>
+              <h2 className="text-sm font-semibold text-shop-ink">Complete payment</h2>
+              <p className="mt-1 text-sm text-black/70">
+                This order is unpaid. Your cart was already applied — finish payment to complete checkout.
+              </p>
+              <Link href={`/checkout?resume=${order.id}`} className="btn-primary mt-3 inline-block">
+                Pay now
+              </Link>
+            </div>
+          </div>
         </section>
       ) : null}
 
@@ -89,7 +95,7 @@ export default function DashboardOrderDetailPage() {
           </p>
           {order.payment.methodDetails && typeof order.payment.methodDetails.checkoutId === "string" ? (
             <p className="mt-1 break-all text-xs text-black/55">
-              <span className="font-medium text-black/70">Checkout id:</span> {order.payment.methodDetails.checkoutId}
+              <span className="font-medium text-black/70">Payment reference:</span> {order.payment.methodDetails.checkoutId}
             </p>
           ) : null}
         </section>
@@ -134,7 +140,7 @@ export default function DashboardOrderDetailPage() {
           All orders
         </Link>
         <Link href={`/checkout/success?order_id=${order.id}`} className="btn-secondary inline-block">
-          Payment receipt view
+          View payment receipt
         </Link>
       </div>
     </div>

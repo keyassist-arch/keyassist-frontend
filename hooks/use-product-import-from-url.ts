@@ -86,6 +86,10 @@ export function useProductImportFromUrl() {
     if (!url.trim()) return;
     try {
       const res = await importProduct({ url: url.trim() }).unwrap();
+      if (res.requiresManualEntry) {
+        router.push(`/products/add-manual?url=${encodeURIComponent(res.sourceUrl ?? url.trim())}`);
+        return;
+      }
       if (res.product?.id && statusUpper(res.status) === "COMPLETED") {
         router.push(productDetailPathFromApi(res.product));
         return;

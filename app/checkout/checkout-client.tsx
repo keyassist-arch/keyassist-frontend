@@ -287,7 +287,7 @@ export function CheckoutClient() {
           <p className="text-sm text-black/70">
             Sign in to place an order and pay securely.
             {localItems.length > 0
-              ? " Items in your browser cart aren't kept after sign-in — add them again once you're logged in."
+              ? " Your browsing cart won't carry over after sign-in — you can add items again once you're in."
               : null}
           </p>
           <Link href="/auth/login" className="btn-primary inline-block text-center">
@@ -329,8 +329,8 @@ export function CheckoutClient() {
               <h1 className="text-2xl font-semibold">Checkout</h1>
               <p className="mt-2 text-sm text-black/70">
                 {inPaymentStep
-                  ? "Your cart was converted to an order. Complete payment using the order total below (not the cart)."
-                  : "Enter shipping, place the order, then pay."}
+                  ? "Your order is placed. Choose a payment method below to complete checkout."
+                  : "Enter your shipping details, then place the order to proceed to payment."}
               </p>
             </div>
             <Steps
@@ -345,8 +345,8 @@ export function CheckoutClient() {
         </section>
 
         {loading && !inPaymentStep && <LoadingState label="Loading…" />}
-        {createErr && <ErrorState error={createError} title="Order failed" />}
-        {payErr && payInitError && <ErrorState error={payError} title="Payment init failed" />}
+        {createErr && <ErrorState error={createError} title="Couldn't place order" />}
+        {payErr && payInitError && <ErrorState error={payError} title="Payment setup failed" />}
 
         {showMyaza && myazaOrderId ? (
           <section className="card space-y-4 border-shop-accent/30">
@@ -408,8 +408,7 @@ export function CheckoutClient() {
             <form className="card space-y-4" onSubmit={onPay}>
               <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
               <p className="text-sm text-amber-900/80">
-                Status: <span className="font-medium">{displayOrder.status}</span>. The cart is empty for this account — totals
-                below are from the order.
+                Status: <span className="font-medium">{displayOrder.status}</span>. Your cart was cleared when the order was placed — use the totals below to complete payment.
               </p>
               {displayOrder.shippingAddress ? (
                 <div className="rounded-lg border border-black/10 bg-black/2 p-3 text-sm">
@@ -434,28 +433,56 @@ export function CheckoutClient() {
                 <p className="text-sm text-amber-800">No payment methods are available right now.</p>
               ) : null}
               {methodsError ? (
-                <p className="text-xs text-black/50">Could not load payment availability; all options are shown for retry.</p>
+                <p className="text-xs text-black/50">Couldn't check payment options — all methods are shown.</p>
               ) : null}
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Provider</span>
-                <select
-                  className="input w-full"
-                  value={provider}
-                  onChange={(e) => {
-                    setProvider(e.target.value as PaymentProvider);
-                    setPayInitError(false);
-                    resetPayError();
-                  }}
-                  disabled={!methodsError && availableProviders.length === 0}
-                >
-                  {methodRows.map((m) => (
-                    <option key={m.provider} value={m.provider} disabled={!m.available}>
-                      {providerLabels[m.provider]}
-                      {!m.available && m.reason ? ` — ${m.reason}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="space-y-1.5">
+                <p className="text-sm text-black/70">Payment method</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {methodRows.map((m) => {
+                    const isSelected = provider === m.provider;
+                    const isDisabled = !m.available || (!methodsError && availableProviders.length === 0);
+                    return (
+                      <label
+                        key={m.provider}
+                        className={`flex cursor-pointer items-center gap-3 border p-3 transition ${
+                          isDisabled ? "cursor-not-allowed opacity-50" : ""
+                        } ${
+                          isSelected
+                            ? "border-shop-primary bg-shop-primary/[0.03]"
+                            : "border-black/10 hover:border-black/25"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentProvider"
+                          value={m.provider}
+                          checked={isSelected}
+                          disabled={isDisabled}
+                          onChange={() => {
+                            setProvider(m.provider);
+                            setPayInitError(false);
+                            resetPayError();
+                          }}
+                          className="sr-only"
+                        />
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                            isSelected ? "border-shop-primary" : "border-black/25"
+                          }`}
+                        >
+                          {isSelected && <div className="h-2 w-2 rounded-full bg-shop-primary" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-shop-ink">{providerLabels[m.provider]}</p>
+                          {!m.available && m.reason ? (
+                            <p className="text-xs text-black/50">{m.reason}</p>
+                          ) : null}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
@@ -480,16 +507,14 @@ export function CheckoutClient() {
                 ) : null}
               </div>
               <p className="text-xs text-black/50">
-                If payment setup failed, you can <span className="font-medium">retry</span> with the same or another
-                provider. The order id stays the same.
+                If payment didn't start, you can <span className="font-medium">try again</span> with the same or a different method. Your order stays open.
               </p>
             </form>
           ) : !inPaymentStep && !showMyaza ? (
             <form className="card space-y-4" onSubmit={onPlaceOrder}>
               <h2 className="text-lg font-semibold">Shipping</h2>
               <p className="text-xs text-black/60">
-                Placing the order <span className="font-medium">moves</span> line items out of your cart. You will pay on the
-                next step.
+                Placing the order <span className="font-medium">clears your cart</span>. You'll complete payment on the next step.
               </p>
 
               <label className="block space-y-1 text-sm">
@@ -587,8 +612,8 @@ export function CheckoutClient() {
             <h2 className="text-lg font-semibold">Summary</h2>
             {inPaymentStep && displayOrder ? (
               <>
-                <p className="mt-2 text-sm font-medium text-shop-ink">Order — not the cart</p>
-                <p className="mt-1 text-xs text-black/55">Server totals from the order you created.</p>
+                <p className="mt-2 text-sm font-medium text-shop-ink">Order total</p>
+                <p className="mt-1 text-xs text-black/55">Totals are locked in from your order.</p>
                 <ul className="mt-3 space-y-2 border-b border-black/10 pb-3 text-sm">
                   {displayOrder.items.map((item, idx) => (
                     <li key={`${item.title}-${idx}`} className="flex justify-between gap-2">
@@ -642,7 +667,7 @@ export function CheckoutClient() {
                 </p>
                 {localItems.length > 0 ? (
                   <p className="mt-2 text-xs text-black/50">
-                    {localItems.length} on-device only — not in server cart
+                    {localItems.length} saved in your browser only
                   </p>
                 ) : null}
                 <div className="mt-4 space-y-2 text-sm">

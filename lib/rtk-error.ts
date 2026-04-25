@@ -25,7 +25,7 @@ export function getErrorMessage(error: unknown): string {
   if ("status" in e && e.status === "CUSTOM_ERROR" && "error" in e && typeof (e as { error?: string }).error === "string") {
     return (e as { error: string }).error;
   }
-  if ("status" in e && e.status === "FETCH_ERROR") return "Network error. Check API URL and CORS.";
+  if ("status" in e && e.status === "FETCH_ERROR") return "Network error. Check your connection and try again.";
   if ("data" in e && e.data && typeof e.data === "object") {
     const data = e.data as { message?: string | string[]; error?: string };
     if (Array.isArray(data.message)) return data.message.join(", ");

@@ -13,7 +13,7 @@ type StateWithAuth = { auth: AuthState };
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 const MISSING_BASE_MSG =
-  "The store can’t reach our services right now. If you’re setting up the site, ask your host to configure the storefront environment.";
+  "We’re having trouble connecting right now. Please try again shortly.";
 
 function missingBaseError(): { error: FetchBaseQueryError } {
   return {

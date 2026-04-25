@@ -46,20 +46,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <aside className="shrink-0 lg:w-56">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-black/45">Account</p>
-          <nav className="flex flex-wrap gap-2 border-b border-black/10 pb-4 lg:flex-col lg:border-b-0 lg:pb-0">
+          <nav className="flex flex-wrap gap-1.5 border-b border-black/10 pb-4 lg:flex-col lg:border-b-0 lg:pb-0">
             {NAV.map(({ href, label, icon: Icon, end }) => {
               const active = navActive(pathname, href, end);
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`inline-flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium transition lg:w-full ${
+                  className={`inline-flex items-center gap-2.5 rounded-none px-3 py-2.5 text-sm font-medium transition lg:w-full ${
                     active
                       ? "bg-shop-primary text-white"
-                      : "text-shop-ink hover:bg-shop-accent-soft hover:text-shop-accent"
+                      : "text-shop-ink/80 hover:bg-shop-accent-soft hover:text-shop-accent"
                   }`}
                 >
-                  <Icon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                  <Icon className={`h-4 w-4 shrink-0 ${active ? "opacity-100" : "opacity-60"}`} aria-hidden />
                   {label}
                 </Link>
               );

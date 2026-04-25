@@ -8,6 +8,8 @@ import type {
   ApiProduct,
   CartResponse,
   CreateOrderRequest,
+  CreateIssueRequest,
+  CreateRefundRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   InitializePaymentRequest,
@@ -21,6 +23,7 @@ import type {
   MeResponse,
   OrderResponse,
   OrderStatus,
+  PatchIssueRequest,
   PendingPaymentResponse,
   PatchAdminOrderRequest,
   PatchMeRequest,
@@ -28,11 +31,17 @@ import type {
   PaymentMethodsResponse,
   PaypalCaptureRequest,
   ProductImportResponse,
+  ManualProductImportRequest,
+  ManualProductImportResponse,
+  ReconciliationIssue,
+  ReconciliationRefund,
   RefreshRequest,
   RegisterRequest,
   RegisterResponse,
   ResendVerificationRequest,
   ResendVerificationResponse,
+  ResolveWithRefundRequest,
+  ResolveWithRefundResponse,
   CartSyncRequest,
   ResetPasswordRequest,
   ResetPasswordResponse,
@@ -58,7 +67,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -235,6 +244,11 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["Import", "CatalogProducts"],
     }),
 
+    createManualProduct: builder.mutation<ManualProductImportResponse, ManualProductImportRequest>({
+      query: (body) => ({ url: "/products/manual", method: "POST", body }),
+      invalidatesTags: ["CatalogProducts"],
+    }),
+
     getImportStatus: builder.query<ProductImportResponse, string>({
       query: (importId) => ({ url: `/products/import/${importId}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "Import", id }],
@@ -347,6 +361,65 @@ export const unifiedCommerceApi = createApi({
     postAdminScrapePreview: builder.mutation<ScrapePreviewResponse, { url: string }>({
       query: (body) => ({ url: "/admin/scrape-preview", method: "POST", body }),
     }),
+
+    /* ---------- Reconciliation — refunds (admin) ---------- */
+    createRefund: builder.mutation<ReconciliationRefund, CreateRefundRequest>({
+      query: (body) => ({ url: "/admin/reconciliation/refunds", method: "POST", body }),
+      invalidatesTags: ["Refunds", "AdminOrders"],
+    }),
+
+    getRefunds: builder.query<ReconciliationRefund[], { orderId?: string } | void>({
+      query: (arg) => {
+        const orderId = arg && typeof arg === "object" && arg.orderId ? arg.orderId : undefined;
+        return {
+          url: orderId ? `/admin/reconciliation/refunds?orderId=${encodeURIComponent(orderId)}` : "/admin/reconciliation/refunds",
+          method: "GET",
+        };
+      },
+      providesTags: ["Refunds"],
+    }),
+
+    getRefund: builder.query<ReconciliationRefund, string>({
+      query: (id) => ({ url: `/admin/reconciliation/refunds/${id}`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "Refunds", id }],
+    }),
+
+    /* ---------- Reconciliation — issues (admin) ---------- */
+    createIssue: builder.mutation<ReconciliationIssue, CreateIssueRequest>({
+      query: (body) => ({ url: "/admin/reconciliation/issues", method: "POST", body }),
+      invalidatesTags: ["Issues"],
+    }),
+
+    getIssues: builder.query<ReconciliationIssue[], { status?: string; userId?: string; orderId?: string; type?: string; priority?: string } | void>({
+      query: (arg) => {
+        const params = new URLSearchParams();
+        if (arg && typeof arg === "object") {
+          if (arg.status) params.set("status", arg.status);
+          if (arg.userId) params.set("userId", arg.userId);
+          if (arg.orderId) params.set("orderId", arg.orderId);
+          if (arg.type) params.set("type", arg.type);
+          if (arg.priority) params.set("priority", arg.priority);
+        }
+        const qs = params.toString();
+        return { url: qs ? `/admin/reconciliation/issues?${qs}` : "/admin/reconciliation/issues", method: "GET" };
+      },
+      providesTags: ["Issues"],
+    }),
+
+    getIssue: builder.query<ReconciliationIssue, string>({
+      query: (id) => ({ url: `/admin/reconciliation/issues/${id}`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "Issues", id }],
+    }),
+
+    patchIssue: builder.mutation<ReconciliationIssue, { id: string; body: PatchIssueRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/reconciliation/issues/${id}`, method: "PATCH", body }),
+      invalidatesTags: ["Issues"],
+    }),
+
+    resolveWithRefund: builder.mutation<ResolveWithRefundResponse, { id: string; body: ResolveWithRefundRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/reconciliation/issues/${id}/resolve-with-refund`, method: "POST", body }),
+      invalidatesTags: ["Issues", "Refunds", "AdminOrders"],
+    }),
   }),
 });
 
@@ -369,6 +442,7 @@ export const {
   usePostMe2faSetupCancelMutation,
   usePostMe2faDisableMutation,
   useImportProductMutation,
+  useCreateManualProductMutation,
   useGetImportStatusQuery,
   useLazyGetImportStatusQuery,
   useGetProductQuery,
@@ -391,4 +465,12 @@ export const {
   usePatchAdminOrderMutation,
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,
+  useCreateRefundMutation,
+  useGetRefundsQuery,
+  useGetRefundQuery,
+  useCreateIssueMutation,
+  useGetIssuesQuery,
+  useGetIssueQuery,
+  usePatchIssueMutation,
+  useResolveWithRefundMutation,
 } = unifiedCommerceApi;

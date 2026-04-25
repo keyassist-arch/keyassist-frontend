@@ -289,8 +289,8 @@ export default function DashboardSettingsPage() {
 
       <section className="card space-y-4 border-shop-border/80">
         <div>
-          <h2 className="text-base font-semibold text-shop-ink">Security (2FA)</h2>
-          <p className="mt-1 text-sm text-black/70">Authenticator app (TOTP). When enabled, sign-in will ask for a code after your password.</p>
+          <h2 className="text-base font-semibold text-shop-ink">Two-factor authentication</h2>
+          <p className="mt-1 text-sm text-black/70">Add extra security with an authenticator app. Once enabled, you'll enter a one-time code alongside your password each time you sign in.</p>
         </div>
         {tf?.enabled ? (
           <div className="space-y-3 rounded-lg border border-black/10 bg-black/2 p-4">
@@ -316,20 +316,20 @@ export default function DashboardSettingsPage() {
               />
             </label>
             <button type="button" className="btn-secondary text-sm" disabled={disableLoading} onClick={onDisable2fa}>
-              {disableLoading ? "Disabling…" : "Turn off 2FA"}
+              {disableLoading ? "Disabling…" : "Turn off two-factor authentication"}
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             {tf?.setupPending && !qr ? (
               <div className="space-y-2">
-                <p className="text-sm text-amber-900/90">You have a 2FA setup in progress. Generate a new QR to continue, or cancel.</p>
+                <p className="text-sm text-amber-900/90">You started setting up two-factor authentication but didn't finish. Continue to complete the setup, or cancel to start over.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn-primary text-sm" disabled={setupLoading} onClick={onStart2fa}>
-                    {setupLoading ? "Preparing…" : "Show QR and continue"}
+                    {setupLoading ? "Preparing…" : "Continue setup"}
                   </button>
                   <button type="button" className="btn-secondary text-sm" disabled={cancelLoading} onClick={onCancel2fa}>
-                    Cancel setup
+                    Cancel
                   </button>
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function DashboardSettingsPage() {
                     <Image src={qr.dataUrl} alt="Authenticator QR" fill className="object-contain p-2" unoptimized />
                   </div>
                   <div className="min-w-0 space-y-2 text-sm">
-                    <p className="text-black/70">If you can’t scan, enter the secret manually:</p>
+                    <p className="text-black/70">If you can’t scan the QR, enter this key manually in your app:</p>
                     <p className="break-all font-mono text-xs">{qr.secret}</p>
                     <label className="block">
                       <span className="text-black/70">6-digit code</span>
@@ -368,7 +368,7 @@ export default function DashboardSettingsPage() {
             ) : null}
             {!tf?.enabled && !qr && !tf?.setupPending ? (
               <button type="button" className="btn-secondary" disabled={setupLoading} onClick={onStart2fa}>
-                {setupLoading ? "Preparing…" : "Set up authenticator 2FA"}
+                {setupLoading ? "Preparing…" : "Set up two-factor authentication"}
               </button>
             ) : null}
           </div>

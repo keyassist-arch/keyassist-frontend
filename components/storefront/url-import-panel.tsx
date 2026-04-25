@@ -25,7 +25,7 @@ export function UrlImportPanel() {
   if (!hasApiBase) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Product import isn’t available until the storefront is connected to our services. Please try again later or contact support.
+        Product import isn’t available right now. Please try again shortly or contact support.
       </div>
     );
   }
@@ -54,10 +54,10 @@ export function UrlImportPanel() {
       {importId && waiting ? (
         <div className="space-y-2 rounded-2xl border border-black/10 bg-shop-surface px-4 py-3 text-sm text-shop-muted">
           <LoadingState label={effective?.userMessage ?? "Working on your import…"} />
-          {effective?.phase ? (
-            <p className="text-xs capitalize text-black/50">
-              Step: <span className="font-medium text-shop-ink">{effective.phase}</span>
-            </p>
+          {effective?.phase === "scraping" ? (
+            <p className="text-xs text-black/50">Fetching product details…</p>
+          ) : effective?.phase === "queued" ? (
+            <p className="text-xs text-black/50">Waiting in queue…</p>
           ) : null}
           <p className="text-xs text-black/50">{waitCopy}</p>
         </div>
