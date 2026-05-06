@@ -27,7 +27,7 @@ export function VerifyEmailClient() {
     if (!token) {
       if (!missingToast.current) {
         missingToast.current = true;
-        toast.error("This link is missing a verification token. Open the link from your email.");
+        toast.error("This link doesn't look right. Please open the confirmation link from your email.");
       }
       return;
     }
@@ -68,7 +68,7 @@ export function VerifyEmailClient() {
         {!token ? (
           <div className="card space-y-4">
             <ErrorState
-              error="Use the full link from your verification email, or sign in if you already confirmed your address."
+              error="Open the full link from your confirmation email. If you've already verified, you can sign in directly."
               title="Invalid link"
             />
             <Link href="/auth/login" className="btn-primary inline-block w-full text-center">

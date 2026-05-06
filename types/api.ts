@@ -259,6 +259,25 @@ export interface ProductImportResponse {
   errorMessage?: string;
   /** User-safe failure text on FAILED (preferred over raw errorMessage). */
   message?: string;
+  /** True when the URL is from an unsupported retailer — navigate user to the manual entry form. */
+  requiresManualEntry?: boolean;
+  /** Normalized source URL echoed back when requiresManualEntry is true. */
+  sourceUrl?: string;
+}
+
+export interface ManualProductImportRequest {
+  title: string;
+  price: number;
+  currency: string;
+  brand?: string;
+  description?: string;
+  imageUrls?: string[];
+  sourceUrl: string;
+}
+
+export interface ManualProductImportResponse {
+  status: "completed";
+  product: ApiProduct;
 }
 
 /** Debug-only; does not write to catalog. */
@@ -309,7 +328,9 @@ export type OrderStatus =
   | "ORDERED_FROM_SUPPLIER"
   | "SHIPPED"
   | "DELIVERED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REFUNDED"
+  | "DISPUTED";
 
 export interface OrderItemSnapshot {
   title: string;
@@ -353,7 +374,7 @@ export interface OrderResponse {
     stripeCheckoutSessionId?: string;
     stripePaymentIntentId?: string;
   };
-  tracking?: unknown[];
+  tracking?: TrackingEntry[];
   userEmail?: string;
 }
 
@@ -444,6 +465,104 @@ export interface PatchAdminOrderRequest {
   trackingNumber?: string;
   carrier?: string;
   trackingStatus?: string;
+  /** Human-readable note shown to the customer on the tracking event (max 512 chars). */
+  trackingMessage?: string;
+}
+
+/** Append-only tracking event from `GET /orders/:id` → `tracking[]`. */
+export interface TrackingEntry {
+  id: string;
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  /** Lifecycle label: UPDATED | IN_TRANSIT | OUT_FOR_DELIVERY | DELIVERED | EXCEPTION */
+  status?: string;
+  message?: string | null;
+  createdAt: string;
+}
+
+// ─── Reconciliation (admin only) ─────────────────────────────────────────────
+
+export type RefundStatus = "PENDING" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "MANUAL_REQUIRED";
+
+export interface ReconciliationRefund {
+  id: string;
+  orderId: string;
+  amount: string;
+  reason?: string | null;
+  internalNote?: string | null;
+  initiatedBy?: string | null;
+  status: RefundStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateRefundRequest {
+  orderId: string;
+  amount: string;
+  reason?: string;
+  internalNote?: string;
+  initiatedBy?: string;
+}
+
+export type IssueType =
+  | "PAYMENT_DISPUTE"
+  | "REFUND_REQUEST"
+  | "ITEM_NOT_RECEIVED"
+  | "WRONG_ITEM"
+  | "DAMAGED_ITEM"
+  | "BILLING_ERROR"
+  | "OTHER";
+
+export type IssuePriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type IssueStatus = "OPEN" | "IN_PROGRESS" | "AWAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
+
+export interface ReconciliationIssue {
+  id: string;
+  userId: string;
+  orderId?: string | null;
+  type?: IssueType;
+  priority?: IssuePriority;
+  subject: string;
+  description: string;
+  status: IssueStatus;
+  internalNote?: string | null;
+  assignedTo?: string | null;
+  resolutionNote?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateIssueRequest {
+  userId: string;
+  orderId?: string;
+  type?: IssueType;
+  priority?: IssuePriority;
+  subject: string;
+  description: string;
+  internalNote?: string;
+  assignedTo?: string;
+}
+
+export interface PatchIssueRequest {
+  status?: IssueStatus;
+  priority?: IssuePriority;
+  assignedTo?: string;
+  resolutionNote?: string;
+  internalNote?: string;
+}
+
+export interface ResolveWithRefundRequest {
+  amount: string;
+  reason?: string;
+  internalNote?: string;
+  resolutionNote?: string;
+  initiatedBy?: string;
+}
+
+export interface ResolveWithRefundResponse {
+  issue: ReconciliationIssue;
+  refund: ReconciliationRefund;
 }
 
 export interface NestValidationError {

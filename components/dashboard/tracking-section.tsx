@@ -1,23 +1,16 @@
 import { Package } from "lucide-react";
+import type { TrackingEntry } from "@/types/api";
 
-function describeEntry(entry: unknown): { title: string; subtitle?: string } {
-  if (entry && typeof entry === "object") {
-    const o = entry as Record<string, unknown>;
-    const carrier = typeof o.carrier === "string" ? o.carrier : undefined;
-    const num = typeof o.trackingNumber === "string" ? o.trackingNumber : undefined;
-    const status = typeof o.trackingStatus === "string" ? o.trackingStatus : typeof o.status === "string" ? o.status : undefined;
-    const at = typeof o.at === "string" ? o.at : typeof o.date === "string" ? o.date : undefined;
-    if (carrier || num || status) {
-      return {
-        title: [carrier, num].filter(Boolean).join(" · ") || status || "Shipment update",
-        subtitle: [status, at].filter(Boolean).join(" · ") || undefined,
-      };
-    }
+function formatDate(iso?: string | null) {
+  if (!iso) return undefined;
+  try {
+    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return iso;
   }
-  return { title: typeof entry === "string" ? entry : "Update", subtitle: undefined };
 }
 
-export function TrackingSection({ tracking }: { tracking: unknown }) {
+export function TrackingSection({ tracking }: { tracking: TrackingEntry[] | undefined }) {
   if (!Array.isArray(tracking) || tracking.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.02] p-6 text-center">
@@ -30,17 +23,15 @@ export function TrackingSection({ tracking }: { tracking: unknown }) {
   return (
     <ol className="relative space-y-0 border-l border-shop-border pl-6">
       {tracking.map((entry, i) => {
-        const { title, subtitle } = describeEntry(entry);
+        const carrierNum = [entry.carrier, entry.trackingNumber].filter(Boolean).join(" · ");
+        const title = carrierNum || entry.status || "Shipment update";
+        const statusDate = [entry.status, formatDate(entry.createdAt)].filter(Boolean).join(" · ");
         return (
-          <li key={i} className="relative pb-8 last:pb-0">
+          <li key={entry.id ?? i} className="relative pb-8 last:pb-0">
             <span className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full border-2 border-shop-accent bg-white" />
             <p className="font-medium text-shop-ink">{title}</p>
-            {subtitle ? <p className="mt-0.5 text-sm text-black/60">{subtitle}</p> : null}
-            {entry && typeof entry === "object" && Object.keys(entry as object).length > 0 && !subtitle ? (
-              <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/[0.03] p-2 text-[11px] leading-relaxed text-black/70">
-                {JSON.stringify(entry, null, 2)}
-              </pre>
-            ) : null}
+            {statusDate ? <p className="mt-0.5 text-sm text-black/60">{statusDate}</p> : null}
+            {entry.message ? <p className="mt-1 text-sm text-black/70">{entry.message}</p> : null}
           </li>
         );
       })}

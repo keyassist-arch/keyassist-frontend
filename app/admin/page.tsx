@@ -6,13 +6,19 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector } from "@/store/hooks";
 import {
+  useCreateIssueMutation,
+  useCreateRefundMutation,
   useGetAdminOrdersQuery,
   useGetAdminProductsQuery,
+  useGetIssuesQuery,
   useGetMeQuery,
+  useGetRefundsQuery,
   usePatchAdminOrderMutation,
+  usePatchIssueMutation,
   usePostAdminScrapePreviewMutation,
+  useResolveWithRefundMutation,
 } from "@/store/routes/unified-commerce-api";
-import type { OrderStatus, PatchAdminOrderRequest } from "@/types/api";
+import type { IssueStatus, OrderStatus, PatchAdminOrderRequest } from "@/types/api";
 import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { orderTotal } from "@/lib/dashboard-orders";
@@ -25,6 +31,8 @@ const ADMIN_STATUSES: OrderStatus[] = [
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
+  "REFUNDED",
+  "DISPUTED",
 ];
 
 export default function AdminPage() {
@@ -48,10 +56,19 @@ export default function AdminPage() {
   const [patchOrder, { isLoading: patching }] = usePatchAdminOrderMutation();
   const [scrapePreview, { isLoading: scraping, isError: scrapeErr, error: scrapeError }] =
     usePostAdminScrapePreviewMutation();
+  const [createRefund, { isLoading: refundLoading }] = useCreateRefundMutation();
+  const [createIssue, { isLoading: issueLoading }] = useCreateIssueMutation();
+  const [patchIssue, { isLoading: patchingIssue }] = usePatchIssueMutation();
+  const [resolveWithRefund, { isLoading: resolvingIssue }] = useResolveWithRefundMutation();
+
+  const { data: refunds, isLoading: refundsLoading } = useGetRefundsQuery(undefined, { skip: !token || !isAdmin });
+  const { data: issues, isLoading: issuesLoading } = useGetIssuesQuery(undefined, { skip: !token || !isAdmin });
+
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewJson, setPreviewJson] = useState<string | null>(null);
   const previewUrlFieldId = useId();
+
 
   if (!token) {
     return (
@@ -98,7 +115,7 @@ export default function AdminPage() {
     );
   }
 
-  const loading = ordLoading || prodLoading;
+  const loading = ordLoading || prodLoading || refundsLoading || issuesLoading;
 
   const onPatch = async (id: string, body: PatchAdminOrderRequest) => {
     setNotice(null);
@@ -146,12 +163,14 @@ export default function AdminPage() {
           </article>
           <article className="card">
             <h2 className="text-base font-semibold">Role</h2>
-            <p className="mt-2 text-sm">{me?.role}</p>
+            <p className="mt-2 text-sm">
+              {me?.role === "ADMIN_SUPER" ? "Super admin" : me?.role === "ADMIN_STAFF" ? "Staff" : me?.role}
+            </p>
           </article>
         </section>
 
         <section className="card">
-          <h2 className="text-lg font-semibold">Listing preview</h2>
+          <h2 className="text-lg font-semibold">Product preview</h2>
           <p className="mt-2 text-xs text-black/60">
             Preview a product from any URL. Nothing is saved to the catalog until you import it from the storefront.
           </p>
@@ -217,7 +236,7 @@ export default function AdminPage() {
                       ))}
                     </select>
                   </label>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     <label className="block space-y-1 text-xs">
                       <span className="font-medium text-black/60">Tracking number</span>
                       <input
@@ -236,6 +255,15 @@ export default function AdminPage() {
                         id={`carrier-${order.id}`}
                       />
                     </label>
+                    <label className="block space-y-1 text-xs">
+                      <span className="font-medium text-black/60">Note for customer</span>
+                      <input
+                        className="input w-full text-sm"
+                        placeholder="e.g. Arrived at local hub"
+                        defaultValue=""
+                        id={`trackmsg-${order.id}`}
+                      />
+                    </label>
                   </div>
                   <button
                     type="button"
@@ -244,7 +272,8 @@ export default function AdminPage() {
                     onClick={() => {
                       const tr = (document.getElementById(`track-${order.id}`) as HTMLInputElement | null)?.value?.trim();
                       const car = (document.getElementById(`carrier-${order.id}`) as HTMLInputElement | null)?.value?.trim();
-                      if (tr && car) void onPatch(order.id, { trackingNumber: tr, carrier: car });
+                      const msg = (document.getElementById(`trackmsg-${order.id}`) as HTMLInputElement | null)?.value?.trim();
+                      if (tr && car) void onPatch(order.id, { trackingNumber: tr, carrier: car, trackingMessage: msg || undefined });
                     }}
                   >
                     Add tracking
@@ -253,6 +282,172 @@ export default function AdminPage() {
               );
             })}
           </div>
+        </section>
+
+        {/* ── Refunds ─────────────────────────────────────────────── */}
+        <section className="card">
+          <h2 className="text-xl font-semibold">Refunds</h2>
+          <p className="mt-1 text-xs text-black/60">Issue a refund for an order. The refund status updates automatically once your payment provider processes it.</p>
+          <form
+            className="mt-4 grid gap-3 sm:grid-cols-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const orderId = String(fd.get("refund_orderId") ?? "").trim();
+              const amount = String(fd.get("refund_amount") ?? "").trim();
+              const reason = String(fd.get("refund_reason") ?? "").trim();
+              if (!orderId || !amount) return;
+              setNotice(null);
+              try {
+                await createRefund({ orderId, amount, reason: reason || undefined }).unwrap();
+                setNotice({ ok: true, text: "Refund created." });
+                (e.target as HTMLFormElement).reset();
+              } catch (err) {
+                setNotice({ ok: false, text: getErrorMessage(err) });
+              }
+            }}
+          >
+            <label className="block space-y-1 text-xs">
+              <span className="font-medium text-black/60">Order ID</span>
+              <input className="input w-full text-sm" name="refund_orderId" placeholder="Paste the order ID" required />
+            </label>
+            <label className="block space-y-1 text-xs">
+              <span className="font-medium text-black/60">Amount</span>
+              <input className="input w-full text-sm" name="refund_amount" placeholder="49.99" required />
+            </label>
+            <label className="block space-y-1 text-xs sm:col-span-2">
+              <span className="font-medium text-black/60">Reason (optional)</span>
+              <input className="input w-full text-sm" name="refund_reason" placeholder="Wrong item shipped" />
+            </label>
+            <div className="sm:col-span-4">
+              <button type="submit" className="btn-secondary text-sm" disabled={refundLoading}>
+                {refundLoading ? "Creating…" : "Create refund"}
+              </button>
+            </div>
+          </form>
+
+          {(refunds ?? []).length > 0 ? (
+            <div className="mt-6 space-y-3">
+              {(refunds ?? []).map((r) => (
+                <div key={r.id} className="rounded-xl border border-black/10 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="break-all font-mono text-xs text-black/60">{r.id}</span>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <p className="mt-1 text-black/70">
+                    Order <span className="font-mono text-xs">{r.orderId}</span> · Amount {r.amount}
+                    {r.reason ? ` · ${r.reason}` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
+        {/* ── Customer Issues ──────────────────────────────────────── */}
+        <section className="card">
+          <h2 className="text-xl font-semibold">Customer issues</h2>
+          <p className="mt-1 text-xs text-black/60">Log and track support tickets for customers.</p>
+          <form
+            className="mt-4 grid gap-3 sm:grid-cols-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const userId = String(fd.get("issue_userId") ?? "").trim();
+              const subject = String(fd.get("issue_subject") ?? "").trim();
+              const description = String(fd.get("issue_description") ?? "").trim();
+              const orderId = String(fd.get("issue_orderId") ?? "").trim();
+              if (!userId || !subject || !description) return;
+              setNotice(null);
+              try {
+                await createIssue({ userId, subject, description, orderId: orderId || undefined }).unwrap();
+                setNotice({ ok: true, text: "Issue created." });
+                (e.target as HTMLFormElement).reset();
+              } catch (err) {
+                setNotice({ ok: false, text: getErrorMessage(err) });
+              }
+            }}
+          >
+            <label className="block space-y-1 text-xs">
+              <span className="font-medium text-black/60">Customer ID</span>
+              <input className="input w-full text-sm" name="issue_userId" placeholder="Paste the customer ID" required />
+            </label>
+            <label className="block space-y-1 text-xs">
+              <span className="font-medium text-black/60">Related order (optional)</span>
+              <input className="input w-full text-sm" name="issue_orderId" placeholder="Paste the order ID" />
+            </label>
+            <label className="block space-y-1 text-xs sm:col-span-2">
+              <span className="font-medium text-black/60">Subject</span>
+              <input className="input w-full text-sm" name="issue_subject" placeholder="Item not received" required />
+            </label>
+            <label className="block space-y-1 text-xs sm:col-span-2">
+              <span className="font-medium text-black/60">Description</span>
+              <textarea className="input w-full text-sm" name="issue_description" rows={3} required />
+            </label>
+            <div className="sm:col-span-2">
+              <button type="submit" className="btn-secondary text-sm" disabled={issueLoading}>
+                {issueLoading ? "Creating…" : "Create issue"}
+              </button>
+            </div>
+          </form>
+
+          {(issues ?? []).length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {(issues ?? []).map((issue) => (
+                <div key={issue.id} className="rounded-xl border border-black/10 p-4 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-shop-ink">{issue.subject}</p>
+                      <p className="text-xs text-black/50 mt-0.5 font-mono">{issue.id}</p>
+                    </div>
+                    <StatusBadge status={issue.status} />
+                  </div>
+                  <p className="text-sm text-black/70">{issue.description}</p>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <label className="flex items-center gap-2 text-xs">
+                      <span className="text-black/60">Status</span>
+                      <select
+                        className="input text-sm"
+                        value={issue.status}
+                        disabled={patchingIssue}
+                        onChange={async (e) => {
+                          setNotice(null);
+                          try {
+                            await patchIssue({ id: issue.id, body: { status: e.target.value as IssueStatus } }).unwrap();
+                            setNotice({ ok: true, text: "Issue updated." });
+                          } catch (err) {
+                            setNotice({ ok: false, text: getErrorMessage(err) });
+                          }
+                        }}
+                      >
+                        {(["OPEN", "IN_PROGRESS", "AWAITING_CUSTOMER", "RESOLVED", "CLOSED"] as IssueStatus[]).map((s) => (
+                          <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      className="btn-secondary text-xs"
+                      disabled={resolvingIssue}
+                      onClick={async () => {
+                        const amount = window.prompt("Refund amount (e.g. 49.99):");
+                        if (!amount) return;
+                        setNotice(null);
+                        try {
+                          await resolveWithRefund({ id: issue.id, body: { amount, reason: issue.subject } }).unwrap();
+                          setNotice({ ok: true, text: "Issue resolved with refund." });
+                        } catch (err) {
+                          setNotice({ ok: false, text: getErrorMessage(err) });
+                        }
+                      }}
+                    >
+                      {resolvingIssue ? "Processing…" : "Resolve + refund"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
       </div>
     </InnerShell>

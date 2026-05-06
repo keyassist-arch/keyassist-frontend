@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/cart-context";
 import { Steps } from "@/components/ui/steps";
@@ -44,7 +44,7 @@ function isPaymentProvider(p: string | undefined | null): p is PaymentProvider {
   return p === "paystack" || p === "stripe" || p === "paypal" || p === "myaza";
 }
 
-export default function CheckoutPage() {
+export function CheckoutClient() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.accessToken);
   const searchParams = useSearchParams();
@@ -64,8 +64,6 @@ export default function CheckoutPage() {
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
-  const [addressCopied, setAddressCopied] = useState(false);
-  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: orderFetched, isLoading: orderLoading, refetch: refetchOrder } = useGetOrderQuery(activeOrderId ?? "", {
     skip: !token || !activeOrderId,
@@ -273,15 +271,6 @@ export default function CheckoutPage() {
     void runInitialize(displayOrder);
   };
 
-  const copyAddress = useCallback(() => {
-    if (!myazaSession?.depositAddress) return;
-    void navigator.clipboard.writeText(myazaSession.depositAddress).then(() => {
-      setAddressCopied(true);
-      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = setTimeout(() => setAddressCopied(false), 2000);
-    });
-  }, [myazaSession?.depositAddress]);
-
   const loading = meLoading || cartLoading || methodsLoading;
   const providerLabels: Record<PaymentProvider, string> = {
     paystack: "Paystack",
@@ -298,7 +287,7 @@ export default function CheckoutPage() {
           <p className="text-sm text-black/70">
             Sign in to place an order and pay securely.
             {localItems.length > 0
-              ? " Items in your browser cart aren’t kept after sign-in — add them again once you’re logged in."
+              ? " Your browsing cart won't carry over after sign-in — you can add items again once you're in."
               : null}
           </p>
           <Link href="/auth/login" className="btn-primary inline-block text-center">
@@ -309,7 +298,28 @@ export default function CheckoutPage() {
     );
   }
 
-export default function CheckoutPage() {
+  if (activeOrderId && !displayOrder && orderLoading) {
+    return (
+      <InnerShell>
+        <LoadingState label="Loading your order…" />
+      </InnerShell>
+    );
+  }
+
+  if (activeOrderId && displayOrder && displayOrder.status === "PAID") {
+    return (
+      <InnerShell>
+        <div className="card max-w-lg space-y-3">
+          <h1 className="text-lg font-semibold">Order already paid</h1>
+          <p className="text-sm text-black/70">This order is complete. You can open it from your account.</p>
+          <Link className="btn-primary" href={`/dashboard/orders/${displayOrder.id}`}>
+            View order
+          </Link>
+        </div>
+      </InnerShell>
+    );
+  }
+
   return (
     <InnerShell>
       <div className="space-y-6">
@@ -319,104 +329,70 @@ export default function CheckoutPage() {
               <h1 className="text-2xl font-semibold">Checkout</h1>
               <p className="mt-2 text-sm text-black/70">
                 {inPaymentStep
-                  ? "Your cart was converted to an order. Complete payment using the order total below (not the cart)."
-                  : "Enter shipping, place the order, then pay."}
+                  ? "Your order is placed. Choose a payment method below to complete checkout."
+                  : "Enter your shipping details, then place the order to proceed to payment."}
               </p>
             </div>
             <Steps
               current={1}
               steps={[
-                { label: "Cart", href: inPaymentStep ? undefined : "/cart" },
-                { label: "Checkout" },
-                { label: "Success" },
+                { label: "Cart", href: "/cart" },
+                { label: "Checkout", href: "/checkout" },
+                { label: "Success", href: "/checkout/success" },
               ]}
             />
           </div>
         </section>
 
         {loading && !inPaymentStep && <LoadingState label="Loading…" />}
-        {createErr && <ErrorState error={createError} title="Order failed" />}
-        {payErr && payInitError && <ErrorState error={payError} title="Payment init failed" />}
+        {createErr && <ErrorState error={createError} title="Couldn't place order" />}
+        {payErr && payInitError && <ErrorState error={payError} title="Payment setup failed" />}
 
         {showMyaza && myazaOrderId ? (
-          <section className="card overflow-hidden border-shop-accent/40 p-0">
-            {/* Header */}
-            <div className="bg-shop-accent/8 px-6 py-4 border-b border-shop-accent/20">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-amber-400 ring-4 ring-amber-400/20" />
-                <h2 className="text-base font-semibold text-shop-ink">Awaiting crypto payment</h2>
-              </div>
-              <p className="mt-1 text-sm text-black/60">
-                Send the exact amount to the address below. Payment confirms automatically.
-              </p>
-            </div>
-
-            <div className="p-6">
+          <section className="card space-y-4 border-shop-accent/30">
+            <h2 className="text-lg font-semibold">Complete Myaza payment</h2>
+            <p className="text-sm text-black/70">
+              Send the indicated amount to the address below, or use the hosted checkout if you opened it in a new tab. Open
+              your order to see when the payment clears.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {myazaSession?.qrCode ? (
+                <div className="relative h-48 w-48 border border-black/10 bg-white">
+                  <Image src={myazaSession.qrCode} alt="" fill className="object-contain p-2" unoptimized />
+                </div>
+              ) : null}
               {myazaSession ? (
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-                  {/* QR code */}
-                  {myazaSession.qrCode ? (
-                    <div className="shrink-0">
-                      <div className="relative h-40 w-40 rounded-xl border border-black/10 bg-white p-2 shadow-sm">
-                        <Image src={myazaSession.qrCode} alt="Payment QR code" fill className="object-contain p-1" unoptimized />
-                      </div>
-                      <p className="mt-1.5 text-center text-xs text-black/40">Scan to pay</p>
-                    </div>
-                  ) : null}
-
-                  {/* Details */}
-                  <div className="min-w-0 flex-1 space-y-4">
-                    {/* Network + Amount row */}
-                    <div className="flex flex-wrap gap-3">
-                      <div className="rounded-lg border border-black/10 bg-black/3 px-3 py-2">
-                        <p className="text-xs text-black/50">Network</p>
-                        <p className="mt-0.5 font-semibold text-sm">{myazaSession.chain}</p>
-                      </div>
-                      <div className="rounded-lg border border-black/10 bg-black/3 px-3 py-2">
-                        <p className="text-xs text-black/50">Token</p>
-                        <p className="mt-0.5 font-semibold text-sm">{myazaSession.token}</p>
-                      </div>
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                        <p className="text-xs text-amber-700/70">Amount due</p>
-                        <p className="mt-0.5 font-mono font-bold text-sm text-amber-800">{myazaSession.amount}</p>
-                      </div>
-                    </div>
-
-                    {/* Wallet address */}
-                    <div>
-                      <p className="mb-1.5 text-xs font-medium text-black/50 uppercase tracking-wide">Deposit address</p>
-                      <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-black/3 px-3 py-2.5">
-                        <p className="min-w-0 flex-1 break-all font-mono text-xs text-shop-ink">{myazaSession.depositAddress}</p>
-                        <button
-                          type="button"
-                          onClick={copyAddress}
-                          className="shrink-0 rounded-md border border-black/10 bg-white px-2.5 py-1 text-xs font-medium text-black/60 transition hover:border-shop-accent/50 hover:text-shop-accent active:scale-95"
-                          aria-label="Copy wallet address"
-                        >
-                          {addressCopied ? "Copied!" : "Copy"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Hosted checkout link */}
-                    {myazaSession.checkoutUrl ? (
+                <dl className="space-y-2 text-sm">
+                  <div>
+                    <dt className="text-black/50">Network / token</dt>
+                    <dd className="font-medium">
+                      {myazaSession.chain} / {myazaSession.token}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-black/50">Amount</dt>
+                    <dd className="font-mono">{myazaSession.amount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-black/50">Deposit address</dt>
+                    <dd className="break-all font-mono text-xs">{myazaSession.depositAddress}</dd>
+                  </div>
+                  {myazaSession.checkoutUrl ? (
+                    <dd>
                       <a
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-shop-accent underline underline-offset-2 hover:opacity-80"
+                        className="text-shop-accent underline"
                         href={myazaSession.checkoutUrl}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Open Myaza hosted checkout
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Open Myaza checkout
                       </a>
-                    ) : null}
-                  </div>
-                </div>
+                    </dd>
+                  ) : null}
+                </dl>
               ) : null}
             </div>
-
-            {/* Footer actions */}
-            <div className="flex flex-wrap gap-2 border-t border-black/8 bg-black/2 px-6 py-4">
+            <div className="flex flex-wrap gap-2">
               <Link className="btn-primary" href={`/dashboard/orders/${myazaOrderId}`}>
                 View order
               </Link>
@@ -430,7 +406,10 @@ export default function CheckoutPage() {
         <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
           {inPaymentStep && displayOrder && !showMyaza ? (
             <form className="card space-y-4" onSubmit={onPay}>
-              <h2 className="text-lg font-semibold">Complete your payment</h2>
+              <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
+              <p className="text-sm text-amber-900/80">
+                Status: <span className="font-medium">{displayOrder.status}</span>. Your cart was cleared when the order was placed — use the totals below to complete payment.
+              </p>
               {displayOrder.shippingAddress ? (
                 <div className="rounded-lg border border-black/10 bg-black/2 p-3 text-sm">
                   <p className="font-medium text-shop-ink">Ship to</p>
@@ -454,28 +433,56 @@ export default function CheckoutPage() {
                 <p className="text-sm text-amber-800">No payment methods are available right now.</p>
               ) : null}
               {methodsError ? (
-                <p className="text-xs text-black/50">Payment options couldn't load. All options are shown — try again if needed.</p>
+                <p className="text-xs text-black/50">Couldn't check payment options — all methods are shown.</p>
               ) : null}
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Provider</span>
-                <select
-                  className="input w-full"
-                  value={provider}
-                  onChange={(e) => {
-                    setProvider(e.target.value as PaymentProvider);
-                    setPayInitError(false);
-                    resetPayError();
-                  }}
-                  disabled={!methodsError && availableProviders.length === 0}
-                >
-                  {methodRows.map((m) => (
-                    <option key={m.provider} value={m.provider} disabled={!m.available}>
-                      {providerLabels[m.provider]}
-                      {!m.available && m.reason ? ` — ${m.reason}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="space-y-1.5">
+                <p className="text-sm text-black/70">Payment method</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {methodRows.map((m) => {
+                    const isSelected = provider === m.provider;
+                    const isDisabled = !m.available || (!methodsError && availableProviders.length === 0);
+                    return (
+                      <label
+                        key={m.provider}
+                        className={`flex cursor-pointer items-center gap-3 border p-3 transition ${
+                          isDisabled ? "cursor-not-allowed opacity-50" : ""
+                        } ${
+                          isSelected
+                            ? "border-shop-primary bg-shop-primary/[0.03]"
+                            : "border-black/10 hover:border-black/25"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentProvider"
+                          value={m.provider}
+                          checked={isSelected}
+                          disabled={isDisabled}
+                          onChange={() => {
+                            setProvider(m.provider);
+                            setPayInitError(false);
+                            resetPayError();
+                          }}
+                          className="sr-only"
+                        />
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                            isSelected ? "border-shop-primary" : "border-black/25"
+                          }`}
+                        >
+                          {isSelected && <div className="h-2 w-2 rounded-full bg-shop-primary" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-shop-ink">{providerLabels[m.provider]}</p>
+                          {!m.available && m.reason ? (
+                            <p className="text-xs text-black/50">{m.reason}</p>
+                          ) : null}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button
@@ -500,16 +507,14 @@ export default function CheckoutPage() {
                 ) : null}
               </div>
               <p className="text-xs text-black/50">
-                If payment setup failed, you can <span className="font-medium">retry</span> with the same or another
-                provider. The order id stays the same.
+                If payment didn't start, you can <span className="font-medium">try again</span> with the same or a different method. Your order stays open.
               </p>
             </form>
           ) : !inPaymentStep && !showMyaza ? (
             <form className="card space-y-4" onSubmit={onPlaceOrder}>
               <h2 className="text-lg font-semibold">Shipping</h2>
               <p className="text-xs text-black/60">
-                Placing the order <span className="font-medium">moves</span> line items out of your cart. You will pay on the
-                next step.
+                Placing the order <span className="font-medium">clears your cart</span>. You'll complete payment on the next step.
               </p>
 
               <label className="block space-y-1 text-sm">
@@ -607,7 +612,8 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-semibold">Summary</h2>
             {inPaymentStep && displayOrder ? (
               <>
-                <p className="mt-2 text-xs text-black/55">Your order total — this is what you'll pay.</p>
+                <p className="mt-2 text-sm font-medium text-shop-ink">Order total</p>
+                <p className="mt-1 text-xs text-black/55">Totals are locked in from your order.</p>
                 <ul className="mt-3 space-y-2 border-b border-black/10 pb-3 text-sm">
                   {displayOrder.items.map((item, idx) => (
                     <li key={`${item.title}-${idx}`} className="flex justify-between gap-2">
@@ -661,7 +667,7 @@ export default function CheckoutPage() {
                 </p>
                 {localItems.length > 0 ? (
                   <p className="mt-2 text-xs text-black/50">
-                    {localItems.length} on-device only — not in server cart
+                    {localItems.length} saved in your browser only
                   </p>
                 ) : null}
                 <div className="mt-4 space-y-2 text-sm">
