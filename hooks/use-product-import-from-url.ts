@@ -105,8 +105,8 @@ export function useProductImportFromUrl() {
   const waitHint = effective?.typicalWaitSeconds;
   const waitCopy =
     waitHint?.min != null && waitHint?.max != null
-      ? `Usually ${waitHint.min}s–${waitHint.max}s.`
-      : "Imports run in the background; this can take a minute or two.";
+      ? `Should be ready in about ${waitHint.min}–${waitHint.max} seconds.`
+      : "Sit tight, this usually wraps up in under a minute.";
 
   /** True while POST is in flight or job is queued/processing (until success navigation or failure). */
   const isImportBlocking = Boolean(hasApiBase && (importing || (importId && waiting)));

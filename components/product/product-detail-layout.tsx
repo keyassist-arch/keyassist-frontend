@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { Eye } from "lucide-react";
 import type { ProductDetailLayoutProps } from "@/types/product-detail";
 import { ProductDetailGallery } from "@/components/product/product-detail-gallery";
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs";
 import { ProductDetailZonesBelowStory } from "@/components/product/product-detail-zones";
-import { ProductPdpCountdown } from "@/components/product/product-pdp-countdown";
 import { ProductRatingStars } from "@/components/product/product-rating-stars";
 
 export function ProductDetailLayout({
@@ -17,8 +15,6 @@ export function ProductDetailLayout({
   priceCompareAt,
   discountPercent,
   heroExcerpt,
-  showDealCountdown,
-  viewingCount,
   rating,
   availabilitySlot,
   variantSlots,
@@ -79,17 +75,6 @@ export function ProductDetailLayout({
 
             {heroExcerpt ? (
               <div className="text-sm leading-relaxed text-black/70 [&_p+_p]:mt-2">{heroExcerpt}</div>
-            ) : null}
-
-            {showDealCountdown ? <ProductPdpCountdown /> : null}
-
-            {viewingCount != null && viewingCount > 0 ? (
-              <p className="flex items-center gap-2 text-sm text-black/60">
-                <Eye className="h-[18px] w-[18px] shrink-0 text-black/45" strokeWidth={1.5} aria-hidden />
-                <span>
-                  <span className="font-medium text-shop-ink">{viewingCount}</span> people are viewing this right now
-                </span>
-              </p>
             ) : null}
 
             {availabilitySlot ? (

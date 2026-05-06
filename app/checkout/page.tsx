@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/cart-context";
 import { Steps } from "@/components/ui/steps";
@@ -64,6 +64,8 @@ export default function CheckoutPage() {
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
+  const [addressCopied, setAddressCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: orderFetched, isLoading: orderLoading, refetch: refetchOrder } = useGetOrderQuery(activeOrderId ?? "", {
     skip: !token || !activeOrderId,
@@ -271,6 +273,15 @@ export default function CheckoutPage() {
     void runInitialize(displayOrder);
   };
 
+  const copyAddress = useCallback(() => {
+    if (!myazaSession?.depositAddress) return;
+    void navigator.clipboard.writeText(myazaSession.depositAddress).then(() => {
+      setAddressCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setAddressCopied(false), 2000);
+    });
+  }, [myazaSession?.depositAddress]);
+
   const loading = meLoading || cartLoading || methodsLoading;
   const providerLabels: Record<PaymentProvider, string> = {
     paystack: "Paystack",
@@ -336,9 +347,9 @@ export default function CheckoutPage() {
             <Steps
               current={1}
               steps={[
-                { label: "Cart", href: "/cart" },
-                { label: "Checkout", href: "/checkout" },
-                { label: "Success", href: "/checkout/success" },
+                { label: "Cart", href: inPaymentStep ? undefined : "/cart" },
+                { label: "Checkout" },
+                { label: "Success" },
               ]}
             />
           </div>
@@ -349,50 +360,84 @@ export default function CheckoutPage() {
         {payErr && payInitError && <ErrorState error={payError} title="Payment init failed" />}
 
         {showMyaza && myazaOrderId ? (
-          <section className="card space-y-4 border-shop-accent/30">
-            <h2 className="text-lg font-semibold">Complete Myaza payment</h2>
-            <p className="text-sm text-black/70">
-              Send the indicated amount to the address below, or use the hosted checkout if you opened it in a new tab. Open
-              your order to see when the payment clears.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {myazaSession?.qrCode ? (
-                <div className="relative h-48 w-48 border border-black/10 bg-white">
-                  <Image src={myazaSession.qrCode} alt="" fill className="object-contain p-2" unoptimized />
-                </div>
-              ) : null}
+          <section className="card overflow-hidden border-shop-accent/40 p-0">
+            {/* Header */}
+            <div className="bg-shop-accent/8 px-6 py-4 border-b border-shop-accent/20">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-amber-400 ring-4 ring-amber-400/20" />
+                <h2 className="text-base font-semibold text-shop-ink">Awaiting crypto payment</h2>
+              </div>
+              <p className="mt-1 text-sm text-black/60">
+                Send the exact amount to the address below. Payment confirms automatically.
+              </p>
+            </div>
+
+            <div className="p-6">
               {myazaSession ? (
-                <dl className="space-y-2 text-sm">
-                  <div>
-                    <dt className="text-black/50">Network / token</dt>
-                    <dd className="font-medium">
-                      {myazaSession.chain} / {myazaSession.token}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-black/50">Amount</dt>
-                    <dd className="font-mono">{myazaSession.amount}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-black/50">Deposit address</dt>
-                    <dd className="break-all font-mono text-xs">{myazaSession.depositAddress}</dd>
-                  </div>
-                  {myazaSession.checkoutUrl ? (
-                    <dd>
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+                  {/* QR code */}
+                  {myazaSession.qrCode ? (
+                    <div className="shrink-0">
+                      <div className="relative h-40 w-40 rounded-xl border border-black/10 bg-white p-2 shadow-sm">
+                        <Image src={myazaSession.qrCode} alt="Payment QR code" fill className="object-contain p-1" unoptimized />
+                      </div>
+                      <p className="mt-1.5 text-center text-xs text-black/40">Scan to pay</p>
+                    </div>
+                  ) : null}
+
+                  {/* Details */}
+                  <div className="min-w-0 flex-1 space-y-4">
+                    {/* Network + Amount row */}
+                    <div className="flex flex-wrap gap-3">
+                      <div className="rounded-lg border border-black/10 bg-black/3 px-3 py-2">
+                        <p className="text-xs text-black/50">Network</p>
+                        <p className="mt-0.5 font-semibold text-sm">{myazaSession.chain}</p>
+                      </div>
+                      <div className="rounded-lg border border-black/10 bg-black/3 px-3 py-2">
+                        <p className="text-xs text-black/50">Token</p>
+                        <p className="mt-0.5 font-semibold text-sm">{myazaSession.token}</p>
+                      </div>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                        <p className="text-xs text-amber-700/70">Amount due</p>
+                        <p className="mt-0.5 font-mono font-bold text-sm text-amber-800">{myazaSession.amount}</p>
+                      </div>
+                    </div>
+
+                    {/* Wallet address */}
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium text-black/50 uppercase tracking-wide">Deposit address</p>
+                      <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-black/3 px-3 py-2.5">
+                        <p className="min-w-0 flex-1 break-all font-mono text-xs text-shop-ink">{myazaSession.depositAddress}</p>
+                        <button
+                          type="button"
+                          onClick={copyAddress}
+                          className="shrink-0 rounded-md border border-black/10 bg-white px-2.5 py-1 text-xs font-medium text-black/60 transition hover:border-shop-accent/50 hover:text-shop-accent active:scale-95"
+                          aria-label="Copy wallet address"
+                        >
+                          {addressCopied ? "Copied!" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hosted checkout link */}
+                    {myazaSession.checkoutUrl ? (
                       <a
-                        className="text-shop-accent underline"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-shop-accent underline underline-offset-2 hover:opacity-80"
                         href={myazaSession.checkoutUrl}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Open Myaza checkout
+                        Open Myaza hosted checkout
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                       </a>
-                    </dd>
-                  ) : null}
-                </dl>
+                    ) : null}
+                  </div>
+                </div>
               ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
+
+            {/* Footer actions */}
+            <div className="flex flex-wrap gap-2 border-t border-black/8 bg-black/2 px-6 py-4">
               <Link className="btn-primary" href={`/dashboard/orders/${myazaOrderId}`}>
                 View order
               </Link>
@@ -406,11 +451,7 @@ export default function CheckoutPage() {
         <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
           {inPaymentStep && displayOrder && !showMyaza ? (
             <form className="card space-y-4" onSubmit={onPay}>
-              <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
-              <p className="text-sm text-amber-900/80">
-                Status: <span className="font-medium">{displayOrder.status}</span>. The cart is empty for this account — totals
-                below are from the order.
-              </p>
+              <h2 className="text-lg font-semibold">Complete your payment</h2>
               {displayOrder.shippingAddress ? (
                 <div className="rounded-lg border border-black/10 bg-black/2 p-3 text-sm">
                   <p className="font-medium text-shop-ink">Ship to</p>
@@ -434,7 +475,7 @@ export default function CheckoutPage() {
                 <p className="text-sm text-amber-800">No payment methods are available right now.</p>
               ) : null}
               {methodsError ? (
-                <p className="text-xs text-black/50">Could not load payment availability; all options are shown for retry.</p>
+                <p className="text-xs text-black/50">Payment options couldn't load. All options are shown — try again if needed.</p>
               ) : null}
               <label className="block space-y-1 text-sm">
                 <span className="text-black/70">Provider</span>
@@ -587,8 +628,7 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-semibold">Summary</h2>
             {inPaymentStep && displayOrder ? (
               <>
-                <p className="mt-2 text-sm font-medium text-shop-ink">Order — not the cart</p>
-                <p className="mt-1 text-xs text-black/55">Server totals from the order you created.</p>
+                <p className="mt-2 text-xs text-black/55">Your order total — this is what you'll pay.</p>
                 <ul className="mt-3 space-y-2 border-b border-black/10 pb-3 text-sm">
                   {displayOrder.items.map((item, idx) => (
                     <li key={`${item.title}-${idx}`} className="flex justify-between gap-2">

@@ -62,7 +62,7 @@ export function ContactForm() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="text-black/70">Order ID (optional)</span>
-          <input className="input w-full" name="orderId" type="text" placeholder="e.g. UUID from your confirmation email" />
+          <input className="input w-full" name="orderId" type="text" placeholder="e.g. the order number from your confirmation email" />
         </label>
         <label className="block space-y-1 text-sm">
           <span className="text-black/70">Message</span>

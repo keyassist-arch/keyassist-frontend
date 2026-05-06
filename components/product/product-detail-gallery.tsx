@@ -20,7 +20,7 @@ export function ProductDetailGallery({
     <div className={`flex flex-col gap-4 sm:flex-row sm:items-start ${className}`}>
       {list.length > 1 ? (
         <ul
-          className="flex flex-row gap-2 overflow-x-auto pb-1 sm:max-h-[min(70vh,640px)] sm:w-[4.5rem] sm:flex-shrink-0 sm:flex-col sm:overflow-y-auto sm:pb-0 sm:pr-1"
+          className="flex flex-row gap-2 overflow-x-auto pb-1 sm:max-h-[min(70vh,640px)] sm:w-[4.5rem] sm:flex-shrink-0 sm:flex-col sm:overflow-y-auto sm:pb-0 sm:pr-1 sm:[-ms-overflow-style:none] sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden"
           role="list"
         >
           {list.map((src, i) => (

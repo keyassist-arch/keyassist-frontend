@@ -43,7 +43,7 @@ export function PaypalSuccessClient() {
     const oid = orderId ?? stored?.orderId;
     const paypalOrderId = stored?.paypalOrderId;
     if (!oid || !paypalOrderId) {
-      setErr("Missing PayPal order context. Return to checkout and try again.");
+      setErr("We couldn't find your PayPal order. Please go back to checkout and try again.");
       return;
     }
     try {
@@ -87,7 +87,7 @@ export function PaypalSuccessClient() {
     return (
       <InnerShell>
         <div className="card max-w-lg space-y-4">
-          <ErrorState error={err} title="Could not confirm PayPal" />
+          <ErrorState error={err} title="Payment not confirmed" />
           <Link className="btn-secondary inline-block" href="/checkout">
             Back to checkout
           </Link>

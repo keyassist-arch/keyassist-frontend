@@ -77,13 +77,6 @@ function heroExcerptFromApi(api: ApiProduct): ReactNode | undefined {
   return <p>{cut}</p>;
 }
 
-function stableViewingCount(productId: string) {
-  const hex = productId.replace(/-/g, "").slice(0, 10);
-  const n = parseInt(hex, 16);
-  const base = Number.isFinite(n) ? n % 38 : 0;
-  return 18 + base;
-}
-
 function configurationRowLabel(row: ApiConfigurationPrice): string {
   const primary = row.displayLabel?.trim() || row.label?.trim();
   if (primary) return primary;
@@ -346,12 +339,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   }
 
   const availabilitySlot =
-    stockNum == null ? (
-      <span className="inline-flex items-center gap-2 text-shop-ink">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
-        Available to order
-      </span>
-    ) : stockNum <= 0 ? (
+    stockNum == null ? null : stockNum <= 0 ? (
       <span className="inline-flex items-center gap-2 text-shop-sale">
         <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
         Out of stock
@@ -431,8 +419,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         priceCompareAt={showCompare ? formatApiMoney(api.originalPrice, currency) : undefined}
         discountPercent={discountPercent}
         heroExcerpt={heroExcerptFromApi(api)}
-        showDealCountdown={Boolean(showCompare)}
-        viewingCount={stableViewingCount(api.id)}
         availabilitySlot={availabilitySlot}
         variantSlots={variantSlots}
         configurationPricesSlot={configurationPricesSlot}

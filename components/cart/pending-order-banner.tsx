@@ -14,15 +14,15 @@ export function PendingOrderBanner() {
   return (
     <div className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
       <p>
-        <span className="font-semibold">You have an unpaid order.</span>{" "}
+        <span className="font-semibold">You have an order waiting for payment.</span>{" "}
         <Link href={`/checkout?resume=${pendingId}`} className="font-medium text-shop-accent underline underline-offset-2">
-          Continue checkout
+          Complete checkout
         </Link>{" "}
         or{" "}
         <Link href={`/dashboard/orders/${pendingId}`} className="font-medium text-shop-accent underline underline-offset-2">
           view the order
         </Link>
-        . Your cart may be empty because the order already used those items.
+        .
       </p>
     </div>
   );
