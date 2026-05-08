@@ -25,7 +25,7 @@ function variantForStatus(status: string): BadgeVariant {
 }
 
 const dotColor: Record<BadgeVariant, string> = {
-  success: "bg-emerald-500",
+  success: "bg-indigo-500",
   warning: "bg-amber-500",
   neutral: "bg-black/30",
   danger: "bg-rose-500",

@@ -51,7 +51,8 @@ export const cartSlice = createSlice({
     rehydrateFromStorage: () => readPersisted(),
     addItem: (state, action: PayloadAction<{ product: Product; quantity: number; variant?: ProductVariant }>) => {
       const { product, quantity, variant } = action.payload;
-      const key = `${product.id}-${variant?.id ?? "default"}`;
+      // Use a combination of id, marketplace, and slug to ensure uniqueness
+      const key = `${product.id}-${product.marketplace}-${variant?.id ?? "default"}`;
       const existing = state.items.find((i) => i.id === key);
       if (existing) {
         existing.quantity += quantity;

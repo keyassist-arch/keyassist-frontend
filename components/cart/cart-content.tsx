@@ -366,7 +366,7 @@ function GuestCartSection({
         ))}
       </div>
       <PageSummary
-        count={items.length}
+        count={items.reduce((sum, i) => sum + i.quantity, 0)}
         totals={{ subtotal, serviceCharge: 0, discount: 0, fees: 0, total: subtotal }}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}
@@ -459,7 +459,7 @@ function ApiCartSection({
         })}
       </div>
       <PageSummary
-        count={items.length}
+        count={items.reduce((sum, i) => sum + i.quantity, 0)}
         totals={totals}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}

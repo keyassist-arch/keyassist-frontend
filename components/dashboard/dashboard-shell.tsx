@@ -70,74 +70,76 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-24 sm:px-8 lg:pb-8">
-      <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+    <>
+      <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-24 sm:px-8 lg:pb-8">
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
 
-        {/* Sidebar */}
-        <aside className="hidden shrink-0 lg:block lg:w-60">
-          {/* User card */}
-          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
-            <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-              style={{ background: "#5C4AE6" }}
-              aria-hidden
-            >
-              {ini}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
-              {me?.email && (
-                <p className="truncate text-[11px] text-gray-400">{me.email}</p>
-              )}
+          {/* Sidebar */}
+          <aside className="hidden shrink-0 lg:block lg:w-60">
+            {/* User card */}
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{ background: "#5C4AE6" }}
+                aria-hidden
+              >
+                {ini}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
+                {me?.email && (
+                  <p className="truncate text-[11px] text-gray-400">{me.email}</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Nav */}
-          <nav className="flex flex-wrap gap-1 lg:flex-col" aria-label="Dashboard navigation">
-            {NAV.map(({ href, label, icon: Icon, end }) => {
-              const active = navActive(pathname, href, end);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
-                    active
-                      ? "text-[#5C4AE6]"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                  style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
-                >
-                  <Icon
-                    className={`h-4 w-4 shrink-0 ${active ? "text-[#5C4AE6]" : "text-gray-400"}`}
-                    aria-hidden
-                  />
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
+            {/* Nav */}
+            <nav className="flex flex-wrap gap-1 lg:flex-col" aria-label="Dashboard navigation">
+              {NAV.map(({ href, label, icon: Icon, end }) => {
+                const active = navActive(pathname, href, end);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
+                      active
+                        ? "text-[#5C4AE6]"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                    style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+                  >
+                    <Icon
+                      className={`h-4 w-4 shrink-0 ${active ? "text-[#5C4AE6]" : "text-gray-400"}`}
+                      aria-hidden
+                    />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-          {/* Sign out */}
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
-          >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-            Sign out
-          </button>
-        </aside>
+            {/* Sign out */}
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+              Sign out
+            </button>
+          </aside>
 
-        {/* Content */}
-        <div className="min-w-0 flex-1">{children}</div>
+          {/* Content */}
+          <div className="min-w-0 flex-1">{children}</div>
+        </div>
       </div>
 
-      {/* Mobile bottom tabs */}
+      {/* Mobile bottom tabs - outside wrapper to avoid stacking context issues */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-[9999] border-t border-gray-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
+        className="fixed  bottom-0 z-[9999] flex h-16 flex-col items-center justify-center border-t border-gray-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
         aria-label="Dashboard navigation"
       >
-        <div className="mx-auto flex h-16 max-w-(--shop-layout-max) items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
+        <div className="mx-auto flex w-full max-w-(--shop-layout-max) flex-1 items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
           {NAV.map(({ href, label, icon: Icon, end }) => {
             const active = navActive(pathname, href, end);
             return (
@@ -166,6 +168,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </nav>
-    </div>
+    </>
   );
 }

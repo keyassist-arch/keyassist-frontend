@@ -477,6 +477,13 @@ export const unifiedCommerceApi = createApi({
         const qs = params.toString();
         return { url: qs ? `/reconciliation/my-issues?${qs}` : "/reconciliation/my-issues", method: "GET" };
       },
+      transformResponse: (response: any) => {
+        // Handle wrapped response (e.g., { issues: [...] } or { data: [...] })
+        if (Array.isArray(response)) return response;
+        if (response?.issues && Array.isArray(response.issues)) return response.issues;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        return Array.isArray(response) ? response : [];
+      },
       providesTags: ["MyIssues"],
     }),
 
