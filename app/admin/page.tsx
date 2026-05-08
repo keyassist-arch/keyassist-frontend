@@ -87,7 +87,7 @@ export default function AdminPage() {
   if (meLoading) {
     return (
       <InnerShell>
-        <LoadingState label="Checking role…" />
+        <LoadingState label="Verifying access…" />
       </InnerShell>
     );
   }
@@ -97,7 +97,7 @@ export default function AdminPage() {
       <InnerShell>
         <section className="card">
           <h1 className="text-2xl font-semibold">Access denied</h1>
-          <p className="mt-2 text-sm text-black/70">Your account doesn't have permission to view this page.</p>
+          <p className="mt-2 text-sm text-black/70">This page is only available to admin accounts. If you think this is a mistake, please contact support.</p>
           <Link href="/dashboard" className="btn-secondary mt-4 inline-block">
             Back to account
           </Link>
@@ -109,8 +109,8 @@ export default function AdminPage() {
   if (ordErr || prodErr) {
     return (
       <InnerShell>
-        {ordErr ? <ErrorState error={ordError} title="Admin orders failed" /> : null}
-        {prodErr ? <ErrorState error={prodError} title="Admin products failed" /> : null}
+        {ordErr ? <ErrorState error={ordError} title="Could not load orders" /> : null}
+        {prodErr ? <ErrorState error={prodError} title="Could not load products" /> : null}
       </InnerShell>
     );
   }
@@ -148,7 +148,7 @@ export default function AdminPage() {
           <p className="mt-2 text-sm text-black/70">Manage orders, review catalog entries, and preview listings from a URL.</p>
         </section>
 
-        {loading && <LoadingState label="Loading admin data…" />}
+        {loading && <LoadingState label="Loading…" />}
         {notice?.ok && <SuccessState message={notice.text} />}
         {notice && !notice.ok && <ErrorState error={notice.text} title="Update failed" />}
 
@@ -172,7 +172,7 @@ export default function AdminPage() {
         <section className="card">
           <h2 className="text-lg font-semibold">Product preview</h2>
           <p className="mt-2 text-xs text-black/60">
-            Preview how a product URL will appear before importing. Nothing is saved — use the shop to add items to your catalog.
+            Preview a product from any URL. Nothing is saved to the catalog until you import it from the storefront.
           </p>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onScrapePreview}>
             <label htmlFor={previewUrlFieldId} className="min-w-0 flex-1 space-y-1 text-sm">
@@ -216,7 +216,7 @@ export default function AdminPage() {
                     <StatusBadge status={order.status} />
                   </div>
                   <p className="mt-2 text-sm text-black/70">
-                    Total {currency} {amount.toFixed(2)} · {order.items.length} lines
+                    Total {currency} {amount.toFixed(2)} · {order.items.length} items
                   </p>
                   <label className="mt-3 block max-w-xs space-y-1 text-xs">
                     <span className="font-medium text-black/60">Order status</span>

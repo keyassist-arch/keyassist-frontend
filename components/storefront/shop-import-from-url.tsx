@@ -52,13 +52,8 @@ export function ShopImportFromUrl() {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
           <div className="max-w-md text-center">
             <p className="text-base font-semibold text-white">
-              {effective?.userMessage ?? (importing ? "Starting import…" : "Importing your product…")}
+              {effective?.userMessage ?? "On it — pulling in that listing"}
             </p>
-            {effective?.phase ? (
-              <p className="mt-2 text-sm capitalize text-white/80">
-                Step: <span className="font-medium text-white">{effective.phase}</span>
-              </p>
-            ) : null}
             <p className="mt-3 text-sm text-white/75">{waitCopy}</p>
           </div>
         </div>

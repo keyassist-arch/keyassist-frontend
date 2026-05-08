@@ -55,10 +55,6 @@ export interface ProductDetailLayoutProps {
   discountPercent?: number | null;
   /** Short lead under the price row (first paragraph / summary). */
   heroExcerpt?: ReactNode;
-  /** Woodisa-style weekly deal countdown. */
-  showDealCountdown?: boolean;
-  /** Shown as “N people are viewing…”; omit or pass null to hide. */
-  viewingCount?: number | null;
   /** 0–5 filled stars; omit for all-outline stars. */
   rating?: number;
   /** Total review/rating count shown next to stars. */

@@ -53,12 +53,7 @@ export function UrlImportPanel() {
       )}
       {importId && waiting ? (
         <div className="space-y-2 rounded-2xl border border-black/10 bg-shop-surface px-4 py-3 text-sm text-shop-muted">
-          <LoadingState label={effective?.userMessage ?? "Working on your import…"} />
-          {effective?.phase === "scraping" ? (
-            <p className="text-xs text-black/50">Fetching product details…</p>
-          ) : effective?.phase === "queued" ? (
-            <p className="text-xs text-black/50">Waiting in queue…</p>
-          ) : null}
+          <LoadingState label={effective?.userMessage ?? "Getting your product ready…"} />
           <p className="text-xs text-black/50">{waitCopy}</p>
         </div>
       ) : null}
