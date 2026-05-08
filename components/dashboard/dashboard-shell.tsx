@@ -70,11 +70,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 sm:px-8">
+    <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-24 sm:px-8 lg:pb-8">
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
 
         {/* Sidebar */}
-        <aside className="shrink-0 lg:w-60">
+        <aside className="hidden shrink-0 lg:block lg:w-60">
           {/* User card */}
           <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
             <span
@@ -131,6 +131,41 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Content */}
         <div className="min-w-0 flex-1">{children}</div>
       </div>
+
+      {/* Mobile bottom tabs */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-[9999] border-t border-gray-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
+        aria-label="Dashboard navigation"
+      >
+        <div className="mx-auto flex h-16 max-w-(--shop-layout-max) items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
+          {NAV.map(({ href, label, icon: Icon, end }) => {
+            const active = navActive(pathname, href, end);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
+                  active ? "text-[#5C4AE6]" : "text-gray-500 hover:text-gray-900"
+                }`}
+                style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+              >
+                <Icon className={`h-5 w-5 ${active ? "text-[#5C4AE6]" : "text-gray-400"}`} aria-hidden />
+                <span className="truncate">{label}</span>
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium text-gray-500 transition hover:text-gray-900"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-5 w-5 text-gray-400" aria-hidden />
+            <span className="truncate">Sign out</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

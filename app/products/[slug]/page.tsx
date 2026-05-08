@@ -446,7 +446,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         discountPercent={discountPercent}
         rating={stableRating(api.id)}
         ratingCount={stableRatingCount(api.id)}
-        viewingCount={stableViewingCount(api.id)}
         availabilitySlot={availabilitySlot}
         variantSlots={variantSlots}
         configurationPricesSlot={configurationPricesSlot}

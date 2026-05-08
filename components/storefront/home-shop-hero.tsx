@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { ClipboardEvent, FormEvent, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Star } from "lucide-react";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
+import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
 const BRAND_COLOR = "#5C4AE6";
 
@@ -18,7 +19,6 @@ const MARKETPLACES = [
   { label: "Target",  href: "/shop?q=target",   slug: "target",  hex: "CC0000", iconBg: "#FFF0F0" },
 ];
 
-/* ── Floating decorative items ── */
 type FloatItem =
   | { kind: "card"; title: string; sub: string; gradient: string }
   | { kind: "box";  label: string; gradient: string; textColor: string };
@@ -32,9 +32,13 @@ const FLOAT_ITEMS: FloatItem[] = [
   { kind: "box",  label: "eBay",                  gradient: "linear-gradient(140deg,#f5f5f5 0%,#e8e8e8 100%)", textColor: "#E53238" },
 ];
 
-const HEIGHTS = [148, 120, 190, 100, 148, 88];
-const ROTATIONS = ["-2deg", "0deg", "0deg", "0deg", "2deg", "0deg"];
-const MARGINS_B = [16, 32, 0, 52, 16, 68];
+const HEIGHTS    = [148, 120, 190, 100, 148, 88];
+const ROTATIONS  = ["-2deg", "0deg", "0deg", "0deg", "2deg", "0deg"];
+const MARGINS_B  = [16, 32, 0, 52, 16, 68];
+
+function looksLikeUrl(v: string) {
+  return /^https?:\/\//i.test(v.trim());
+}
 
 function FloatCard({ title, sub, gradient, h, rotate, mb }: { title: string; sub: string; gradient: string; h: number; rotate: string; mb: number }) {
   return (
@@ -71,15 +75,62 @@ export function HomeShopHero() {
   const router = useRouter();
   const searchId = useId();
   const [q, setQ] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    triggerImport,
+    hasApiBase,
+    isImportBlocking,
+    effective,
+    waitCopy,
+  } = useProductImportFromUrl();
+
+  const isUrl = looksLikeUrl(q);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!q.trim()) return;
-    router.push(`/shop?q=${encodeURIComponent(q.trim())}`);
+    const val = q.trim();
+    if (!val) return;
+    if (looksLikeUrl(val)) {
+      triggerImport(val);
+    } else {
+      router.push(`/shop?q=${encodeURIComponent(val)}`);
+    }
+  };
+
+  const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (!looksLikeUrl(pasted)) return;
+    // Let the paste land in the input, then auto-submit on the next frame
+    e.preventDefault();
+    setQ(pasted);
+    // Small rAF so the input visually shows the pasted value before the overlay appears
+    requestAnimationFrame(() => {
+      triggerImport(pasted);
+    });
   };
 
   return (
     <section className="w-full bg-white">
+      {/* Import overlay */}
+      {isImportBlocking && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/60 px-6 py-10 backdrop-blur-sm"
+          role="alertdialog"
+          aria-busy="true"
+          aria-live="polite"
+          aria-label="Import in progress"
+        >
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
+          <div className="max-w-md text-center">
+            <p className="text-base font-semibold text-white">
+              {effective?.userMessage ?? "On it — pulling in that listing"}
+            </p>
+            <p className="mt-3 text-sm text-white/75">{waitCopy}</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Announcement bar ── */}
       <div className="flex w-full items-center justify-center gap-2 bg-black px-4 py-2.5 text-[13px] font-medium text-white">
         <KeyAssistMark size={22} className="shrink-0" />
@@ -94,25 +145,9 @@ export function HomeShopHero() {
         <div className="mx-auto mb-4 hidden max-w-[860px] items-end justify-center gap-2 lg:flex">
           {FLOAT_ITEMS.map((item, i) =>
             item.kind === "card" ? (
-              <FloatCard
-                key={i}
-                title={item.title}
-                sub={item.sub}
-                gradient={item.gradient}
-                h={HEIGHTS[i]}
-                rotate={ROTATIONS[i]}
-                mb={MARGINS_B[i]}
-              />
+              <FloatCard key={i} title={item.title} sub={item.sub} gradient={item.gradient} h={HEIGHTS[i]} rotate={ROTATIONS[i]} mb={MARGINS_B[i]} />
             ) : (
-              <FloatBox
-                key={i}
-                label={item.label}
-                gradient={item.gradient}
-                textColor={item.textColor}
-                h={HEIGHTS[i]}
-                rotate={ROTATIONS[i]}
-                mb={MARGINS_B[i]}
-              />
+              <FloatBox key={i} label={item.label} gradient={item.gradient} textColor={item.textColor} h={HEIGHTS[i]} rotate={ROTATIONS[i]} mb={MARGINS_B[i]} />
             )
           )}
         </div>
@@ -127,29 +162,51 @@ export function HomeShopHero() {
           </h1>
 
           <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-gray-500">
-            Search across Amazon, Nike, Apple, Jumia and more — one cart, one checkout.
+            Search across Amazon, Nike, Apple, Jumia and more — or paste a product link to import it instantly.
           </p>
 
-          {/* Search */}
-          <form id="hero-search" onSubmit={onSubmit} className="mx-auto mt-5 max-w-[540px]">
-            <div className="flex items-center rounded-full border border-gray-200 bg-white px-5 py-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
-              <label htmlFor={searchId} className="sr-only">What are you shopping for today?</label>
+          {/* Search / import bar */}
+          <form
+            id="hero-search"
+            onSubmit={onSubmit}
+            className="mx-auto mt-5 max-w-[540px]"
+            suppressHydrationWarning
+          >
+            <div
+              className={`flex items-center rounded-full border bg-white px-5 py-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition-colors ${
+                isUrl ? "border-[#5C4AE6]/40" : "border-gray-200"
+              }`}
+            >
+              <label htmlFor={searchId} className="sr-only">
+                {isUrl ? "Import product from link" : "What are you shopping for today?"}
+              </label>
               <input
+                ref={inputRef}
                 id={searchId}
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                placeholder="What are you shopping for today?"
+                onPaste={onPaste}
+                placeholder="Search products or paste a link to import"
                 className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                disabled={isImportBlocking}
+                suppressHydrationWarning
               />
               <button
                 type="submit"
-                className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:opacity-90"
+                disabled={isImportBlocking}
+                className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:opacity-90 disabled:opacity-50"
                 style={{ background: BRAND_COLOR }}
-                aria-label="Search"
+                aria-label={isUrl ? "Import product" : "Search"}
+                suppressHydrationWarning
               >
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
             </div>
+            {isUrl && (
+              <p className="mt-2 text-center text-xs text-[#5C4AE6]">
+                Product link detected — press Enter or ↵ to import
+              </p>
+            )}
           </form>
 
           {/* Marketplace chips */}

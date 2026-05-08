@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId } from "react";
+import { ClipboardEvent, useEffect, useId } from "react";
 import { ErrorState } from "@/components/feedback/query-state";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
@@ -13,6 +13,7 @@ export function ShopImportFromUrl() {
     url,
     setUrl,
     onSubmit,
+    triggerImport,
     hasApiBase,
     importing,
     importErr,
@@ -24,6 +25,16 @@ export function ShopImportFromUrl() {
     importId,
     isImportBlocking,
   } = useProductImportFromUrl();
+
+  const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (!pasted) return;
+    e.preventDefault();
+    setUrl(pasted);
+    requestAnimationFrame(() => {
+      triggerImport(pasted);
+    });
+  };
   const importUrlId = useId();
 
   useEffect(() => {
@@ -73,6 +84,7 @@ export function ShopImportFromUrl() {
               className="input w-full"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              onPaste={onPaste}
               placeholder="https://www.jumia.com.ng/..."
               disabled={isImportBlocking}
             />

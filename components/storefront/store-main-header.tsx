@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useId, useMemo, useState } from "react";
+import { ClipboardEvent, FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { siteContext } from "@/lib/site-context";
@@ -12,6 +12,11 @@ import { loggedOut } from "@/store/slices/authSlice";
 import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
 import { IconCart, IconUser } from "@/components/storefront/header-icons";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
+import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+
+function looksLikeUrl(v: string) {
+  return /^https?:\/\//i.test(v.trim());
+}
 
 const MARKET_CHIPS = [
   { label: "Amazon",  q: "amazon"  },
@@ -75,13 +80,55 @@ export function StoreMainHeader() {
   const cartLabel =
     cartCount === 0 ? "Cart, empty" : cartCount === 1 ? "Cart, 1 item" : `Cart, ${cartCount} items`;
 
+  const {
+    triggerImport,
+    isImportBlocking,
+    effective,
+    waitCopy,
+  } = useProductImportFromUrl();
+
+  const isUrl = looksLikeUrl(q);
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     const t = q.trim();
-    if (t) router.push(`/shop?q=${encodeURIComponent(t)}`);
+    if (!t) return;
+    if (looksLikeUrl(t)) {
+      triggerImport(t);
+    } else {
+      router.push(`/shop?q=${encodeURIComponent(t)}`);
+    }
+  };
+
+  const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (!looksLikeUrl(pasted)) return;
+    e.preventDefault();
+    setQ(pasted);
+    requestAnimationFrame(() => {
+      triggerImport(pasted);
+    });
   };
 
   return (
+    <>
+    {isImportBlocking && (
+      <div
+        className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/60 px-6 py-10 backdrop-blur-sm"
+        role="alertdialog"
+        aria-busy="true"
+        aria-live="polite"
+        aria-label="Import in progress"
+      >
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
+        <div className="max-w-md text-center">
+          <p className="text-base font-semibold text-white">
+            {effective?.userMessage ?? "On it — pulling in that listing"}
+          </p>
+          <p className="mt-3 text-sm text-white/75">{waitCopy}</p>
+        </div>
+      </div>
+    )}
     <div className="w-full border-b bg-white/70" style={{ borderColor: "var(--shop-border)" }}>
       <div className="mx-auto max-w-[var(--shop-layout-max)] px-4 sm:px-8">
 
@@ -157,20 +204,33 @@ export function StoreMainHeader() {
         <div className="pb-3">
           <form onSubmit={onSubmit} className="flex items-center gap-2">
             <label htmlFor="store-search" className="sr-only">
-              Search or paste marketplace URL
+              {isUrl ? "Import product from link" : "Search or paste marketplace URL"}
             </label>
-            <input
-              id="store-search"
-              type="search"
-              enterKeyHint="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search or paste a product URL — Amazon, Nike, Apple, Jumia…"
-              className="input min-h-11 flex-1 text-sm"
-              style={{ borderColor: "var(--shop-border)" }}
-            />
-            <button type="submit" className="btn-primary shrink-0 px-5 py-2 text-sm">
-              Search
+            <div className="relative min-w-0 flex-1">
+              <input
+                id="store-search"
+                type="search"
+                enterKeyHint="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onPaste={onPaste}
+                placeholder="Search or paste a product URL — Amazon, Nike, Apple, Jumia…"
+                className="input min-h-11 w-full text-sm"
+                style={{ borderColor: isUrl ? "var(--shop-accent)" : "var(--shop-border)" }}
+                disabled={isImportBlocking}
+              />
+              {isUrl && (
+                <p className="mt-1 text-[11px] text-shop-accent">
+                  Product link detected — press Enter or click Import
+                </p>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="btn-primary shrink-0 self-start px-5 py-2 text-sm"
+              disabled={isImportBlocking}
+            >
+              {isUrl ? "Import" : "Search"}
             </button>
           </form>
 
@@ -300,5 +360,6 @@ export function StoreMainHeader() {
         </div>
       )}
     </div>
+    </>
   );
 }

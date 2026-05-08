@@ -76,18 +76,18 @@ export function useProductImportFromUrl() {
     router.push(productDetailPathFromApi(effective.product));
   }, [effective, router]);
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const runImport = async (urlStr: string) => {
     navigatedRef.current = false;
     setImportId(null);
     setPostHint(null);
     setSocketPayload(null);
     setPollPayload(null);
-    if (!url.trim()) return;
+    const trimmed = urlStr.trim();
+    if (!trimmed) return;
     try {
-      const res = await importProduct({ url: url.trim() }).unwrap();
+      const res = await importProduct({ url: trimmed }).unwrap();
       if (res.requiresManualEntry) {
-        router.push(`/products/add-manual?url=${encodeURIComponent(res.sourceUrl ?? url.trim())}`);
+        router.push(`/products/add-manual?url=${encodeURIComponent(res.sourceUrl ?? trimmed)}`);
         return;
       }
       if (res.product?.id && statusUpper(res.status) === "COMPLETED") {
@@ -101,6 +101,17 @@ export function useProductImportFromUrl() {
     } catch {
       /* surfaced via importErr */
     }
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await runImport(url);
+  };
+
+  /** Trigger an import with an explicit URL, without requiring a form event. */
+  const triggerImport = (urlStr: string) => {
+    setUrl(urlStr);
+    void runImport(urlStr);
   };
 
   const hasApiBase = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
@@ -119,6 +130,7 @@ export function useProductImportFromUrl() {
     url,
     setUrl,
     onSubmit,
+    triggerImport,
     hasApiBase,
     importing,
     importErr,
