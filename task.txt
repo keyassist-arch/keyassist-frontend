@@ -1,0 +1,2 @@
+1. on the sidebar the compooent shoild be justified between ,the logo on top, the pages in the middle and the profile. at the bottom shich should redirect to login/signup if they aren't loggedin
+2. the input field below should only come up when the hero section is srolled out of focus we can use framer motion for the animatiobs, remove the white background only the input field component should come up, add a transition.

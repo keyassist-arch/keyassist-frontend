@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" fill="#F3F4F6"/>
+  <!-- Mountains / landscape icon -->
+  <rect x="140" y="140" width="120" height="90" rx="8" fill="#E5E7EB"/>
+  <path d="M140 205 L175 168 L203 196 L222 178 L260 230 L140 230 Z" fill="#D1D5DB"/>
+  <circle cx="235" cy="165" r="12" fill="#D1D5DB"/>
+  <rect x="140" y="140" width="120" height="90" rx="8" stroke="#D1D5DB" stroke-width="2"/>
+</svg>

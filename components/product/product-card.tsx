@@ -19,7 +19,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <article className="card group transition hover:-translate-y-0.5">
       <div className="relative mb-4 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
         <Image
-          src={product.images[activeImage] ?? "/file.svg"}
+          src={product.images[activeImage] ?? "/product-placeholder.svg"}
           alt={product.title}
           className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
           width={600}

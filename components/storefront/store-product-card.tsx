@@ -3,31 +3,40 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, type MouseEvent } from "react";
-import { ShoppingCart, Star } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import type { Product, ProductVariant } from "@/types";
 import { useAppSelector } from "@/store/hooks";
-import { useAddCartItemMutation } from "@/store/routes/unified-commerce-api";
+import {
+  useAddCartItemMutation,
+  useGetSaveStatusQuery,
+  useSaveProductMutation,
+  useUnsaveProductMutation,
+} from "@/store/routes/unified-commerce-api";
 import { productDetailPath } from "@/lib/product-detail-path";
 import { isUuid } from "@/lib/uuid";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { formatApiMoney } from "@/lib/format-price";
 import { getStorefrontActivitySignals } from "@/lib/storefront-activity";
 
-function StarRow({ filled }: { filled: number }) {
+function StarRow({ filled, count }: { filled: number; count: number }) {
   const n = Math.min(5, Math.max(0, Math.round(filled)));
+  const display = count >= 1000 ? `(${(count / 1000).toFixed(1)}k)` : `(${count})`;
   return (
-    <span className="inline-flex items-center gap-px text-amber-400" aria-hidden>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          size={13}
-          fill={i < n ? "currentColor" : "none"}
-          className={i < n ? "" : "text-black/22"}
-          strokeWidth={i < n ? 0 : 1.2}
-        />
-      ))}
-    </span>
+    <div className="flex items-center gap-1">
+      <span className="inline-flex items-center gap-px" aria-hidden>
+        {Array.from({ length: 5 }, (_, i) => (
+          <Star
+            key={i}
+            size={12}
+            fill={i < n ? "currentColor" : "none"}
+            className={i < n ? "text-amber-400" : "text-gray-200"}
+            strokeWidth={i < n ? 0 : 1.5}
+          />
+        ))}
+      </span>
+      <span className="text-[11px] text-gray-400">{display}</span>
+    </div>
   );
 }
 
@@ -35,14 +44,37 @@ export function StoreProductCard({ product }: { product: Product }) {
   const { addItem, openCartDrawer } = useCart();
   const token = useAppSelector((s) => s.auth.accessToken);
   const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
+  const [saveProduct] = useSaveProductMutation();
+  const [unsaveProduct] = useUnsaveProductMutation();
+  const { data: saveStatus } = useGetSaveStatusQuery(product.id, { skip: !token || !isUuid(product.id) });
   const [apiErr, setApiErr] = useState<string | null>(null);
-  const img = product.images[0] ?? "/file.svg";
+
+  const img = product.images[0] ?? "/product-placeholder.svg";
   const activity = getStorefrontActivitySignals(product.id);
   const onSale = product.discountPercent != null && product.discountPercent > 0 && product.compareAtPrice != null;
 
-  const onAdd = async (e?: MouseEvent<HTMLButtonElement>) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  const brandLine = product.seller?.trim() || product.marketplace;
+  const pdpHref = productDetailPath(product);
+  const isSaved = saveStatus?.saved ?? false;
+
+  const onSave = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token || !isUuid(product.id)) return;
+    try {
+      if (isSaved) {
+        await unsaveProduct(product.id).unwrap();
+      } else {
+        await saveProduct(product.id).unwrap();
+      }
+    } catch {
+      /* ignore — optimistic UI handles it */
+    }
+  };
+
+  const onAdd = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     setApiErr(null);
     const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
     if (token && isUuid(product.id)) {
@@ -58,10 +90,7 @@ export function StoreProductCard({ product }: { product: Product }) {
       }
       return;
     }
-    const selKey = product.variants
-      .map((v) => `${v.name}:${v.value}`)
-      .sort()
-      .join("|");
+    const selKey = product.variants.map((v) => `${v.name}:${v.value}`).sort().join("|");
     const cartVariant: ProductVariant = {
       id: selKey || "default",
       name: "Selection",
@@ -71,67 +100,74 @@ export function StoreProductCard({ product }: { product: Product }) {
     openCartDrawer();
   };
 
-  const brandLine = product.seller?.trim() || product.marketplace;
-  const pdpHref = productDetailPath(product);
-
   return (
-    <article
-      className="flex flex-col overflow-hidden rounded-none border bg-white"
-      style={{ borderColor: "var(--shop-border)" }}
-    >
-      <div className="relative">
-        <Link href={pdpHref} className="relative block aspect-square overflow-hidden bg-neutral-100">
-          <Image
-            src={img}
-            alt={product.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
-        </Link>
+    <article className="group flex flex-col overflow-hidden rounded-2xl bg-white transition hover:shadow-lg">
+      {/* Image area */}
+      <Link href={pdpHref} className="relative block h-[180px] overflow-hidden bg-gray-50 sm:h-[200px]">
+        <Image
+          src={img}
+          alt={product.title}
+          fill
+          className="object-contain p-2 transition duration-300 group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          unoptimized
+        />
+
+        {/* Extra savings badge */}
+        {onSale && (
+          <span className="absolute left-2 top-2 rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: "#5C4AE6" }}>
+            Extra savings
+          </span>
+        )}
+
+        {/* Discount % badge */}
+        {onSale && product.discountPercent != null && (
+          <span className="absolute left-2 top-7 mt-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+            {product.discountPercent}% off
+          </span>
+        )}
+
+        {/* Heart / save button */}
         <button
           type="button"
-          onClick={onAdd}
-          disabled={addingApi}
-          className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-none border border-black/15 bg-white text-shop-ink shadow-sm transition hover:bg-black hover:text-white disabled:opacity-50"
-          aria-label="Add to cart"
+          onClick={onSave}
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white"
+          aria-label={isSaved ? "Remove from saved" : "Save item"}
         >
-          <ShoppingCart className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          <Heart
+            className="h-4 w-4 transition"
+            fill={isSaved ? "#5C4AE6" : "none"}
+            stroke={isSaved ? "#5C4AE6" : "#6b7280"}
+            strokeWidth={1.75}
+          />
         </button>
-      </div>
+      </Link>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-black/45">{brandLine}</p>
-        <Link href={pdpHref} className="line-clamp-2 text-sm font-medium leading-snug text-shop-ink hover:text-shop-accent">
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
+        <p className="truncate text-[11px] text-gray-400">{brandLine}</p>
+
+        <Link
+          href={pdpHref}
+          className="line-clamp-2 text-[13px] font-medium leading-snug text-gray-900 hover:text-[#5C4AE6]"
+        >
           {product.title}
         </Link>
 
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          {onSale ? (
-            <>
-              <span className="text-sm font-semibold tabular-nums text-shop-sale">-{product.discountPercent}%</span>
-              <span className="text-base font-bold tabular-nums text-shop-sale">{formatApiMoney(product.price, product.currency)}</span>
-              <span className="text-xs tabular-nums text-black/40 line-through">
-                {formatApiMoney(product.compareAtPrice, product.currency)}
-              </span>
-            </>
-          ) : (
-            <span className="text-base font-bold tabular-nums text-shop-ink">{formatApiMoney(product.price, product.currency)}</span>
+        <StarRow filled={activity.rating} count={activity.reviewCount} />
+
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 pt-0.5">
+          <span className="text-[15px] font-bold tabular-nums text-gray-900">
+            {formatApiMoney(product.price, product.currency)}
+          </span>
+          {onSale && (
+            <span className="text-[12px] tabular-nums text-gray-400 line-through">
+              {formatApiMoney(product.compareAtPrice, product.currency)}
+            </span>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-black/50">
-          <StarRow filled={activity.rating} />
-          <span className="tabular-nums">({activity.reviewCount})</span>
-        </div>
-        <p className="text-[11px] text-black/45">{activity.cartsLine}</p>
-
-        {apiErr ? <p className="text-xs text-red-600">{apiErr}</p> : null}
-        {!token ? <p className="text-[11px] text-black/45">Sign in to sync cart to your account.</p> : null}
-
-        <Link href={pdpHref} className="mt-auto pt-1 text-xs font-medium text-shop-accent hover:underline">
-          View details
-        </Link>
+        {apiErr ? <p className="text-[11px] text-red-500">{apiErr}</p> : null}
       </div>
     </article>
   );

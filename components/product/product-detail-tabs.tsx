@@ -27,14 +27,14 @@ export function ProductDetailTabs({
 
   return (
     <div className="mt-14 border-t border-black/10 pt-10">
-      <div className="flex flex-wrap gap-0 border-b border-black/10">
+      <div className="flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`px-6 py-3 text-sm font-semibold transition ${
-              tab === t.id ? "bg-black text-white" : "bg-transparent text-shop-ink hover:bg-black/5"
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+              tab === t.id ? "bg-shop-ink text-white" : "bg-black/5 text-shop-ink hover:bg-black/10"
             }`}
           >
             {t.label}
@@ -43,8 +43,8 @@ export function ProductDetailTabs({
       </div>
 
       <div
-        className="bg-white px-4 py-8 sm:px-8 sm:py-10"
-        style={{ border: "1px solid var(--shop-border)", borderTop: "none" }}
+        className="mt-4 rounded-2xl bg-white px-4 py-8 sm:px-8 sm:py-10"
+        style={{ border: "1px solid var(--shop-border)" }}
       >
         {tab === "description" && descriptionBlocks?.length ? (
           <div className="space-y-8">

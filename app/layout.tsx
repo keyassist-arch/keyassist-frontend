@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { LeftRail } from "@/components/layout/left-rail";
+import { StickySearchBar } from "@/components/storefront/sticky-search-bar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,8 +37,10 @@ export default function RootLayout({
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="w-full flex-1">{children}</main>
+            <LeftRail />
+            <main className="w-full flex-1 pb-[68px] lg:pl-[84px]">{children}</main>
             <Footer />
+            <StickySearchBar />
           </div>
         </Providers>
       </body>

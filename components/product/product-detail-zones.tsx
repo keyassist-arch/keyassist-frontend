@@ -62,7 +62,7 @@ export function ProductComplianceCallout({ lines }: { lines: string[] }) {
   if (!lines.length) return null;
   return (
     <aside
-      className="max-w-3xl border-l-4 border-amber-600/70 bg-amber-50/60 py-4 pl-4 pr-4"
+      className="max-w-3xl rounded-xl border border-amber-200 bg-amber-50/60 py-4 pl-4 pr-4"
       aria-labelledby="pdp-compliance-heading"
     >
       <h2 id="pdp-compliance-heading" className="text-sm font-semibold text-shop-ink">

@@ -25,7 +25,7 @@ function InfoBlock({
 }) {
   return (
     <div className="flex gap-4">
-      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center border border-black/10 bg-shop-accent-soft text-shop-accent">
+      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-shop-accent-soft text-shop-accent">
         <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
       </span>
       <div>

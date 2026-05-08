@@ -13,22 +13,31 @@ import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
 import { IconCart, IconUser } from "@/components/storefront/header-icons";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 
-const iconLinkClass =
-  "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent";
+const MARKET_CHIPS = [
+  { label: "Amazon",  q: "amazon"  },
+  { label: "Apple",   q: "apple"   },
+  { label: "Nike",    q: "nike"    },
+  { label: "Jumia",   q: "jumia"   },
+  { label: "Walmart", q: "walmart" },
+  { label: "eBay",    q: "ebay"    },
+];
 
-function AccountCartIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount: number }) {
+const iconBtn =
+  "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent";
+
+function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount: number }) {
   return (
     <>
-      <Link href="/dashboard" className={iconLinkClass} aria-label="Account" title="Account">
-        <IconUser className="h-5 w-5" />
+      <Link href="/dashboard" className={iconBtn} aria-label="Account" title="Account">
+        <IconUser className="h-[18px] w-[18px]" />
       </Link>
-      <OpenCartTrigger className={iconLinkClass} aria-label={cartLabel} title="Cart">
-        <IconCart className="h-5 w-5" />
-        {cartCount > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-shop-primary px-1 text-[10px] font-semibold leading-none text-white">
+      <OpenCartTrigger className={iconBtn} aria-label={cartLabel} title="Cart">
+        <IconCart className="h-[18px] w-[18px]" />
+        {cartCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop-primary px-0.5 text-[9px] font-bold leading-none text-white">
             {cartCount > 99 ? "99+" : cartCount}
           </span>
-        ) : null}
+        )}
       </OpenCartTrigger>
     </>
   );
@@ -48,16 +57,12 @@ export function StoreMainHeader() {
     if (!navOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [navOpen]);
 
   useEffect(() => {
     if (!navOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setNavOpen(false);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [navOpen]);
@@ -67,37 +72,77 @@ export function StoreMainHeader() {
     return localItems.length;
   }, [token, apiCart, localItems.length]);
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = q.trim();
-    if (trimmed) router.push(`/shop?q=${encodeURIComponent(trimmed)}`);
-  };
-
   const cartLabel =
     cartCount === 0 ? "Cart, empty" : cartCount === 1 ? "Cart, 1 item" : `Cart, ${cartCount} items`;
 
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const t = q.trim();
+    if (t) router.push(`/shop?q=${encodeURIComponent(t)}`);
+  };
+
   return (
-    <div className="w-full border-b bg-white" style={{ borderColor: "var(--shop-border)" }}>
-      <div className="mx-auto flex max-w-[var(--shop-layout-max)] flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:gap-6 sm:px-8">
-        {/* Mobile: brand + icons on one row; sm+: brand only in this cell */}
-        <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:w-auto sm:shrink-0 sm:justify-start">
-          <Link href="/" className="min-w-0 truncate text-xl font-semibold tracking-tight text-shop-ink">
-            {siteContext.brand}
+    <div className="w-full border-b bg-white/70" style={{ borderColor: "var(--shop-border)" }}>
+      <div className="mx-auto max-w-[var(--shop-layout-max)] px-4 sm:px-8">
+
+        {/* ── Row 1: brand · nav · auth ── */}
+        <div className="flex h-14 items-center gap-3">
+
+          {/* Brand */}
+          <Link
+            href="/"
+            className="shrink-0 text-[15px] font-extrabold tracking-tight text-shop-ink"
+          >
+            <span style={{ color: "var(--shop-accent)" }}>Key</span>
+            <span className="text-shop-ink">Assist</span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2 sm:hidden" aria-label="Account and cart">
+
+          {/* Desktop nav links */}
+          <nav className="ml-2 hidden flex-1 items-center gap-0.5 lg:flex" aria-label="Primary">
+            {STORE_NAV_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="rounded-xl px-3 py-1.5 text-sm font-medium text-shop-ink/65 transition hover:bg-shop-accent-soft hover:text-shop-accent"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex-1 lg:hidden" />
+
+          {/* Auth + cart */}
+          <div className="flex shrink-0 items-center gap-1">
             {token ? (
               <button
                 type="button"
-                className="rounded-none px-2 py-1.5 text-xs font-medium text-shop-muted hover:bg-shop-accent-soft hover:text-shop-accent"
+                className="hidden rounded-xl px-3 py-1.5 text-sm text-shop-muted transition hover:bg-shop-accent-soft hover:text-shop-accent sm:block"
                 onClick={() => dispatch(loggedOut())}
               >
                 Sign out
               </button>
-            ) : null}
-            <AccountCartIcons cartLabel={cartLabel} cartCount={cartCount} />
+            ) : (
+              <div className="hidden items-center gap-1 sm:flex">
+                <Link
+                  href="/auth/login"
+                  className="rounded-xl px-3 py-1.5 text-sm text-shop-muted transition hover:bg-shop-accent-soft hover:text-shop-accent"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="rounded-xl border px-3 py-1.5 text-sm font-semibold text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent"
+                  style={{ borderColor: "var(--shop-border)" }}
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+            <CartUserIcons cartLabel={cartLabel} cartCount={cartCount} />
             <button
               type="button"
-              className={iconLinkClass}
+              className={`${iconBtn} lg:hidden`}
               aria-expanded={navOpen}
               aria-controls={navPanelId}
               aria-label="Open menu"
@@ -108,104 +153,86 @@ export function StoreMainHeader() {
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="flex min-w-0 flex-1 items-center gap-2">
-          <label htmlFor="store-search" className="sr-only">
-            Search products or paste marketplace URL
-          </label>
-          <input
-            id="store-search"
-            type="search"
-            enterKeyHint="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search or paste Amazon, Nike, Apple, Jumia URL…"
-            className="input min-h-11 min-w-0 flex-1 rounded-none border-neutral-200"
-            style={{ borderColor: "var(--shop-border)", borderRadius: 0 }}
-          />
-          <button type="submit" className="btn-primary shrink-0 px-5 py-2.5 text-sm">
-            Search
-          </button>
-        </form>
-
-        {/* sm+: auth text links + icons (Sign in / Register hidden on narrow screens) */}
-        <div className="hidden shrink-0 flex-wrap items-center justify-end gap-1 sm:flex sm:gap-2">
-          {token ? (
-            <button
-              type="button"
-              className="rounded-none px-3 py-2 text-sm text-shop-muted hover:bg-shop-accent-soft hover:text-shop-accent"
-              onClick={() => dispatch(loggedOut())}
-            >
-              Sign out
+        {/* ── Row 2: search + marketplace chips ── */}
+        <div className="pb-3">
+          <form onSubmit={onSubmit} className="flex items-center gap-2">
+            <label htmlFor="store-search" className="sr-only">
+              Search or paste marketplace URL
+            </label>
+            <input
+              id="store-search"
+              type="search"
+              enterKeyHint="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search or paste a product URL — Amazon, Nike, Apple, Jumia…"
+              className="input min-h-11 flex-1 text-sm"
+              style={{ borderColor: "var(--shop-border)" }}
+            />
+            <button type="submit" className="btn-primary shrink-0 px-5 py-2 text-sm">
+              Search
             </button>
-          ) : (
-            <>
-              <Link
-                href="/auth/login"
-                className="rounded-none px-3 py-2 text-sm text-shop-muted hover:bg-shop-accent-soft hover:text-shop-accent"
+          </form>
+
+          {/* Quick-filter chips — clicking jumps to shop filtered by marketplace */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-medium text-shop-muted">Shop on:</span>
+            {MARKET_CHIPS.map((c) => (
+              <button
+                key={c.q}
+                type="button"
+                onClick={() => router.push(`/shop?q=${encodeURIComponent(c.q)}`)}
+                className="rounded-full border px-3 py-0.5 text-[11px] font-semibold transition hover:border-shop-accent hover:bg-shop-accent-soft hover:text-shop-accent"
+                style={{ borderColor: "var(--shop-border)", color: "var(--shop-muted)" }}
               >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="rounded-none px-3 py-2 text-sm text-shop-muted hover:bg-shop-accent-soft hover:text-shop-accent"
-              >
-                Register
-              </Link>
-            </>
-          )}
-          <AccountCartIcons cartLabel={cartLabel} cartCount={cartCount} />
-          <button
-            type="button"
-            className={`${iconLinkClass} lg:hidden`}
-            aria-expanded={navOpen}
-            aria-controls={navPanelId}
-            aria-label="Open menu"
-            onClick={() => setNavOpen(true)}
-          >
-            <Menu className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden />
-          </button>
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Primary nav drawer: screens below lg (hamburger beside cart in header) */}
-      {navOpen ? (
+      {/* ── Mobile drawer (slides from right) ── */}
+      {navOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             aria-label="Close menu"
             onClick={() => setNavOpen(false)}
           />
           <nav
             id={navPanelId}
-            className="absolute left-0 top-0 flex h-full w-[min(100%,18rem)] flex-col border-r border-black/10 bg-white shadow-lg"
-            style={{ borderColor: "var(--shop-border)" }}
+            className="absolute right-0 top-0 flex h-full w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
             aria-labelledby={`${navPanelId}-title`}
             role="dialog"
             aria-modal="true"
           >
+            {/* Drawer header */}
             <div
-              className="flex items-center justify-between border-b border-black/10 px-4 py-3"
+              className="flex items-center justify-between border-b px-5 py-4"
               style={{ borderColor: "var(--shop-border)" }}
             >
-              <span id={`${navPanelId}-title`} className="text-sm font-semibold text-shop-ink">
-                Browse
+              <span id={`${navPanelId}-title`} className="text-sm font-bold text-shop-ink">
+                <span style={{ color: "var(--shop-accent)" }}>Key</span>Assist
               </span>
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-none text-shop-ink hover:bg-black/5"
+                className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-black/5"
                 aria-label="Close menu"
                 onClick={() => setNavOpen(false)}
               >
                 <X className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </button>
             </div>
-            <ul className="flex flex-col gap-0 p-2">
+
+            {/* Nav links */}
+            <ul className="flex flex-col gap-0.5 p-3">
               {STORE_NAV_LINKS.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="block rounded-none px-4 py-3 text-sm font-medium text-shop-ink hover:bg-shop-accent-soft"
+                    className="block rounded-xl px-4 py-3 text-sm font-medium text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent"
                     onClick={() => setNavOpen(false)}
                   >
                     {l.label}
@@ -213,9 +240,65 @@ export function StoreMainHeader() {
                 </li>
               ))}
             </ul>
+
+            {/* Marketplace chips in drawer */}
+            <div className="px-4 pb-2">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-shop-muted">
+                Quick shop
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {MARKET_CHIPS.map((c) => (
+                  <button
+                    key={c.q}
+                    type="button"
+                    onClick={() => {
+                      router.push(`/shop?q=${encodeURIComponent(c.q)}`);
+                      setNavOpen(false);
+                    }}
+                    className="rounded-full border px-3 py-1 text-xs font-semibold transition hover:border-shop-accent hover:bg-shop-accent-soft hover:text-shop-accent"
+                    style={{ borderColor: "var(--shop-border)", color: "var(--shop-muted)" }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Auth at the bottom */}
+            <div
+              className="mt-auto border-t p-4"
+              style={{ borderColor: "var(--shop-border)" }}
+            >
+              {token ? (
+                <button
+                  type="button"
+                  className="btn-secondary w-full text-sm"
+                  onClick={() => { dispatch(loggedOut()); setNavOpen(false); }}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/auth/login"
+                    className="btn-primary w-full text-center text-sm"
+                    onClick={() => setNavOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="btn-secondary w-full text-center text-sm"
+                    onClick={() => setNavOpen(false)}
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
           </nav>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

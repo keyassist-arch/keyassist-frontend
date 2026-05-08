@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatApiMoney } from "@/lib/format-price";
 import type { OrderResponse } from "@/types/api";
@@ -12,35 +14,59 @@ type Props = {
 
 export function OrderCard({ order, href, compact }: Props) {
   const { amount, currency } = orderTotal(order);
-  const preview = order.items[0];
+  const firstItem = order.items[0];
+  const image = firstItem?.images?.[0];
   const title =
     order.items.length === 1
-      ? preview?.title ?? "Order"
-      : `${preview?.title ?? "Items"} + ${order.items.length - 1} more`;
+      ? firstItem?.title ?? "Order"
+      : `${firstItem?.title ?? "Items"} +${order.items.length - 1} more`;
+
+  const shortId = `${order.id.slice(0, 8)}…${order.id.slice(-4)}`;
 
   return (
     <Link
       href={href}
-      className="group block rounded-2xl border border-black/10 bg-white p-4 transition hover:border-shop-accent/40 hover:shadow-sm"
+      className="group flex items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-4 transition hover:border-[#5C4AE6]/30 hover:shadow-md"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-black/45">Order</p>
-          <p className="mt-0.5 font-mono text-sm font-medium text-shop-ink group-hover:text-shop-accent">
-            {order.id.slice(0, 8)}…{order.id.slice(-4)}
-          </p>
-          {!compact ? <p className="mt-1 line-clamp-2 text-sm text-black/70">{title}</p> : null}
-        </div>
-        <StatusBadge status={order.status} />
+      {/* Image thumbnail */}
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+        {image ? (
+          <Image
+            src={image}
+            alt=""
+            fill
+            className="object-contain p-1"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-gray-300">
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+          </div>
+        )}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="font-medium text-shop-ink">{formatApiMoney(amount, currency)}</span>
-        <span className="text-black/50">
-          {order.items.length} line{order.items.length === 1 ? "" : "s"}
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        {!compact && (
+          <p className="truncate text-sm font-medium text-gray-900">{title}</p>
+        )}
+        <p className={`font-mono text-xs text-gray-400 ${compact ? "" : "mt-0.5"}`}>{shortId}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <StatusBadge status={order.status} />
+          <span className="text-xs text-gray-400">
+            {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Amount + arrow */}
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="text-sm font-semibold tabular-nums text-gray-900">
+          {formatApiMoney(amount, currency)}
         </span>
-        {order.payment?.provider ? (
-          <span className="text-xs text-black/45">via {order.payment.provider}</span>
-        ) : null}
+        <ArrowRight className="h-4 w-4 text-gray-300 transition group-hover:text-[#5C4AE6]" aria-hidden />
       </div>
     </Link>
   );

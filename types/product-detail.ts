@@ -61,6 +61,8 @@ export interface ProductDetailLayoutProps {
   viewingCount?: number | null;
   /** 0–5 filled stars; omit for all-outline stars. */
   rating?: number;
+  /** Total review/rating count shown next to stars. */
+  ratingCount?: number;
   /** Styled availability row (dot, low-stock copy). */
   availabilitySlot?: ReactNode;
   variantSlots?: ProductDetailVariantSlot[];

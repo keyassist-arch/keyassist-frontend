@@ -40,7 +40,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           title: product.title,
           price: product.price,
           currency: product.currency,
-          image: product.images[0] ?? "/globe.svg",
+          image: product.images[0] ?? "/product-placeholder.svg",
           quantity,
           variant,
           marketplace: product.marketplace,

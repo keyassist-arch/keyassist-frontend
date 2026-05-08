@@ -32,8 +32,7 @@ export function SearchInput({ onSearch, variant = "default" }: SearchInputProps)
           id={inputId}
           type="search"
           enterKeyHint="search"
-          className={variant === "hero" ? "input flex-1 rounded-none" : "input rounded-none"}
-          style={{ borderRadius: 0 }}
+          className={variant === "hero" ? "input flex-1" : "input"}
           placeholder="Paste: Amazon / Apple / Jumia / Nike URL"
           value={value}
           onChange={(event) => setValue(event.target.value)}

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 
 export function ProductDetailGallery({
   images,
@@ -12,48 +13,83 @@ export function ProductDetailGallery({
   alt: string;
   className?: string;
 }) {
-  const list = images.length ? images : ["/file.svg"];
+  const list = images.length ? images : ["/product-placeholder.svg"];
   const [active, setActive] = useState(0);
   const main = list[Math.min(active, list.length - 1)];
 
-  return (
-    <div className={`flex flex-col gap-4 sm:flex-row sm:items-start ${className}`}>
-      {list.length > 1 ? (
-        <ul
-          className="flex flex-row gap-2 overflow-x-auto pb-1 sm:max-h-[min(70vh,640px)] sm:w-[4.5rem] sm:flex-shrink-0 sm:flex-col sm:overflow-y-auto sm:pb-0 sm:pr-1"
-          role="list"
-        >
-          {list.map((src, i) => (
-            <li key={`${src}-${i}`} className="flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setActive(i)}
-                className={`relative h-16 w-16 overflow-hidden border bg-white transition sm:h-[4.5rem] sm:w-[4.5rem] ${
-                  i === active ? "border-shop-ink ring-1 ring-shop-ink" : "border-black/10 hover:border-black/30"
-                }`}
-                aria-label={`Image ${i + 1}`}
-                aria-current={i === active ? "true" : undefined}
-              >
-                <Image src={src} alt="" fill className="object-cover" sizes="72px" unoptimized />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+  const prev = () => setActive((i) => Math.max(0, i - 1));
+  const next = () => setActive((i) => Math.min(list.length - 1, i + 1));
 
-      <div
-        className="relative aspect-square w-full min-w-0 flex-1 overflow-hidden bg-shop-surface"
-        style={{ border: "1px solid var(--shop-border)" }}
-      >
-        <Image
-          src={main}
-          alt={alt}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, min(960px, 55vw)"
-          unoptimized
-          priority
-        />
+  return (
+    <div className={`flex gap-3 ${className}`}>
+      {/* Left thumbnail strip */}
+      {list.length > 1 && (
+        <div className="flex w-[60px] shrink-0 flex-col gap-2 overflow-y-auto">
+          {list.map((src, i) => (
+            <button
+              key={`${src}-${i}`}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`View image ${i + 1}`}
+              aria-current={i === active ? "true" : undefined}
+              className={`relative h-[60px] w-[60px] shrink-0 overflow-hidden rounded-xl border-2 bg-gray-50 transition ${
+                i === active
+                  ? "border-gray-900"
+                  : "border-transparent hover:border-gray-300"
+              }`}
+            >
+              <Image src={src} alt="" fill className="object-cover" sizes="60px" unoptimized />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Main image */}
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gray-50">
+        <div className="aspect-square w-full">
+          <Image
+            src={main}
+            alt={alt}
+            fill
+            className="object-contain p-4"
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            unoptimized
+            priority
+          />
+        </div>
+
+        {/* Zoom */}
+        <button
+          type="button"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white"
+          aria-label="Zoom"
+        >
+          <ZoomIn className="h-4 w-4 text-gray-600" />
+        </button>
+
+        {/* Prev */}
+        {active > 0 && (
+          <button
+            type="button"
+            onClick={prev}
+            className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-4 w-4 text-gray-700" />
+          </button>
+        )}
+
+        {/* Next */}
+        {active < list.length - 1 && (
+          <button
+            type="button"
+            onClick={next}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white"
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-4 w-4 text-gray-700" />
+          </button>
+        )}
       </div>
     </div>
   );

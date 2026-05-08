@@ -1,40 +1,51 @@
 @import "tailwindcss";
 
-/* Slate-indigo + warm-stone palette */
+/* Key Assist design tokens (Shop-app-inspired) */
 :root {
   /* Full-bleed content width */
   --shop-layout-max: 1680px;
-  --background: #fafaf9;           /* warm stone-50 */
-  --foreground: #1c1917;           /* stone-900 */
-  --shop-surface: #fafaf9;
+
+  /* Surfaces */
+  --background: #f8f6f1; /* warm paper */
+  --foreground: #111827; /* slate-900-ish */
+  --shop-surface: var(--background);
   --shop-white: #ffffff;
-  --shop-ink: #1c1917;             /* stone-900 */
-  --shop-muted: #78716c;           /* stone-500 */
-  --shop-border: #e7e5e4;          /* stone-200 */
-  /* Primary actions: indigo */
-  --shop-primary: #3730a3;         /* indigo-800 */
-  --shop-primary-hover: #312e81;   /* indigo-900 */
-  /* Accent: indigo-500 */
-  --shop-accent: #6366f1;          /* indigo-500 */
-  --shop-accent-hover: #4f46e5;    /* indigo-600 */
-  --shop-accent-soft: #eef2ff;     /* indigo-50 */
+
+  /* Text + borders */
+  --shop-ink: #111827;
+  --shop-muted: #6b7280; /* gray-500 */
+  --shop-border: color-mix(in srgb, #111827 10%, transparent);
+
+  /* Brand */
+  --shop-primary: #5C4AE6;
+  --shop-primary-hover: #4c3bd6;
+  --shop-accent: #5C4AE6;
+  --shop-accent-hover: #4c3bd6;
+  --shop-accent-soft: color-mix(in srgb, var(--shop-accent) 10%, white);
+  --shop-accent-2: #7c6ef0;
+  --shop-primary-gradient: linear-gradient(135deg, #5C4AE6, #7c6ef0);
+
+  /* Shape + elevation */
+  --shop-radius: 20px;
+  --shop-radius-sm: 14px;
+  --shop-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
+  --shop-shadow-md: 0 10px 30px rgba(17, 24, 39, 0.10);
+  --shop-ring: 0 0 0 4px color-mix(in srgb, var(--shop-accent) 14%, transparent);
+
   /* Footer / top bar */
-  --shop-dark: #1c1917;            /* stone-900 */
-  --shop-dark-soft: #292524;       /* stone-800 */
+  --shop-dark: #0b1220;
+  --shop-dark-soft: #121a2b;
   /* Promo triptych + feature banner */
   --shop-promo-peach: #f7e7dc;     /* keep warm peach */
-  --shop-promo-sage: #6366f1;      /* updated to indigo */
+  --shop-promo-sage: #5C4AE6;      /* brand purple */
   --shop-promo-tan: #e7e5e4;       /* stone-200 */
   --shop-promo-slate: #1c1917;     /* stone-900 */
   /* Product UI */
   --shop-sale: #dc2626;            /* red-600 */
   --shop-star: #f59e0b;            /* amber-500 */
-  /* Legacy aliases */
+  /* Legacy alias — keep only this one; --shop-ink-soft used in a few components */
   --shop-cream: #fafaf9;
   --shop-ink-soft: #292524;
-  --shop-green: #6366f1;
-  --shop-green-hover: #4f46e5;
-  --shop-green-soft: #eef2ff;
 }
 
 @theme inline {
@@ -65,23 +76,27 @@ body {
 }
 
 .card {
-  @apply rounded-2xl border p-6;
+  @apply border p-6;
+  border-radius: var(--shop-radius);
   border-color: var(--shop-border);
   background: var(--shop-white);
+  box-shadow: var(--shop-shadow-sm);
 }
 
 .btn-primary {
-  @apply rounded-none px-6 py-2.5 text-sm font-medium text-white transition;
-  background: var(--shop-primary);
+  @apply px-6 py-2.5 text-sm font-medium text-white transition;
+  border-radius: 999px;
+  background: var(--shop-primary-gradient);
+  box-shadow: var(--shop-shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--shop-primary-hover);
+  filter: saturate(1.05) brightness(0.98);
 }
 
 .btn-primary:focus-visible {
-  outline: 2px solid var(--shop-accent);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--shop-shadow-sm), var(--shop-ring);
 }
 
 .btn-primary:disabled {
@@ -90,19 +105,21 @@ body {
 }
 
 .btn-secondary {
-  @apply rounded-none border px-6 py-2.5 text-sm font-medium transition;
-  border-color: rgba(26, 26, 26, 0.2);
+  @apply border px-6 py-2.5 text-sm font-medium transition;
+  border-radius: 999px;
+  border-color: var(--shop-border);
   color: var(--shop-ink);
+  background: color-mix(in srgb, white 90%, var(--background));
+  box-shadow: var(--shop-shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--shop-accent-soft);
-  border-color: var(--shop-accent);
 }
 
 .btn-secondary:focus-visible {
-  outline: 2px solid var(--shop-ink);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--shop-shadow-sm), var(--shop-ring);
 }
 
 .btn-secondary:disabled {
@@ -110,18 +127,59 @@ body {
   cursor: not-allowed;
 }
 
-/* Text fields, selects, textareas — sharp corners to match buttons */
+.btn-ghost {
+  @apply px-6 py-2.5 text-sm font-medium transition;
+  border-radius: 999px;
+  color: var(--shop-ink);
+  background: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(26, 26, 26, 0.06);
+}
+
+.btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: var(--shop-ring);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  @apply rounded-xl px-6 py-2.5 text-sm font-medium text-white transition;
+  background: #dc2626;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-danger:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+.btn-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Text fields, selects, textareas */
 .input {
-  @apply w-full rounded-none border bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-black/35;
+  @apply w-full border bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-black/35;
+  border-radius: 999px;
   border-color: var(--shop-border);
   appearance: none;
   -webkit-appearance: none;
-  border-radius: 0;
+  box-shadow: var(--shop-shadow-sm);
 }
 
 .input:focus {
   border-color: var(--shop-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shop-accent) 12%, transparent);
+  box-shadow: var(--shop-shadow-sm), var(--shop-ring);
 }
 
 input.input[type="search"]::-webkit-search-decoration,

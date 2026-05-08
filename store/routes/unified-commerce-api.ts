@@ -9,6 +9,7 @@ import type {
   CartResponse,
   CreateOrderRequest,
   CreateIssueRequest,
+  CreatePriceDisputeRequest,
   CreateRefundRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
@@ -23,7 +24,12 @@ import type {
   MeResponse,
   OrderResponse,
   OrderStatus,
+  PasskeyCredential,
+  PasskeyRegisterFinishRequest,
+  PasskeyRegisterFinishResponse,
+  PasskeyLoginFinishResponse,
   PatchIssueRequest,
+  PatchShippingRatesRequest,
   PendingPaymentResponse,
   PatchAdminOrderRequest,
   PatchMeRequest,
@@ -45,7 +51,13 @@ import type {
   CartSyncRequest,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  SaveRecord,
+  SaveStatusResponse,
   ScrapePreviewResponse,
+  ShippingQuoteRequest,
+  ShippingQuoteResponse,
+  ShippingRatesResponse,
+  UserIssue,
   VerifyEmailRequest,
   VerifyEmailResponse,
   TokenResponse,
@@ -67,7 +79,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -420,6 +432,119 @@ export const unifiedCommerceApi = createApi({
       query: ({ id, body }) => ({ url: `/admin/reconciliation/issues/${id}/resolve-with-refund`, method: "POST", body }),
       invalidatesTags: ["Issues", "Refunds", "AdminOrders"],
     }),
+
+    /* ---------- Saves / wishlist (protected) ---------- */
+    getSaves: builder.query<SaveRecord[], void>({
+      query: () => ({ url: "/saves", method: "GET" }),
+      providesTags: ["Saves"],
+    }),
+
+    saveProduct: builder.mutation<SaveRecord, string>({
+      query: (productId) => ({ url: `/saves/${productId}`, method: "POST", body: {} }),
+      invalidatesTags: ["Saves"],
+    }),
+
+    unsaveProduct: builder.mutation<void, string>({
+      query: (productId) => ({ url: `/saves/${productId}`, method: "DELETE" }),
+      invalidatesTags: ["Saves"],
+    }),
+
+    getSaveStatus: builder.query<SaveStatusResponse, string>({
+      query: (productId) => ({ url: `/saves/${productId}/status`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "Saves", id }],
+    }),
+
+    /* ---------- Shipping quote (public) ---------- */
+    getShippingQuote: builder.mutation<ShippingQuoteResponse, ShippingQuoteRequest>({
+      query: (body) => ({ url: "/shipping/quote", method: "POST", body }),
+    }),
+
+    /* ---------- User reconciliation ---------- */
+    createPriceDispute: builder.mutation<ReconciliationIssue, CreatePriceDisputeRequest>({
+      query: (body) => ({ url: "/reconciliation/price-disputes", method: "POST", body }),
+      invalidatesTags: ["MyIssues"],
+    }),
+
+    getMyIssues: builder.query<UserIssue[], { status?: string; orderId?: string; limit?: number; offset?: number } | void>({
+      query: (arg) => {
+        const params = new URLSearchParams();
+        if (arg && typeof arg === "object") {
+          if (arg.status) params.set("status", arg.status);
+          if (arg.orderId) params.set("orderId", arg.orderId);
+          if (arg.limit != null) params.set("limit", String(arg.limit));
+          if (arg.offset != null) params.set("offset", String(arg.offset));
+        }
+        const qs = params.toString();
+        return { url: qs ? `/reconciliation/my-issues?${qs}` : "/reconciliation/my-issues", method: "GET" };
+      },
+      providesTags: ["MyIssues"],
+    }),
+
+    getMyIssue: builder.query<UserIssue, string>({
+      query: (id) => ({ url: `/reconciliation/my-issues/${id}`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "MyIssues", id }],
+    }),
+
+    /* ---------- Passkeys (WebAuthn) ---------- */
+    passkeyLoginStart: builder.mutation<unknown, void>({
+      queryFn: async (_arg, api, extra) => {
+        const result = await refreshBaseQuery({ url: "/auth/passkey/login/start", method: "POST", body: {} }, api, extra);
+        if (result.error) return { error: result.error };
+        return { data: result.data };
+      },
+    }),
+
+    passkeyLoginFinish: builder.mutation<PasskeyLoginFinishResponse, unknown>({
+      queryFn: async (body, api, extra) => {
+        const result = await refreshBaseQuery({ url: "/auth/passkey/login/finish", method: "POST", body }, api, extra);
+        if (result.error) return { error: result.error };
+        const data = result.data as PasskeyLoginFinishResponse;
+        return { data };
+      },
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(credentialsReceived({ accessToken: data.accessToken, refreshToken: data.refreshToken, expiresIn: data.expiresIn }));
+        } catch {
+          /* surfaced in UI */
+        }
+      },
+    }),
+
+    passkeyRegisterStart: builder.mutation<unknown, void>({
+      query: () => ({ url: "/auth/passkey/register/start", method: "POST", body: {} }),
+    }),
+
+    passkeyRegisterFinish: builder.mutation<PasskeyRegisterFinishResponse, PasskeyRegisterFinishRequest>({
+      query: (body) => ({ url: "/auth/passkey/register/finish", method: "POST", body }),
+      invalidatesTags: ["PasskeyCredentials"],
+    }),
+
+    getPasskeyCredentials: builder.query<PasskeyCredential[], void>({
+      query: () => ({ url: "/auth/passkey/credentials", method: "GET" }),
+      providesTags: ["PasskeyCredentials"],
+    }),
+
+    patchPasskeyCredential: builder.mutation<PasskeyCredential, { id: string; friendlyName: string }>({
+      query: ({ id, friendlyName }) => ({ url: `/auth/passkey/credentials/${id}`, method: "PATCH", body: { friendlyName } }),
+      invalidatesTags: ["PasskeyCredentials"],
+    }),
+
+    deletePasskeyCredential: builder.mutation<void, string>({
+      query: (id) => ({ url: `/auth/passkey/credentials/${id}`, method: "DELETE" }),
+      invalidatesTags: ["PasskeyCredentials"],
+    }),
+
+    /* ---------- Admin shipping rates ---------- */
+    getAdminShippingRates: builder.query<ShippingRatesResponse | null, void>({
+      query: () => ({ url: "/admin/shipping-rates", method: "GET" }),
+      providesTags: ["ShippingRates"],
+    }),
+
+    patchAdminShippingRates: builder.mutation<ShippingRatesResponse, PatchShippingRatesRequest>({
+      query: (body) => ({ url: "/admin/shipping-rates", method: "PATCH", body }),
+      invalidatesTags: ["ShippingRates"],
+    }),
   }),
 });
 
@@ -473,4 +598,26 @@ export const {
   useGetIssueQuery,
   usePatchIssueMutation,
   useResolveWithRefundMutation,
+  // Saves / wishlist
+  useGetSavesQuery,
+  useSaveProductMutation,
+  useUnsaveProductMutation,
+  useGetSaveStatusQuery,
+  // Shipping quote
+  useGetShippingQuoteMutation,
+  // User reconciliation
+  useCreatePriceDisputeMutation,
+  useGetMyIssuesQuery,
+  useGetMyIssueQuery,
+  // Passkeys
+  usePasskeyLoginStartMutation,
+  usePasskeyLoginFinishMutation,
+  usePasskeyRegisterStartMutation,
+  usePasskeyRegisterFinishMutation,
+  useGetPasskeyCredentialsQuery,
+  usePatchPasskeyCredentialMutation,
+  useDeletePasskeyCredentialMutation,
+  // Admin shipping rates
+  useGetAdminShippingRatesQuery,
+  usePatchAdminShippingRatesMutation,
 } = unifiedCommerceApi;

@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.media-amazon.com", pathname: "/**" },
       { protocol: "https", hostname: "**.ssl-images-amazon.com", pathname: "/**" },
       { protocol: "https", hostname: "image.goat.com", pathname: "/**" },
+      { protocol: "https", hostname: "static.nike.com", pathname: "/**" },
+      { protocol: "https", hostname: "static.zara.net", pathname: "/**" },
+      { protocol: "https", hostname: "cdn.simpleicons.org", pathname: "/**" },
     ],
   },
 };

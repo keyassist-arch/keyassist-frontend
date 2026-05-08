@@ -21,7 +21,7 @@ export function ProductQuantityStepper({
 
   return (
     <div
-      className="inline-flex items-stretch border border-black/20 bg-white"
+      className="inline-flex items-stretch overflow-hidden rounded-xl border border-black/20 bg-white"
       role="group"
       aria-label="Quantity"
     >

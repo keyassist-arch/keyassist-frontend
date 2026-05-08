@@ -13,7 +13,7 @@ export function Steps({
         const isActive = idx === current;
         const isDone = idx < current;
         const common =
-          "flex items-center gap-2 rounded-none border px-4 py-2 text-sm transition dark:border-white/10";
+          "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm transition dark:border-white/10";
         const cls = isActive
           ? "border-black bg-black text-white dark:border-white"
           : isDone
@@ -22,7 +22,7 @@ export function Steps({
 
         const content = (
           <>
-            <span className={`inline-flex h-7 w-7 items-center justify-center rounded-none ${isDone ? "bg-black text-white" : "bg-black/5 text-black dark:bg-white/5 dark:text-white"}`}>
+            <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${isDone ? "bg-black text-white" : "bg-black/5 text-black dark:bg-white/5 dark:text-white"}`}>
               {isDone ? "✓" : idx + 1}
             </span>
             <span className="font-medium">{s.label}</span>

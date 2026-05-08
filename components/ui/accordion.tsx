@@ -43,7 +43,7 @@ export function Accordion({
                 aria-hidden
                 className={
                   tone === "dark"
-                    ? "inline-flex h-9 w-9 items-center justify-center rounded-none border border-shop-accent/50 text-xl leading-none text-shop-accent"
+                    ? "inline-flex h-9 w-9 items-center justify-center rounded-full border border-shop-accent/50 text-xl leading-none text-shop-accent"
                     : "text-lg leading-none"
                 }
               >

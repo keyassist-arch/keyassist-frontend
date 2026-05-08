@@ -361,6 +361,8 @@ export interface OrderResponse {
   serviceCharge?: string | number;
   discount?: string | number;
   fees?: string | number;
+  /** Shipping fee calculated by `POST /shipping/quote` and stored when `shipping` field sent on `POST /orders`. */
+  shippingFee?: string | number;
   total?: string | number;
   currency?: string;
   payment?: {
@@ -570,3 +572,100 @@ export interface NestValidationError {
   message: string | string[];
   error?: string;
 }
+
+// ─── Saves / Wishlist ─────────────────────────────────────────────────────────
+
+export interface SaveRecord {
+  id: string;
+  userId: string;
+  productId: string;
+  product?: ApiProduct;
+  createdAt?: string;
+}
+
+/** `GET /saves/:productId/status` */
+export interface SaveStatusResponse {
+  saved: boolean;
+}
+
+// ─── Shipping quote ────────────────────────────────────────────────────────────
+
+export interface ShippingQuoteRequest {
+  weight: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  destination: "lagos" | "outside_lagos";
+  service: "air" | "ocean_small";
+  bulkCommercial?: boolean;
+  isTV?: boolean;
+}
+
+export interface ShippingQuoteResponse {
+  carrier: string;
+  service: string;
+  destination: string;
+  actualWeight: number;
+  dimWeight: number;
+  billableWeight: number;
+  baseRate: number;
+  tvFee: number;
+  bulkSurcharge: number;
+  total: number;
+  breakdown: string[];
+}
+
+// ─── User reconciliation ───────────────────────────────────────────────────────
+
+export interface CreatePriceDisputeRequest {
+  orderId: string;
+  expectedTotal?: number;
+  reason?: string;
+}
+
+/** User-facing issue (same shape as admin `ReconciliationIssue` but returned from `/reconciliation/my-issues`). */
+export type UserIssue = ReconciliationIssue;
+
+// ─── Passkeys (WebAuthn) ───────────────────────────────────────────────────────
+
+export interface PasskeyCredential {
+  id: string;
+  credentialId: string;
+  deviceType: "singleDevice" | "multiDevice";
+  backedUp: boolean;
+  transports?: string[];
+  friendlyName?: string | null;
+  createdAt: string;
+}
+
+export interface PasskeyRegisterFinishRequest {
+  response: unknown;
+  friendlyName?: string;
+}
+
+export interface PasskeyRegisterFinishResponse {
+  verified: boolean;
+  credentialId: string;
+}
+
+export interface PasskeyLoginFinishResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: string;
+}
+
+// ─── Admin shipping rates ──────────────────────────────────────────────────────
+
+export interface ShippingRatesResponse {
+  airRateLagosPerLb?: number | null;
+  airRateOutsideLagosPerLb?: number | null;
+  airMinimumLagos?: number | null;
+  airMinimumOutsideLagos?: number | null;
+  minWeightLbs?: number | null;
+  bulkCommercialSurcharge?: number | null;
+  tvClearingFee?: number | null;
+  oceanSmallBoxRate?: number | null;
+  dimDivisor?: number | null;
+}
+
+export type PatchShippingRatesRequest = Partial<ShippingRatesResponse>;

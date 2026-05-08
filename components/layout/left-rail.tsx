@@ -1,0 +1,71 @@
+"use client";
+
+import Link from "next/link";
+import { Heart, LayoutGrid, ShoppingCart, Tag, Home } from "lucide-react";
+import { useAppSelector } from "@/store/hooks";
+import { useCart } from "@/context/cart-context";
+import { KeyAssistMark } from "@/components/ui/keyassist-logo";
+
+const railBtn =
+  "relative inline-flex h-11 w-11 items-center justify-center rounded-2xl text-shop-ink/65 transition hover:bg-black/5 hover:text-shop-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--shop-accent)_18%,transparent)]";
+
+const NAV_LINKS = [
+  { href: "/",        label: "Home",     icon: Home },
+  { href: "/shop",    label: "Browse",   icon: LayoutGrid },
+  { href: "/products",label: "Products", icon: Tag },
+  { href: "/",        label: "Saved",    icon: Heart, isCart: false, isSaved: true },
+];
+
+export function LeftRail() {
+  const token = useAppSelector((s) => s.auth.accessToken);
+  const profileHref = token ? "/dashboard" : "/auth/login";
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  return (
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center bg-white py-5 lg:flex">
+      {/* ── Logo ── */}
+      <Link href="/" aria-label="Key Assist home" className="mb-2 flex h-11 w-11 items-center justify-center">
+        <KeyAssistMark size={38} />
+      </Link>
+
+      {/* ── Nav links — centred vertically ── */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-1">
+        <Link href="/" aria-label="Home" className={railBtn}>
+          <Home className="h-5 w-5" aria-hidden />
+        </Link>
+        <Link href="/shop" aria-label="Browse" className={railBtn}>
+          <LayoutGrid className="h-5 w-5" aria-hidden />
+        </Link>
+        <Link href="/products" aria-label="Products" className={railBtn}>
+          <Tag className="h-5 w-5" aria-hidden />
+        </Link>
+        <Link href="/cart" aria-label="Cart" className={railBtn}>
+          <ShoppingCart className="h-5 w-5" aria-hidden />
+          {cartCount > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#5C4AE6" }}>
+              {cartCount > 9 ? "9+" : cartCount}
+            </span>
+          )}
+        </Link>
+        <button type="button" aria-label="Saved" className={railBtn}>
+          <Heart className="h-5 w-5" aria-hidden />
+        </button>
+      </div>
+
+      {/* ── Profile — bottom ── */}
+      <Link
+        href={profileHref}
+        aria-label={token ? "Your account" : "Sign in"}
+        className={railBtn}
+        title={token ? "Your account" : "Sign in / Sign up"}
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
+          {token ? "Me" : "→"}
+        </span>
+      </Link>
+
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-black/5" aria-hidden />
+    </aside>
+  );
+}

@@ -3,19 +3,13 @@ import { siteContext } from "@/lib/site-context";
 
 export function StoreTopBar() {
   return (
-    <div className="w-full text-xs text-white" style={{ background: "var(--shop-dark)" }}>
-      <div className="mx-auto flex max-w-[var(--shop-layout-max)] flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-8">
-        <p className="max-w-3xl text-white/95">{siteContext.topBar.left}</p>
-        <nav className="flex flex-wrap items-center gap-4 font-medium">
-          <Link href="/dashboard" className="hover:underline">
-            Track order
-          </Link>
-          <Link href="/faq" className="hover:underline">
-            Help
-          </Link>
-          <Link href="/contact" className="hover:underline">
-            Contact
-          </Link>
+    <div className="w-full text-white" style={{ background: "var(--shop-primary-gradient)" }}>
+      <div className="mx-auto flex max-w-[var(--shop-layout-max)] items-center justify-between gap-2 px-4 py-1.5 sm:px-8">
+        <p className="text-xs font-medium text-white/90">{siteContext.topBar.left}</p>
+        <nav className="hidden items-center gap-4 text-xs font-semibold sm:flex">
+          <Link href="/dashboard" className="opacity-80 transition hover:opacity-100">Track order</Link>
+          <Link href="/faq" className="opacity-80 transition hover:opacity-100">Help</Link>
+          <Link href="/contact" className="opacity-80 transition hover:opacity-100">Contact</Link>
         </nav>
       </div>
     </div>

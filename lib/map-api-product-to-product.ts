@@ -41,7 +41,7 @@ export function apiProductToProduct(api: ApiProduct): Product {
     description: api.description ?? "",
     price,
     currency: api.currency || "USD",
-    images: api.images?.length ? api.images : ["/file.svg"],
+    images: api.images?.length ? api.images : ["/product-placeholder.svg"],
     variants,
     category: api.brand?.trim() ?? (api.source ? retailerLabelFromSource(api.source) : "Catalog"),
     collection: "Store",

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Heart, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useCart } from "@/context/cart-context";
@@ -82,6 +82,20 @@ function stableViewingCount(productId: string) {
   const n = parseInt(hex, 16);
   const base = Number.isFinite(n) ? n % 38 : 0;
   return 18 + base;
+}
+
+function stableRatingCount(productId: string) {
+  const hex = productId.replace(/-/g, "").slice(4, 12);
+  const n = parseInt(hex, 16);
+  const base = Number.isFinite(n) ? n % 350 : 0;
+  return 47 + base;
+}
+
+function stableRating(productId: string) {
+  const hex = productId.replace(/-/g, "").slice(12, 16);
+  const n = parseInt(hex, 16);
+  const base = Number.isFinite(n) ? (n % 10) / 10 : 0;
+  return Math.round((3.5 + base * 1.5) * 2) / 2;
 }
 
 function configurationRowLabel(row: ApiConfigurationPrice): string {
@@ -214,7 +228,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const original = api ? coerceNumber(api.originalPrice, 0) : 0;
   const sale = api ? coerceNumber(api.salePrice ?? api.originalPrice ?? 0, 0) : 0;
   const currency = api?.currency ?? "USD";
-  const images = api?.images?.length ? api.images : ["/file.svg"];
+  const images = api?.images?.length ? api.images : ["/product-placeholder.svg"];
   const stockRaw = api?.stockQuantity;
   const stockNum = stockRaw == null ? null : coerceNumber(stockRaw, 0);
   const inStock = stockNum == null || stockNum > 0;
@@ -282,7 +296,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       marketplace,
       category: api.brand?.trim() ?? retailer ?? "Catalog",
       collection: "Store",
-      images: api.images?.length ? api.images : ["/file.svg"],
+      images: api.images?.length ? api.images : ["/product-placeholder.svg"],
       variants: variantsForProduct,
       stock: stockNum ?? UNLIMITED_LOCAL_STOCK,
       deliveryEstimate: "Set at checkout",
@@ -346,27 +360,20 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   }
 
   const availabilitySlot =
-    stockNum == null ? (
-      <span className="inline-flex items-center gap-2 text-shop-ink">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
-        Available to order
-      </span>
-    ) : stockNum <= 0 ? (
-      <span className="inline-flex items-center gap-2 text-shop-sale">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
+    stockNum == null ? null
+    : stockNum <= 0 ? (
+      <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
         Out of stock
       </span>
-    ) : stockNum < 100 ? (
-      <span className="inline-flex items-center gap-2 text-shop-ink">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-orange-500" aria-hidden />
-        Low stock: {stockNum} left
+    ) : stockNum < 5 ? (
+      <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-500">
+        Only {stockNum} left
       </span>
-    ) : (
-      <span className="inline-flex items-center gap-2 text-shop-ink">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
-        In stock
+    ) : stockNum < 20 ? (
+      <span className="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600">
+        Low stock — {stockNum} remaining
       </span>
-    );
+    ) : null;
 
   const variantSlots =
     dimensions.length > 0
@@ -401,21 +408,27 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               })}
             </div>
           ) : (
-            <label className="block max-w-md">
-              <span className="sr-only">{dim.name}</span>
-              <select
-                className="input mt-0 block w-full"
-                value={selection[dim.name] ?? dim.options[0] ?? ""}
-                onChange={(e) => setSelection((prev) => ({ ...prev, [dim.name]: e.target.value }))}
-                aria-label={dim.name}
-              >
-                {dim.options.map((opt) => (
-                  <option key={opt} value={opt}>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={dim.name}>
+              {dim.options.map((opt) => {
+                const sel = selection[dim.name] ?? dim.options[0] ?? "";
+                const active = sel === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSelection((prev) => ({ ...prev, [dim.name]: opt }))}
+                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                      active
+                        ? "border-gray-900 bg-gray-900 text-white"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                    }`}
+                    aria-pressed={active}
+                  >
                     {opt}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  </button>
+                );
+              })}
+            </div>
           ),
         }))
       : undefined;
@@ -424,14 +437,15 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     <InnerShell>
       <ProductDetailLayout
         crumbs={crumbs}
+        eyebrow={api.brand?.trim() ?? retailer}
         headline={api.title}
         images={images}
         imageAlt={api.title}
         priceCurrent={formatApiMoney(api.salePrice ?? api.originalPrice, currency)}
         priceCompareAt={showCompare ? formatApiMoney(api.originalPrice, currency) : undefined}
         discountPercent={discountPercent}
-        heroExcerpt={heroExcerptFromApi(api)}
-        showDealCountdown={Boolean(showCompare)}
+        rating={stableRating(api.id)}
+        ratingCount={stableRatingCount(api.id)}
         viewingCount={stableViewingCount(api.id)}
         availabilitySlot={availabilitySlot}
         variantSlots={variantSlots}
@@ -448,32 +462,49 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         actionsSlot={
           <>
             {formErr ? <p className="w-full text-sm text-red-600">{formErr}</p> : null}
-            {!token ? (
-              <p className="w-full text-xs text-shop-muted">Sign in to sync this item with your account cart.</p>
-            ) : null}
             <button
               type="button"
               disabled={!inStock || adding}
               onClick={onAdd}
-              className="w-full rounded-none bg-black py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: "#5C4AE6" }}
             >
               {adding ? "Adding…" : "Add to cart"}
             </button>
-            <div className="flex flex-wrap gap-2">
+            <OpenCartTrigger className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800">
+              Buy now
+            </OpenCartTrigger>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                <Heart className="h-4 w-4" />
+                Save
+              </button>
               {listingUrl ? (
                 <a
                   href={listingUrl}
-                  className="btn-secondary inline-flex min-w-40 flex-1 items-center justify-center"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
+                  <Share2 className="h-4 w-4" />
                   View on {retailer}
                 </a>
-              ) : null}
-              <OpenCartTrigger className="btn-secondary inline-flex min-w-40 flex-1 items-center justify-center">
-                View bag
-              </OpenCartTrigger>
+              ) : (
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </button>
+              )}
             </div>
+            {!token ? (
+              <p className="w-full text-center text-xs text-gray-400">Sign in to sync this item with your account cart.</p>
+            ) : null}
           </>
         }
         metaLines={metaLines}

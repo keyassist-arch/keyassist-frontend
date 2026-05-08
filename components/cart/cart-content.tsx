@@ -15,7 +15,9 @@ import type { ApiProduct, CartItemResponse } from "@/types/api";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
+import { formatApiMoney } from "@/lib/format-price";
 
+/* ── helpers ── */
 function lineUnitPrice(item: CartItemResponse): number {
   const p = item.product;
   if (p && "title" in p) {
@@ -24,32 +26,23 @@ function lineUnitPrice(item: CartItemResponse): number {
   }
   return 0;
 }
-
-function linePrice(item: CartItemResponse): number {
-  return lineUnitPrice(item) * item.quantity;
-}
-
+function linePrice(item: CartItemResponse) { return lineUnitPrice(item) * item.quantity; }
 function lineTitle(item: CartItemResponse): string {
   const p = item.product;
-  if (p && "title" in p) return (p as ApiProduct).title;
-  return "Product";
+  return p && "title" in p ? (p as ApiProduct).title : "Product";
 }
-
 function lineCurrency(item: CartItemResponse): string {
   const p = item.product;
-  if (p && "currency" in p) return (p as ApiProduct).currency ?? "USD";
-  return "USD";
+  return p && "currency" in p ? ((p as ApiProduct).currency ?? "USD") : "USD";
 }
-
 function lineImage(item: CartItemResponse): string {
   const p = item.product;
   if (p && "images" in p) {
     const imgs = (p as ApiProduct).images;
     if (imgs?.length) return imgs[0]!;
   }
-  return "/file.svg";
+  return "/product-placeholder.svg";
 }
-
 function lineBrand(item: CartItemResponse): string {
   const p = item.product;
   if (p && "brand" in p) {
@@ -58,41 +51,39 @@ function lineBrand(item: CartItemResponse): string {
   }
   return "Store";
 }
+function fmtMoney(amount: number, currency: string) {
+  return formatApiMoney(amount, currency);
+}
+
+type TotalsSnapshot = {
+  subtotal: number;
+  serviceCharge: number;
+  discount: number;
+  fees: number;
+  total: number;
+};
 
 export type CartContentLayout = "page" | "drawer";
 
+/* ══════════════════════════════════════════
+   DRAWER — unchanged visual
+══════════════════════════════════════════ */
+
 function DrawerLineItem({
-  imageSrc,
-  imageAlt,
-  brand,
-  title,
-  variantLine,
-  unitLabel,
-  lineTotalLabel,
-  quantity,
-  onQuantityChange,
-  onRemove,
-  maxQty,
-  disabled,
+  imageSrc, imageAlt, brand, title, variantLine,
+  unitLabel, lineTotalLabel, quantity,
+  onQuantityChange, onRemove, maxQty, disabled,
 }: {
-  imageSrc: string;
-  imageAlt: string;
-  brand: string;
-  title: string;
-  variantLine?: string;
-  unitLabel: string;
-  lineTotalLabel: string;
-  quantity: number;
-  onQuantityChange: (q: number) => void;
-  onRemove: () => void;
-  maxQty?: number;
-  disabled?: boolean;
+  imageSrc: string; imageAlt: string; brand: string; title: string;
+  variantLine?: string; unitLabel: string; lineTotalLabel: string;
+  quantity: number; onQuantityChange: (q: number) => void;
+  onRemove: () => void; maxQty?: number; disabled?: boolean;
 }) {
   return (
     <article className="border-b border-black/10 py-4 last:border-b-0">
       <div className="grid grid-cols-[4rem_1fr_minmax(4rem,auto)] gap-3">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-black/10 bg-neutral-100">
-          <Image src={imageSrc} alt={imageAlt} fill className="object-cover" sizes="64px" unoptimized />
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
+          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="64px" unoptimized />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-black/50">{brand}</p>
@@ -103,18 +94,13 @@ function DrawerLineItem({
             <div className="flex flex-col gap-1">
               <span className="text-xs text-black/60">Quantity</span>
               <ProductQuantityStepper
-                value={quantity}
-                onChange={onQuantityChange}
-                min={1}
-                max={maxQty}
-                disabled={disabled}
+                value={quantity} onChange={onQuantityChange}
+                min={1} max={maxQty} disabled={disabled}
               />
             </div>
             <button
-              type="button"
-              onClick={onRemove}
-              disabled={disabled}
-              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
+              type="button" onClick={onRemove} disabled={disabled}
+              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
               aria-label="Remove item"
             >
               <Trash2 size={18} strokeWidth={1.75} aria-hidden />
@@ -127,110 +113,61 @@ function DrawerLineItem({
   );
 }
 
-function formatDrawerSubtotal(amount: number, currency: string) {
-  if (currency === "USD") return `$${amount.toFixed(2)} USD`;
-  return `${currency} ${amount.toFixed(2)}`;
-}
-
-type TotalsSnapshot = {
-  subtotal: number;
-  serviceCharge: number;
-  discount: number;
-  fees: number;
-  total: number;
-};
-
 function DrawerFooter({
-  totals,
-  currencyLabel,
-  ctaDisabled,
-  onCheckoutNavigate,
-  signInHint,
+  totals, currencyLabel, ctaDisabled, onCheckoutNavigate, signInHint,
 }: {
-  totals: TotalsSnapshot;
-  currencyLabel: string;
-  ctaDisabled: boolean;
-  onCheckoutNavigate?: () => void;
-  signInHint?: boolean;
+  totals: TotalsSnapshot; currencyLabel: string;
+  ctaDisabled: boolean; onCheckoutNavigate?: () => void; signInHint?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const fmt = (n: number) => fmtMoney(n, currencyLabel);
 
   return (
     <div className="shrink-0 border-t border-black/10 bg-white px-4 py-4">
-      {signInHint ? (
+      {signInHint && (
         <p className="mb-3 text-center text-xs text-black/55">
-          <Link href="/auth/login" className="font-medium text-shop-accent underline hover:no-underline">
-            Sign in
-          </Link>{" "}
+          <Link href="/auth/login" className="font-medium underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
-      ) : null}
-
+      )}
       <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
+        type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
         className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-shop-ink"
       >
         Order special instructions
-        <ChevronDown
-          size={14}
-          className={`shrink-0 text-black/45 transition-transform ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
-          aria-hidden
-        />
+        <ChevronDown size={14} className={`shrink-0 text-black/45 transition-transform ${open ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden />
       </button>
-      {open ? (
-        <textarea
-          className="input mt-1 min-h-22 resize-y text-shop-ink"
-          rows={3}
-          placeholder="Gift message, delivery notes…"
-          aria-label="Order special instructions"
-        />
-      ) : null}
-
+      {open && (
+        <textarea className="input mt-1 min-h-22 resize-y" rows={3} placeholder="Gift message, delivery notes…" aria-label="Order special instructions" />
+      )}
       <div className="mt-4 flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium text-shop-ink">Subtotal</span>
-        <span className="text-sm font-bold tabular-nums text-shop-ink">
-          {formatDrawerSubtotal(totals.subtotal, currencyLabel)}
-        </span>
+        <span className="text-sm font-bold tabular-nums text-shop-ink">{fmt(totals.subtotal)}</span>
       </div>
       <div className="mt-2 space-y-1 text-xs text-black/55">
         <div className="flex items-center justify-between">
-          <span>Service charge</span>
-          <span>{formatDrawerSubtotal(totals.serviceCharge, currencyLabel)}</span>
+          <span>Service charge</span><span>{fmt(totals.serviceCharge)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Discount</span>
-          <span>-{formatDrawerSubtotal(totals.discount, currencyLabel)}</span>
+          <span>Discount</span><span>-{fmt(totals.discount)}</span>
         </div>
         <div className="flex items-center justify-between border-t border-black/10 pt-1 font-semibold text-shop-ink">
-          <span>Total</span>
-          <span>{formatDrawerSubtotal(totals.total, currencyLabel)}</span>
+          <span>Total</span><span>{fmt(totals.total)}</span>
         </div>
       </div>
       <p className="mt-2 text-xs text-black/50">Taxes and shipping calculated at checkout</p>
-
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Link
-          href="/cart"
-          onClick={onCheckoutNavigate}
-          className="rounded-none border border-black bg-black py-3 text-center text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-black/90"
+          href="/cart" onClick={onCheckoutNavigate}
+          className="rounded-full border border-gray-200 py-3 text-center text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
         >
-          View cart
+          View bag
         </Link>
         <Link
-          href="/checkout"
-          aria-disabled={ctaDisabled}
-          className={`rounded-none border border-black py-3 text-center text-xs font-semibold uppercase tracking-wide transition ${
-            ctaDisabled
-              ? "cursor-not-allowed border-black/20 bg-black/30 text-white/80"
-              : "bg-black text-white hover:bg-black/90"
-          }`}
-          onClick={(e) => {
-            if (ctaDisabled) e.preventDefault();
-            else onCheckoutNavigate?.();
-          }}
+          href="/checkout" aria-disabled={ctaDisabled}
+          className={`rounded-full py-3 text-center text-xs font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "cursor-not-allowed opacity-40" : ""}`}
+          style={{ background: "#5C4AE6" }}
+          onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
         >
           Check out
         </Link>
@@ -239,88 +176,129 @@ function DrawerFooter({
   );
 }
 
-export function CartPanelBody({
-  layout = "page",
-  onCheckoutNavigate,
+/* ══════════════════════════════════════════
+   PAGE — new design
+══════════════════════════════════════════ */
+
+function PageItemCard({
+  imageSrc, imageAlt, brand, title, variantLine, unitPrice,
+  lineTotal, currency, quantity, onQuantityChange, onRemove, maxQty, disabled,
 }: {
-  layout?: CartContentLayout;
-  onCheckoutNavigate?: () => void;
+  imageSrc: string; imageAlt: string; brand: string; title: string;
+  variantLine?: string; unitPrice: number; lineTotal: number; currency: string;
+  quantity: number; onQuantityChange: (q: number) => void;
+  onRemove: () => void; maxQty?: number; disabled?: boolean;
 }) {
-  const token = useAppSelector((s) => s.auth.accessToken);
-  const { items: localItems, removeItem, updateQuantity, subtotal: localSubtotal } = useCart();
+  return (
+    <article className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+      {/* Image */}
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+        <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1.5" sizes="96px" unoptimized />
+      </div>
 
-  const { data: apiCart, isLoading, isError, error, isFetching } = useGetCartQuery(undefined, {
-    skip: !token,
-  });
-  const [patchItem, { isLoading: isPatching }] = usePatchCartItemMutation();
-  const [deleteItem, { isLoading: isDeleting }] = useDeleteCartItemMutation();
+      {/* Info */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="text-[11px] font-medium text-gray-400">{brand}</p>
+        <p className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">{title}</p>
+        {variantLine && <p className="text-xs text-gray-400">{variantLine}</p>}
 
-  const apiItems = apiCart?.items ?? [];
-  const apiCurrency = apiCart?.currency ?? (apiItems[0] ? lineCurrency(apiItems[0]) : "USD");
-  const apiSubtotal = coerceNumber(apiCart?.subtotal, apiItems.reduce((sum, li) => sum + linePrice(li), 0));
-  const apiServiceCharge = coerceNumber(apiCart?.serviceCharge, 0);
-  const apiDiscount = coerceNumber(apiCart?.discount, 0);
-  const apiFees = coerceNumber(apiCart?.fees, apiServiceCharge - apiDiscount);
-  const apiTotal = coerceNumber(apiCart?.total, apiSubtotal + apiFees);
+        <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
+          <ProductQuantityStepper
+            value={quantity} onChange={onQuantityChange}
+            min={1} max={maxQty} disabled={disabled}
+          />
+          <button
+            type="button" onClick={onRemove} disabled={disabled}
+            className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-red-500 disabled:opacity-40"
+            aria-label="Remove item"
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            Remove
+          </button>
+        </div>
+      </div>
 
-  const gridClass =
-    layout === "drawer" ? "flex min-h-0 flex-1 flex-col" : "grid gap-6 lg:grid-cols-[1.5fr_1fr]";
+      {/* Price */}
+      <div className="flex shrink-0 flex-col items-end justify-between">
+        <p className="text-base font-bold tabular-nums text-gray-900">{fmtMoney(lineTotal, currency)}</p>
+        {quantity > 1 && (
+          <p className="text-[11px] tabular-nums text-gray-400">{fmtMoney(unitPrice, currency)} each</p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function PageSummary({
+  count, totals, currencyLabel, ctaDisabled, onCheckoutNavigate, signInHint,
+}: {
+  count: number; totals: TotalsSnapshot; currencyLabel: string;
+  ctaDisabled: boolean; onCheckoutNavigate?: () => void; signInHint?: boolean;
+}) {
+  const fmt = (n: number) => fmtMoney(n, currencyLabel);
 
   return (
-    <div className={layout === "drawer" ? "flex min-h-0 flex-1 flex-col" : "space-y-6"}>
-      {!token ? (
-        <div className={gridClass}>
-          <GuestCartSection
-            items={localItems}
-            removeItem={removeItem}
-            updateQuantity={updateQuantity}
-            subtotal={localSubtotal}
-            layout={layout}
-            onCheckoutNavigate={onCheckoutNavigate}
-          />
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:sticky lg:top-24">
+      <h2 className="mb-4 text-base font-bold text-gray-900">Order summary</h2>
+
+      <div className="space-y-3 text-sm">
+        <div className="flex items-center justify-between text-gray-600">
+          <span>Subtotal ({count} {count === 1 ? "item" : "items"})</span>
+          <span className="tabular-nums font-medium text-gray-900">{fmt(totals.subtotal)}</span>
         </div>
-      ) : (
-        <>
-          {(isLoading || isFetching) && layout !== "drawer" && <LoadingState label="Loading cart…" />}
-          {(isLoading || isFetching) && layout === "drawer" && (
-            <div className="flex flex-1 items-center justify-center p-8">
-              <LoadingState label="Loading cart…" />
-            </div>
-          )}
-          {isError && <ErrorState error={error} title="Could not load cart" />}
-          {!isLoading && !isError && (
-            <div className={gridClass}>
-              <ApiCartSection
-                items={apiItems}
-                totals={{
-                  subtotal: apiSubtotal,
-                  serviceCharge: apiServiceCharge,
-                  discount: apiDiscount,
-                  fees: apiFees,
-                  total: apiTotal,
-                }}
-                currency={apiCurrency}
-                onQuantityChange={(itemId, qty) => patchItem({ itemId, quantity: qty })}
-                onRemove={(itemId) => deleteItem(itemId)}
-                busy={isPatching || isDeleting}
-                layout={layout}
-                onCheckoutNavigate={onCheckoutNavigate}
-              />
-            </div>
-          )}
-        </>
+        {totals.serviceCharge > 0 && (
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Service charge</span>
+            <span className="tabular-nums">{fmt(totals.serviceCharge)}</span>
+          </div>
+        )}
+        {totals.discount > 0 && (
+          <div className="flex items-center justify-between text-green-600">
+            <span>Discount</span>
+            <span className="tabular-nums">-{fmt(totals.discount)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-gray-900">
+          <span className="font-semibold">Total</span>
+          <span className="text-xl font-bold tabular-nums">{fmt(totals.total)}</span>
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs text-gray-400">Taxes and shipping calculated at checkout.</p>
+
+      <Link
+        href="/checkout"
+        aria-disabled={ctaDisabled}
+        className={`mt-5 block w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "pointer-events-none opacity-40" : ""}`}
+        style={{ background: "#5C4AE6" }}
+        onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
+      >
+        Proceed to checkout
+      </Link>
+
+      {signInHint && (
+        <p className="mt-4 text-center text-xs text-gray-400">
+          <Link href="/auth/login" className="font-medium hover:underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
+          to sync your cart across devices
+        </p>
       )}
+
+      <Link
+        href="/shop"
+        className="mt-3 block w-full rounded-full border border-gray-200 py-3 text-center text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+      >
+        Continue shopping
+      </Link>
     </div>
   );
 }
 
+/* ══════════════════════════════════════════
+   GUEST + API SECTIONS
+══════════════════════════════════════════ */
+
 function GuestCartSection({
-  items,
-  removeItem,
-  updateQuantity,
-  subtotal,
-  layout,
-  onCheckoutNavigate,
+  items, removeItem, updateQuantity, subtotal, layout, onCheckoutNavigate,
 }: {
   items: ReturnType<typeof useCart>["items"];
   removeItem: (id: string) => void;
@@ -336,42 +314,25 @@ function GuestCartSection({
       <>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
           {items.length === 0 ? (
-            <p className="py-8 text-center text-sm text-black/55">Your cart is empty.</p>
-          ) : (
-            items.map((item) => {
-              const variantLine = item.variant ? `${item.variant.name}: ${item.variant.value}` : undefined;
-              const unit =
-                currency === "USD" ? `$${item.price.toFixed(2)}` : `${currency} ${item.price.toFixed(2)}`;
-              const lineTot =
-                currency === "USD"
-                  ? `$${(item.price * item.quantity).toFixed(2)}`
-                  : `${currency} ${(item.price * item.quantity).toFixed(2)}`;
-              return (
-                <DrawerLineItem
-                  key={item.id}
-                  imageSrc={item.image}
-                  imageAlt={item.title}
-                  brand={String(item.marketplace)}
-                  title={item.title}
-                  variantLine={variantLine}
-                  unitLabel={unit}
-                  lineTotalLabel={lineTot}
-                  quantity={item.quantity}
-                  onQuantityChange={(q) => updateQuantity(item.id, q)}
-                  onRemove={() => removeItem(item.id)}
-                />
-              );
-            })
-          )}
+            <p className="py-8 text-center text-sm text-black/55">Your bag is empty.</p>
+          ) : items.map((item) => (
+            <DrawerLineItem
+              key={item.id}
+              imageSrc={item.image}
+              imageAlt={item.title}
+              brand={String(item.marketplace)}
+              title={item.title}
+              variantLine={item.variant ? `${item.variant.name}: ${item.variant.value}` : undefined}
+              unitLabel={fmtMoney(item.price, currency)}
+              lineTotalLabel={fmtMoney(item.price * item.quantity, currency)}
+              quantity={item.quantity}
+              onQuantityChange={(q) => updateQuantity(item.id, q)}
+              onRemove={() => removeItem(item.id)}
+            />
+          ))}
         </div>
         <DrawerFooter
-          totals={{
-            subtotal,
-            serviceCharge: 0,
-            discount: 0,
-            fees: 0,
-            total: subtotal,
-          }}
+          totals={{ subtotal, serviceCharge: 0, discount: 0, fees: 0, total: subtotal }}
           currencyLabel={currency}
           ctaDisabled={items.length === 0}
           onCheckoutNavigate={onCheckoutNavigate}
@@ -381,80 +342,43 @@ function GuestCartSection({
     );
   }
 
+  /* Page layout */
   return (
-    <>
-      <section className="card space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Items</h2>
-          <Link href="/auth/login" className="shrink-0 text-sm font-medium text-shop-accent hover:underline">
-            Sign in to sync cart
-          </Link>
-        </div>
-        <div className="mt-2 space-y-4">
-          {items.length === 0 ? (
-            <p className="text-sm text-black/60">Your cart is empty.</p>
-          ) : (
-            items.map((item) => (
-              <article key={item.id} className="rounded-2xl border border-black/10 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <h3 className="truncate font-medium">{item.title}</h3>
-                    <p className="mt-1 text-xs text-black/60">
-                      {item.marketplace}
-                      {item.variant ? ` — ${item.variant.name}: ${item.variant.value}` : ""}
-                    </p>
-                  </div>
-                  <button className="btn-secondary w-fit shrink-0" type="button" onClick={() => removeItem(item.id)}>
-                    Remove
-                  </button>
-                </div>
-                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                  <label htmlFor={`qty-guest-${item.id}`} className="flex flex-col gap-1 text-sm text-black/70">
-                    <span>Quantity</span>
-                    <input
-                      id={`qty-guest-${item.id}`}
-                      className="input max-w-24"
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                    />
-                  </label>
-                  <p className="text-sm font-semibold tabular-nums">
-                    {item.currency} {(item.price * item.quantity).toFixed(2)}
-                  </p>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
-      <SummarySection
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <EmptyBag />
+        ) : items.map((item) => (
+          <PageItemCard
+            key={item.id}
+            imageSrc={item.image}
+            imageAlt={item.title}
+            brand={String(item.marketplace)}
+            title={item.title}
+            variantLine={item.variant ? `${item.variant.name}: ${item.variant.value}` : undefined}
+            unitPrice={item.price}
+            lineTotal={item.price * item.quantity}
+            currency={currency}
+            quantity={item.quantity}
+            onQuantityChange={(q) => updateQuantity(item.id, q)}
+            onRemove={() => removeItem(item.id)}
+          />
+        ))}
+      </div>
+      <PageSummary
         count={items.length}
-        totals={{
-          subtotal,
-          serviceCharge: 0,
-          discount: 0,
-          fees: 0,
-          total: subtotal,
-        }}
+        totals={{ subtotal, serviceCharge: 0, discount: 0, fees: 0, total: subtotal }}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}
         onCheckoutNavigate={onCheckoutNavigate}
+        signInHint
       />
-    </>
+    </div>
   );
 }
 
 function ApiCartSection({
-  items,
-  totals,
-  currency,
-  onQuantityChange,
-  onRemove,
-  busy,
-  layout,
-  onCheckoutNavigate,
+  items, totals, currency, onQuantityChange, onRemove, busy, layout, onCheckoutNavigate,
 }: {
   items: CartItemResponse[];
   totals: TotalsSnapshot;
@@ -470,37 +394,29 @@ function ApiCartSection({
       <>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
           {items.length === 0 ? (
-            <p className="py-8 text-center text-sm text-black/55">Your cart is empty.</p>
-          ) : (
-            items.map((item) => {
-              const unit = lineUnitPrice(item);
-              const variantLine = item.variantSelection
-                ? Object.entries(item.variantSelection)
-                    .map(([k, v]) => `${k}: ${v}`)
-                    .join(" · ")
-                : undefined;
-              return (
-                <DrawerLineItem
-                  key={item.id}
-                  imageSrc={lineImage(item)}
-                  imageAlt={lineTitle(item)}
-                  brand={lineBrand(item)}
-                  title={lineTitle(item)}
-                  variantLine={variantLine}
-                  unitLabel={currency === "USD" ? `$${unit.toFixed(2)}` : `${currency} ${unit.toFixed(2)}`}
-                  lineTotalLabel={
-                    currency === "USD"
-                      ? `$${linePrice(item).toFixed(2)}`
-                      : `${currency} ${linePrice(item).toFixed(2)}`
-                  }
-                  quantity={item.quantity}
-                  onQuantityChange={(q) => onQuantityChange(item.id, q)}
-                  onRemove={() => onRemove(item.id)}
-                  disabled={busy}
-                />
-              );
-            })
-          )}
+            <p className="py-8 text-center text-sm text-black/55">Your bag is empty.</p>
+          ) : items.map((item) => {
+            const unit = lineUnitPrice(item);
+            const variantLine = item.variantSelection
+              ? Object.entries(item.variantSelection).map(([k, v]) => `${k}: ${v}`).join(" · ")
+              : undefined;
+            return (
+              <DrawerLineItem
+                key={item.id}
+                imageSrc={lineImage(item)}
+                imageAlt={lineTitle(item)}
+                brand={lineBrand(item)}
+                title={lineTitle(item)}
+                variantLine={variantLine}
+                unitLabel={fmtMoney(unit, currency)}
+                lineTotalLabel={fmtMoney(linePrice(item), currency)}
+                quantity={item.quantity}
+                onQuantityChange={(q) => onQuantityChange(item.id, q)}
+                onRemove={() => onRemove(item.id)}
+                disabled={busy}
+              />
+            );
+          })}
         </div>
         <DrawerFooter
           totals={totals}
@@ -512,126 +428,122 @@ function ApiCartSection({
     );
   }
 
+  /* Page layout */
   return (
-    <>
-      <section className="card">
-        <h2 className="text-lg font-semibold">Items</h2>
-        <div className="mt-6 space-y-4">
-          {items.length === 0 ? (
-            <p className="text-sm text-black/60">Your cart is empty.</p>
-          ) : (
-            items.map((item) => (
-              <article key={item.id} className="rounded-2xl border border-black/10 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <h3 className="truncate font-medium">{lineTitle(item)}</h3>
-                    {item.variantSelection ? (
-                      <p className="mt-1 text-xs text-black/60">
-                        {Object.entries(item.variantSelection)
-                          .map(([k, v]) => `${k}: ${v}`)
-                          .join(" · ")}
-                      </p>
-                    ) : null}
-                  </div>
-                  <button
-                    className="btn-secondary w-fit shrink-0"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onRemove(item.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                  <label htmlFor={`qty-api-${item.id}`} className="flex flex-col gap-1 text-sm text-black/70">
-                    <span>Quantity</span>
-                    <input
-                      id={`qty-api-${item.id}`}
-                      className="input max-w-24"
-                      type="number"
-                      min={0}
-                      value={item.quantity}
-                      disabled={busy}
-                      onChange={(e) => onQuantityChange(item.id, Number(e.target.value))}
-                    />
-                  </label>
-                  <p className="text-sm font-semibold tabular-nums">
-                    {currency} {linePrice(item).toFixed(2)}
-                  </p>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
-      <SummarySection
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <EmptyBag />
+        ) : items.map((item) => {
+          const unit = lineUnitPrice(item);
+          const variantLine = item.variantSelection
+            ? Object.entries(item.variantSelection).map(([k, v]) => `${k}: ${v}`).join(" · ")
+            : undefined;
+          return (
+            <PageItemCard
+              key={item.id}
+              imageSrc={lineImage(item)}
+              imageAlt={lineTitle(item)}
+              brand={lineBrand(item)}
+              title={lineTitle(item)}
+              variantLine={variantLine}
+              unitPrice={unit}
+              lineTotal={linePrice(item)}
+              currency={currency}
+              quantity={item.quantity}
+              onQuantityChange={(q) => onQuantityChange(item.id, q)}
+              onRemove={() => onRemove(item.id)}
+              disabled={busy}
+            />
+          );
+        })}
+      </div>
+      <PageSummary
         count={items.length}
         totals={totals}
         currencyLabel={currency}
         ctaDisabled={items.length === 0}
         onCheckoutNavigate={onCheckoutNavigate}
       />
-    </>
+    </div>
   );
 }
 
-function SummarySection({
-  count,
-  totals,
-  currencyLabel,
-  ctaDisabled,
+function EmptyBag() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-20 text-center">
+      <p className="text-base font-semibold text-gray-900">Your bag is empty</p>
+      <p className="mt-1 text-sm text-gray-400">Browse the shop and add something you love.</p>
+      <Link
+        href="/shop"
+        className="mt-5 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        style={{ background: "#5C4AE6" }}
+      >
+        Browse shop
+      </Link>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUBLIC EXPORT
+══════════════════════════════════════════ */
+
+export function CartPanelBody({
+  layout = "page",
   onCheckoutNavigate,
 }: {
-  count: number;
-  totals: TotalsSnapshot;
-  currencyLabel: string;
-  ctaDisabled: boolean;
+  layout?: CartContentLayout;
   onCheckoutNavigate?: () => void;
 }) {
-  return (
-    <section className="card h-fit">
-      <h2 className="text-lg font-semibold">Order summary</h2>
-      <p className="mt-3 text-sm text-black/70">{count} items</p>
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="flex items-center justify-between gap-2">
-          <span>Subtotal</span>
-          <span className="font-medium tabular-nums">
-            {currencyLabel} {totals.subtotal.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span>Service charge</span>
-          <span className="font-medium tabular-nums">
-            {currencyLabel} {totals.serviceCharge.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span>Discount</span>
-          <span className="font-medium tabular-nums">
-            -{currencyLabel} {totals.discount.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span>Fees</span>
-          <span className="font-medium tabular-nums">
-            {currencyLabel} {totals.fees.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between border-t border-black/10 pt-2 text-base font-semibold">
-          <span>Total</span>
-          <span className="tabular-nums">
-            {currencyLabel} {totals.total.toFixed(2)}
-          </span>
-        </div>
+  const token = useAppSelector((s) => s.auth.accessToken);
+  const { items: localItems, removeItem, updateQuantity, subtotal: localSubtotal } = useCart();
+
+  const { data: apiCart, isLoading, isError, error, isFetching } = useGetCartQuery(undefined, { skip: !token });
+  const [patchItem, { isLoading: isPatching }] = usePatchCartItemMutation();
+  const [deleteItem, { isLoading: isDeleting }] = useDeleteCartItemMutation();
+
+  const apiItems = apiCart?.items ?? [];
+  const apiCurrency = apiCart?.currency ?? (apiItems[0] ? lineCurrency(apiItems[0]) : "USD");
+  const apiSubtotal    = coerceNumber(apiCart?.subtotal,      apiItems.reduce((s, li) => s + linePrice(li), 0));
+  const apiServiceCharge = coerceNumber(apiCart?.serviceCharge, 0);
+  const apiDiscount    = coerceNumber(apiCart?.discount,      0);
+  const apiFees        = coerceNumber(apiCart?.fees,          apiServiceCharge - apiDiscount);
+  const apiTotal       = coerceNumber(apiCart?.total,         apiSubtotal + apiFees);
+
+  if (!token) {
+    return (
+      <GuestCartSection
+        items={localItems}
+        removeItem={removeItem}
+        updateQuantity={updateQuantity}
+        subtotal={localSubtotal}
+        layout={layout}
+        onCheckoutNavigate={onCheckoutNavigate}
+      />
+    );
+  }
+
+  if (isLoading || isFetching) {
+    return layout === "drawer" ? (
+      <div className="flex flex-1 items-center justify-center p-8">
+        <LoadingState label="Loading cart…" />
       </div>
-      <Link
-        className="btn-primary mt-5 inline-block w-full text-center disabled:pointer-events-none disabled:opacity-50"
-        href="/checkout"
-        aria-disabled={ctaDisabled}
-        onClick={onCheckoutNavigate}
-      >
-        Proceed to checkout
-      </Link>
-    </section>
+    ) : <LoadingState label="Loading cart…" />;
+  }
+
+  if (isError) return <ErrorState error={error} title="Could not load cart" />;
+
+  return (
+    <ApiCartSection
+      items={apiItems}
+      totals={{ subtotal: apiSubtotal, serviceCharge: apiServiceCharge, discount: apiDiscount, fees: apiFees, total: apiTotal }}
+      currency={apiCurrency}
+      onQuantityChange={(itemId, qty) => patchItem({ itemId, quantity: qty })}
+      onRemove={(itemId) => deleteItem(itemId)}
+      busy={isPatching || isDeleting}
+      layout={layout}
+      onCheckoutNavigate={onCheckoutNavigate}
+    />
   );
 }

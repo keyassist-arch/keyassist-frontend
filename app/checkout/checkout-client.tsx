@@ -56,6 +56,7 @@ export function CheckoutClient() {
   const [initPayment, { isLoading: paying, isError: payErr, error: payError, reset: resetPayError }] =
     useInitializePaymentMutation();
 
+  const [mounted, setMounted] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [orderSnapshot, setOrderSnapshot] = useState<OrderResponse | null>(null);
   const [formError, setFormError] = useState("");
@@ -73,6 +74,8 @@ export function CheckoutClient() {
 
   const resumeParam = (searchParams.get("resume") ?? "").trim();
   const resumeId = resumeParam && isUuid(resumeParam) ? resumeParam : null;
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (resumeId) {
@@ -279,6 +282,14 @@ export function CheckoutClient() {
     myaza: "Myaza (crypto)",
   };
 
+  if (!mounted) {
+    return (
+      <InnerShell>
+        <LoadingState label="Loading…" />
+      </InnerShell>
+    );
+  }
+
   if (!token) {
     return (
       <InnerShell>
@@ -444,7 +455,7 @@ export function CheckoutClient() {
                     return (
                       <label
                         key={m.provider}
-                        className={`flex cursor-pointer items-center gap-3 border p-3 transition ${
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
                           isDisabled ? "cursor-not-allowed opacity-50" : ""
                         } ${
                           isSelected
