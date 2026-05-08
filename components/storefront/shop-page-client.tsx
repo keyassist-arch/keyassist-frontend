@@ -7,6 +7,7 @@ import { useGetCatalogProductsQuery } from "@/store/routes/unified-commerce-api"
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { CommunityCatalog } from "@/components/storefront/community-catalog";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { motion } from "framer-motion";
 
 /* ── Editorial carousel slides ── */
 const SLIDES = [
@@ -59,12 +60,22 @@ function EditorialCarousel() {
   const slide = SLIDES[idx];
 
   return (
-    <div className="relative mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
+    <motion.div
+      className="relative mx-auto max-w-(--shop-layout-max) px-4 sm:px-8"
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+    >
       <div className="relative overflow-hidden rounded-3xl" style={{ height: 340 }}>
         {/* Background */}
-        <div
+        <motion.div
           className="absolute inset-0 transition-all duration-500"
           style={{ background: slide.gradient }}
+          key={slide.id}
+          initial={{ opacity: 0.4, scale: 1.01 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
         />
         {/* Decorative shape / person silhouette suggestion */}
         <div
@@ -75,9 +86,13 @@ function EditorialCarousel() {
           }}
         />
         {/* Text overlay */}
-        <div
+        <motion.div
           className="absolute inset-0 flex flex-col justify-end p-7"
           style={{ background: slide.textBg }}
+          key={`${slide.id}-text`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
             Curated collection
@@ -92,7 +107,7 @@ function EditorialCarousel() {
           >
             Shop now <ChevronRight className="h-3.5 w-3.5" />
           </Link>
-        </div>
+        </motion.div>
 
         {/* Prev */}
         {idx > 0 && (
@@ -135,7 +150,7 @@ function EditorialCarousel() {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -143,24 +158,50 @@ function EditorialCarousel() {
 function BrowseCategories() {
   return (
     <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
-      <h2 className="mb-4 text-xl font-bold text-gray-900">Browse categories</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <motion.h2
+        className="mb-4 text-xl font-bold text-gray-900"
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+      >
+        Browse categories
+      </motion.h2>
+      <motion.div
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.06 } },
+        }}
+      >
         {BROWSE_CATS.map((cat) => (
-          <Link
+          <motion.div
             key={cat.label}
-            href={cat.href}
-            className="relative flex h-[110px] items-end overflow-hidden rounded-2xl p-4 transition hover:opacity-90"
-            style={{ background: cat.bg }}
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] } },
+            }}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
           >
-            <span
-              className="text-[13px] font-bold leading-tight"
-              style={{ color: cat.text }}
+            <Link
+              href={cat.href}
+              className="relative flex h-[110px] items-end overflow-hidden rounded-2xl p-4 transition hover:opacity-90"
+              style={{ background: cat.bg }}
             >
-              {cat.label}
-            </span>
-          </Link>
+              <span
+                className="text-[13px] font-bold leading-tight"
+                style={{ color: cat.text }}
+              >
+                {cat.label}
+              </span>
+            </Link>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -171,19 +212,39 @@ export function ShopPageClient() {
   const products = useMemo(() => (data ?? []).map(apiProductToProduct), [data]);
 
   return (
-    <div className="w-full bg-white">
+    <motion.div
+      className="w-full bg-white"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: { transition: { staggerChildren: 0.08 } },
+      }}
+    >
       {/* Explore heading */}
-      <div className="py-8 text-center">
+      <motion.div
+        className="py-8 text-center"
+        variants={{
+          hidden: { opacity: 0, y: 10 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] } },
+        }}
+      >
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Explore</h1>
-      </div>
+      </motion.div>
 
       {/* Editorial carousel */}
       <EditorialCarousel />
 
       {/* Browse categories */}
-      <section className="py-10">
+      <motion.section
+        className="py-10"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+      >
         <BrowseCategories />
-      </section>
+      </motion.section>
 
       {/* Catalog */}
       {isLoading && (
@@ -209,15 +270,21 @@ export function ShopPageClient() {
       )}
 
       {!isLoading && !isError && products.length > 0 && (
-        <div className="border-t border-gray-100">
+        <motion.div
+          className="border-t border-gray-100"
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+        >
           <CommunityCatalog
             products={products}
             title="All products"
             breadcrumbCurrent="Shop"
             sectionId="shop-catalog"
           />
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

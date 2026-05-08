@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight, Star } from "lucide-react";
+import { motion } from "framer-motion";
 
 type BrandCard = {
   id: string;
@@ -111,7 +114,14 @@ function RatingRow({ rating, count }: { rating: number; count: string }) {
 
 function BrandTile({ card }: { card: BrandCard }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md">
+    <motion.div
+      className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+      whileHover={{ y: -2 }}
+    >
       {/* Hero */}
       <div
         className="relative flex h-[210px] flex-col justify-between p-4"
@@ -132,7 +142,7 @@ function BrandTile({ card }: { card: BrandCard }) {
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -167,9 +177,15 @@ function BrandRow({
 
 export function HomeBrandCarousel() {
   return (
-    <section className="w-full border-t border-gray-100 bg-white py-6">
+    <motion.section
+      className="w-full border-t border-gray-100 bg-white py-6"
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+    >
       <BrandRow label="Menswear" href="/shop?q=menswear" cards={MENSWEAR} />
       <BrandRow label="Womenswear" href="/shop?q=womenswear" cards={WOMENSWEAR} />
-    </section>
+    </motion.section>
   );
 }

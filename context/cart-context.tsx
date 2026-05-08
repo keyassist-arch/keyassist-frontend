@@ -1,7 +1,17 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import type { CartItem, Product, ProductVariant } from "@/types";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  cartAddItem,
+  cartClear,
+  cartCloseDrawer,
+  cartOpenDrawer,
+  cartRemoveItem,
+  cartUpdateQuantity,
+  rehydrateCartFromStorage,
+} from "@/store/slices/cartSlice";
 
 interface CartContextValue {
   items: CartItem[];
@@ -18,54 +28,26 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const items = useAppSelector((s) => s.cart.items) as CartItem[];
+  const drawerOpen = useAppSelector((s) => s.cart.drawerOpen);
+
+  useEffect(() => {
+    dispatch(rehydrateCartFromStorage());
+  }, [dispatch]);
 
   const addItem = (product: Product, quantity: number, variant?: ProductVariant) => {
-    setItems((prev) => {
-      const key = `${product.id}-${variant?.id ?? "default"}`;
-      const existing = prev.find((i) => i.id === key);
-
-      if (existing) {
-        return prev.map((i) =>
-          i.id === key ? { ...i, quantity: i.quantity + quantity } : i
-        );
-      }
-
-      return [
-        ...prev,
-        {
-          id: key,
-          productId: product.id,
-          title: product.title,
-          price: product.price,
-          currency: product.currency,
-          image: product.images[0] ?? "/product-placeholder.svg",
-          quantity,
-          variant,
-          marketplace: product.marketplace,
-        },
-      ];
-    });
+    dispatch(cartAddItem({ product, quantity, variant }));
   };
 
-  const removeItem = (itemId: string) =>
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
+  const removeItem = (itemId: string) => dispatch(cartRemoveItem(itemId));
+  const updateQuantity = (itemId: string, quantity: number) => dispatch(cartUpdateQuantity({ itemId, quantity }));
+  const clearCart = () => dispatch(cartClear());
 
-  const updateQuantity = (itemId: string, quantity: number) =>
-    setItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, quantity: Math.max(1, quantity) } : item))
-    );
+  const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
 
-  const clearCart = () => setItems([]);
-
-  const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [items]
-  );
-
-  const openCartDrawer = () => setDrawerOpen(true);
-  const closeCartDrawer = () => setDrawerOpen(false);
+  const openCartDrawer = () => dispatch(cartOpenDrawer());
+  const closeCartDrawer = () => dispatch(cartCloseDrawer());
 
   return (
     <CartContext.Provider

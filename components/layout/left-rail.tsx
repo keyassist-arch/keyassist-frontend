@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Heart, LayoutGrid, ShoppingCart, Tag, Home } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import { useCart } from "@/context/cart-context";
+import { useLocalSaves } from "@/context/saves-context";
+import { useGetSavesQuery } from "@/store/routes/unified-commerce-api";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 
 const railBtn =
@@ -20,7 +22,10 @@ export function LeftRail() {
   const token = useAppSelector((s) => s.auth.accessToken);
   const profileHref = token ? "/dashboard" : "/auth/login";
   const { items } = useCart();
+  const { localSavedIds } = useLocalSaves();
+  const { data: serverSaves } = useGetSavesQuery(undefined, { skip: !token });
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const savedCount = token ? (serverSaves?.length ?? 0) : localSavedIds.size;
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center bg-white py-5 lg:flex">
@@ -48,9 +53,14 @@ export function LeftRail() {
             </span>
           )}
         </Link>
-        <button type="button" aria-label="Saved" className={railBtn}>
+        <Link href="/saves" aria-label="Saved" className={railBtn}>
           <Heart className="h-5 w-5" aria-hidden />
-        </button>
+          {savedCount > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#5C4AE6" }}>
+              {savedCount > 9 ? "9+" : savedCount}
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* ── Profile — bottom ── */}

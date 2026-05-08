@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Star } from "lucide-react";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+import { motion } from "framer-motion";
 
 const BRAND_COLOR = "#5C4AE6";
 
@@ -111,7 +112,15 @@ export function HomeShopHero() {
   };
 
   return (
-    <section className="w-full bg-white">
+    <motion.section
+      className="w-full bg-white"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: { transition: { staggerChildren: 0.08 } },
+      }}
+    >
       {/* Import overlay */}
       {isImportBlocking && (
         <div
@@ -132,11 +141,17 @@ export function HomeShopHero() {
       )}
 
       {/* ── Announcement bar ── */}
-      <div className="flex w-full items-center justify-center gap-2 bg-black px-4 py-2.5 text-[13px] font-medium text-white">
+      <motion.div
+        className="flex w-full items-center justify-center gap-2 bg-black px-4 py-2.5 text-[13px] font-medium text-white"
+        variants={{
+          hidden: { opacity: 0, y: -6 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] } },
+        }}
+      >
         <KeyAssistMark size={22} className="shrink-0" />
         Download Key Assist app.&nbsp;Available on iOS &amp; Android
         <span className="ml-0.5 text-white/60" aria-hidden>→</span>
-      </div>
+      </motion.div>
 
       {/* ── Hero body ── */}
       <div className="bg-white px-4 pb-10 pt-8 sm:px-8">
@@ -154,23 +169,37 @@ export function HomeShopHero() {
 
         {/* Brand + search + chips */}
         <div className="text-center">
-          <h1
+          <motion.h1
             className="text-[60px] font-black leading-none tracking-tight sm:text-[72px] lg:text-[84px]"
             style={{ color: BRAND_COLOR }}
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
+            }}
           >
             key assist
-          </h1>
+          </motion.h1>
 
-          <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-gray-500">
+          <motion.p
+            className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-gray-500"
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
+            }}
+          >
             Search across Amazon, Nike, Apple, Jumia and more — or paste a product link to import it instantly.
-          </p>
+          </motion.p>
 
           {/* Search / import bar */}
-          <form
+          <motion.form
             id="hero-search"
             onSubmit={onSubmit}
             className="mx-auto mt-5 max-w-[540px]"
             suppressHydrationWarning
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
+            }}
           >
             <div
               className={`flex items-center rounded-full border bg-white px-5 py-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition-colors ${
@@ -207,15 +236,23 @@ export function HomeShopHero() {
                 Product link detected — press Enter or ↵ to import
               </p>
             )}
-          </form>
+          </motion.form>
 
           {/* Marketplace chips */}
-          <div className="mt-5 flex items-center justify-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <motion.div
+            className="mt-5 flex items-center justify-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
+            }}
+          >
             {MARKETPLACES.map(({ label, href, slug, hex, iconBg }) => (
-              <a
+              <motion.a
                 key={label}
                 href={href}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+                whileHover={{ y: -1 }}
+                transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
               >
                 <span
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
@@ -231,11 +268,11 @@ export function HomeShopHero() {
                   />
                 </span>
                 {label}
-              </a>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

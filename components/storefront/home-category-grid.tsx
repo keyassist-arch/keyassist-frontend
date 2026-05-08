@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 const SECTIONS = [
   {
@@ -42,11 +45,33 @@ const SECTIONS = [
 
 export function HomeCategoryGrid() {
   return (
-    <section className="w-full border-t border-gray-100 bg-white py-6">
+    <motion.section
+      className="w-full border-t border-gray-100 bg-white py-6"
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+    >
       <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <motion.div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.06 } },
+          }}
+        >
           {SECTIONS.map((sec) => (
-            <div key={sec.id} className="flex flex-col gap-2">
+            <motion.div
+              key={sec.id}
+              className="flex flex-col gap-2"
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] } },
+              }}
+            >
               {/* Section header */}
               <Link
                 href={sec.href}
@@ -58,7 +83,12 @@ export function HomeCategoryGrid() {
               {/* 2-column tile grid */}
               <div className="grid grid-cols-2 gap-1">
                 {sec.tiles.map((tile) => (
-                  <Link
+                  <motion.div
+                    key={tile.label}
+                    whileHover={{ y: -2 }}
+                    transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+                  >
+                    <Link
                     key={tile.label}
                     href={tile.href}
                     className="relative block overflow-hidden rounded-2xl transition hover:opacity-90"
@@ -71,12 +101,13 @@ export function HomeCategoryGrid() {
                       {tile.label}
                     </span>
                   </Link>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

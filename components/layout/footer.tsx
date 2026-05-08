@@ -4,6 +4,14 @@ import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 
 const LINK_COLS = [
   {
+    heading: "Pages",
+    links: [
+      { label: "Shop",  href: "/shop" },
+      { label: "Cart",  href: "/cart" },
+      { label: "Saves", href: "/saves" },
+    ],
+  },
+  {
     heading: "Start selling",
     links: [
       { label: "For brands",     href: "/contact" },

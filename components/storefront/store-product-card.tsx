@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, type MouseEvent } from "react";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useLocalSaves } from "@/context/saves-context";
 import type { Product, ProductVariant } from "@/types";
 import { useAppSelector } from "@/store/hooks";
 import {
@@ -42,6 +43,7 @@ function StarRow({ filled, count }: { filled: number; count: number }) {
 
 export function StoreProductCard({ product }: { product: Product }) {
   const { addItem, openCartDrawer } = useCart();
+  const { toggleLocalSave, isSavedLocal } = useLocalSaves();
   const token = useAppSelector((s) => s.auth.accessToken);
   const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
   const [saveProduct] = useSaveProductMutation();
@@ -55,12 +57,16 @@ export function StoreProductCard({ product }: { product: Product }) {
 
   const brandLine = product.seller?.trim() || product.marketplace;
   const pdpHref = productDetailPath(product);
-  const isSaved = saveStatus?.saved ?? false;
+  const isSaved = token ? (saveStatus?.saved ?? false) : isSavedLocal(product.id);
 
   const onSave = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!token || !isUuid(product.id)) return;
+    if (!token) {
+      toggleLocalSave(product.id);
+      return;
+    }
+    if (!isUuid(product.id)) return;
     try {
       if (isSaved) {
         await unsaveProduct(product.id).unwrap();
@@ -140,6 +146,17 @@ export function StoreProductCard({ product }: { product: Product }) {
             stroke={isSaved ? "#5C4AE6" : "#6b7280"}
             strokeWidth={1.75}
           />
+        </button>
+
+        {/* Floating cart button */}
+        <button
+          type="button"
+          onClick={onAdd}
+          className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
+          aria-label="Add to cart"
+          disabled={addingApi}
+        >
+          <ShoppingCart className="h-4 w-4 text-gray-700" aria-hidden />
         </button>
       </Link>
 
