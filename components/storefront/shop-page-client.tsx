@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useGetCatalogProductsQuery } from "@/store/routes/unified-commerce-api";
@@ -58,6 +58,29 @@ const BROWSE_CATS = [
 function EditorialCarousel() {
   const [idx, setIdx] = useState(0);
   const slide = SLIDES[idx];
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pausedRef = useRef(false);
+
+  const goTo = (i: number) => setIdx((SLIDES.length + i) % SLIDES.length);
+
+  const startAuto = () => {
+    stopAuto();
+    intervalRef.current = setInterval(() => {
+      if (!pausedRef.current) goTo(idx + 1);
+    }, 4000);
+  };
+
+  const stopAuto = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    startAuto();
+    return stopAuto;
+  }, [idx]);
 
   return (
     <motion.div
@@ -67,7 +90,12 @@ function EditorialCarousel() {
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
     >
-      <div className="relative overflow-hidden rounded-3xl" style={{ height: 340 }}>
+      <div
+        className="relative overflow-hidden rounded-3xl"
+        style={{ height: 340 }}
+        onMouseEnter={() => { pausedRef.current = true; }}
+        onMouseLeave={() => { pausedRef.current = false; }}
+      >
         {/* Background */}
         <motion.div
           className="absolute inset-0 transition-all duration-500"
@@ -110,28 +138,24 @@ function EditorialCarousel() {
         </motion.div>
 
         {/* Prev */}
-        {idx > 0 && (
-          <button
-            type="button"
-            onClick={() => setIdx(idx - 1)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="h-4 w-4 text-gray-800" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => goTo(idx - 1)}
+          className="absolute left-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="h-4 w-4 text-gray-800" />
+        </button>
 
         {/* Next */}
-        {idx < SLIDES.length - 1 && (
-          <button
-            type="button"
-            onClick={() => setIdx(idx + 1)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="h-4 w-4 text-gray-800" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => goTo(idx + 1)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="h-4 w-4 text-gray-800" />
+        </button>
 
         {/* Dots */}
         <div className="absolute bottom-4 right-6 flex gap-1.5">
@@ -139,7 +163,7 @@ function EditorialCarousel() {
             <button
               key={i}
               type="button"
-              onClick={() => setIdx(i)}
+              onClick={() => { setIdx(i); }}
               aria-label={`Slide ${i + 1}`}
               className="h-1.5 rounded-full transition-all"
               style={{

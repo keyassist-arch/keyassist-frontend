@@ -102,13 +102,8 @@ export function HomeShopHero() {
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const pasted = e.clipboardData.getData("text").trim();
     if (!looksLikeUrl(pasted)) return;
-    // Let the paste land in the input, then auto-submit on the next frame
     e.preventDefault();
     setQ(pasted);
-    // Small rAF so the input visually shows the pasted value before the overlay appears
-    requestAnimationFrame(() => {
-      triggerImport(pasted);
-    });
   };
 
   return (

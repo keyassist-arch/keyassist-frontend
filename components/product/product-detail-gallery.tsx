@@ -45,13 +45,13 @@ export function ProductDetailGallery({
       )}
 
       {/* Main image */}
-      <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gray-50">
-        <div className="aspect-square w-full">
+      <div className="relative min-w-0 max-h-[500px] flex-1 overflow-hidden rounded-2xl bg-gray-50">
+        <div className="aspect-square w-full max-h-[500px]">
           <Image
             src={main}
             alt={alt}
             fill
-            className="object-contain p-4"
+            className="object-contain p-4 max-h-[500px]"
             sizes="(max-width: 1024px) 100vw, 55vw"
             unoptimized
             priority
