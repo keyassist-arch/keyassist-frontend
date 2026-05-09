@@ -623,6 +623,13 @@ export interface CreatePriceDisputeRequest {
   reason?: string;
 }
 
+export interface CreateUserIssueRequest {
+  orderId?: string;
+  type: IssueType;
+  subject: string;
+  description: string;
+}
+
 /** User-facing issue (same shape as admin `ReconciliationIssue` but returned from `/reconciliation/my-issues`). */
 export type UserIssue = ReconciliationIssue;
 

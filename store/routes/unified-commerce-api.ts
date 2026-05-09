@@ -11,6 +11,7 @@ import type {
   CreateIssueRequest,
   CreatePriceDisputeRequest,
   CreateRefundRequest,
+  CreateUserIssueRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   InitializePaymentRequest,
@@ -374,6 +375,11 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/admin/scrape-preview", method: "POST", body }),
     }),
 
+    deleteAdminProduct: builder.mutation<void, string>({
+      query: (id) => ({ url: `/admin/products/${id}`, method: "DELETE" }),
+      invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
     /* ---------- Reconciliation — refunds (admin) ---------- */
     createRefund: builder.mutation<ReconciliationRefund, CreateRefundRequest>({
       query: (body) => ({ url: "/admin/reconciliation/refunds", method: "POST", body }),
@@ -414,6 +420,12 @@ export const unifiedCommerceApi = createApi({
         }
         const qs = params.toString();
         return { url: qs ? `/admin/reconciliation/issues?${qs}` : "/admin/reconciliation/issues", method: "GET" };
+      },
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) return response;
+        if (response?.issues && Array.isArray(response.issues)) return response.issues;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        return Array.isArray(response) ? response : [];
       },
       providesTags: ["Issues"],
     }),
@@ -490,6 +502,11 @@ export const unifiedCommerceApi = createApi({
     getMyIssue: builder.query<UserIssue, string>({
       query: (id) => ({ url: `/reconciliation/my-issues/${id}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "MyIssues", id }],
+    }),
+
+    createUserIssue: builder.mutation<ReconciliationIssue, CreateUserIssueRequest>({
+      query: (body) => ({ url: "/reconciliation/issues", method: "POST", body }),
+      invalidatesTags: ["MyIssues"],
     }),
 
     /* ---------- Passkeys (WebAuthn) ---------- */
@@ -597,6 +614,7 @@ export const {
   usePatchAdminOrderMutation,
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,
+  useDeleteAdminProductMutation,
   useCreateRefundMutation,
   useGetRefundsQuery,
   useGetRefundQuery,
@@ -614,6 +632,7 @@ export const {
   useGetShippingQuoteMutation,
   // User reconciliation
   useCreatePriceDisputeMutation,
+  useCreateUserIssueMutation,
   useGetMyIssuesQuery,
   useGetMyIssueQuery,
   // Passkeys
