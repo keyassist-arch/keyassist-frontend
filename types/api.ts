@@ -349,22 +349,60 @@ export interface OrderCheckoutHint {
   nextStep: "initialize_payment" | "none" | string;
 }
 
+/**
+ * Pre-computed 3-line order summary from `GET /orders/:id`.
+ * Use this for the main order summary UI — do not compute totals from individual fields.
+ * `importAndDelivery` bundles marketplace tax, domestic/international shipping, customs, FX and risk buffers.
+ */
+export interface OrderDisplaySummary {
+  /** Product price × quantity total. */
+  product: string;
+  /** All import and delivery costs combined (shipping, customs, buffers). */
+  importAndDelivery: string;
+  /** Service charge (10% of product subtotal). */
+  serviceFee: string;
+  /** Loyalty discount (20% when subtotal > $1000, else "0.00"). */
+  discount: string;
+  /** Grand total. */
+  total: string;
+  currency: string;
+}
+
 export interface OrderResponse {
   id: string;
   status: OrderStatus;
   items: OrderItemSnapshot[];
   /** Next checkout action; present on `GET /orders/:id` (and related order payloads). */
   checkout?: OrderCheckoutHint;
+  /**
+   * Pre-computed 3-line summary — use this for the main order summary UI.
+   * Do not recompute totals from individual fields; use `pricingBreakdown` for the details drawer.
+   */
+  displaySummary?: OrderDisplaySummary;
   /** Present on `GET /orders/:id` for checkout / order detail UIs. */
   shippingAddress?: ShippingAddress | null;
   subtotal?: string | number;
   serviceCharge?: string | number;
   discount?: string | number;
   fees?: string | number;
-  /** Shipping fee calculated by `POST /shipping/quote` and stored when `shipping` field sent on `POST /orders`. */
+  /** Kingz international shipping fee (warehouse → customer). */
   shippingFee?: string | number;
+  /** Estimated marketplace tax. */
+  marketplaceTax?: string | number;
+  /** Estimated marketplace → warehouse shipping. */
+  marketplaceShipping?: string | number;
+  /** Warehouse receiving and processing fee. */
+  domesticHandling?: string | number;
+  /** Nigeria import duty + VAT + customs clearing fee combined. */
+  customsTotal?: string | number;
+  /** 2.5% exchange-rate buffer. */
+  fxBuffer?: string | number;
+  /** 6% operational risk buffer. */
+  riskBuffer?: string | number;
   total?: string | number;
   currency?: string;
+  /** Human-readable cost breakdown lines (same as `POST /landed-cost/quote`'s `breakdown`). */
+  pricingBreakdown?: string[];
   payment?: {
     provider?: string;
     methodDetails?: {
@@ -391,8 +429,16 @@ export interface OrderUpdatedEvent {
   status: OrderStatus | string;
 }
 
+export interface LandedCostInput {
+  destination: LandedCostDestination;
+  shippingService: LandedCostService;
+  category?: LandedCostCategory;
+}
+
 export interface CreateOrderRequest {
   shippingAddress?: ShippingAddress;
+  /** Required. Use the same destination/shippingService/category shown in `POST /landed-cost/quote`. */
+  landedCost: LandedCostInput;
 }
 
 export type PaymentProvider = "paystack" | "stripe" | "paypal" | "myaza";
@@ -602,9 +648,6 @@ export interface ShippingQuoteRequest {
 }
 
 export interface ShippingQuoteResponse {
-  carrier: string;
-  service: string;
-  destination: string;
   actualWeight: number;
   dimWeight: number;
   billableWeight: number;
@@ -612,6 +655,85 @@ export interface ShippingQuoteResponse {
   tvFee: number;
   bulkSurcharge: number;
   total: number;
+  breakdown: string[];
+}
+
+// ─── Landed cost quote ─────────────────────────────────────────────────────────
+
+export type LandedCostDestination = "lagos" | "outside_lagos";
+export type LandedCostService = "air" | "ocean_small";
+export type LandedCostCategory =
+  | "sneakers"
+  | "clothing"
+  | "phone"
+  | "laptop"
+  | "tablet"
+  | "tv"
+  | "electronics_small"
+  | "electronics_large"
+  | "accessories"
+  | "books"
+  | "generic";
+
+export type LandedCostMarketplace =
+  | "amazon"
+  | "apple"
+  | "nike"
+  | "converse"
+  | "zara"
+  | "stockx"
+  | "goat"
+  | "ebay"
+  | "shein"
+  | "jumia"
+  | "generic";
+
+/** `POST /landed-cost/quote` — Mode A (by productId) or Mode B (raw inputs). */
+export type LandedCostQuoteRequest =
+  | {
+      productId: string;
+      quantity: number;
+      destination: LandedCostDestination;
+      shippingService: LandedCostService;
+      category?: LandedCostCategory;
+      weightLbs?: number;
+      dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
+      displayCurrency?: string;
+    }
+  | {
+      productPriceUsd: number;
+      marketplace: LandedCostMarketplace;
+      quantity: number;
+      destination: LandedCostDestination;
+      shippingService: LandedCostService;
+      category?: LandedCostCategory;
+      weightLbs?: number;
+      dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
+      displayCurrency?: string;
+    };
+
+export interface LandedCostQuoteResponse {
+  marketplace?: string;
+  category?: string;
+  quantity: number;
+  estimatedWeightLbs?: number;
+  /** `high` = reliable data; `medium` = approximated; `low` = generic fallback — show disclaimer when low. */
+  marketplaceConfidence?: "high" | "medium" | "low";
+  productSubtotalUsd: number;
+  marketplaceTaxUsd: number;
+  marketplaceShippingUsd: number;
+  domesticHandlingUsd: number;
+  internationalShippingUsd: number;
+  customsDutyUsd: number;
+  customsVatUsd: number;
+  customsClearingFeeUsd: number;
+  fxBufferUsd: number;
+  riskBufferUsd: number;
+  serviceChargeUsd: number;
+  discountUsd: number;
+  totalUsd: number;
+  displayCurrency?: string;
+  totalDisplay?: number;
   breakdown: string[];
 }
 

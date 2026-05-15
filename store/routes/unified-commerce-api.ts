@@ -15,6 +15,8 @@ import type {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   InitializePaymentRequest,
+  LandedCostQuoteRequest,
+  LandedCostQuoteResponse,
   Login2faRequest,
   LoginRequest,
   LoginResult,
@@ -471,6 +473,11 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/shipping/quote", method: "POST", body }),
     }),
 
+    /* ---------- Landed cost quote (public) — use for checkout ---------- */
+    getLandedCostQuote: builder.mutation<LandedCostQuoteResponse, LandedCostQuoteRequest>({
+      query: (body) => ({ url: "/landed-cost/quote", method: "POST", body }),
+    }),
+
     /* ---------- User reconciliation ---------- */
     createPriceDispute: builder.mutation<ReconciliationIssue, CreatePriceDisputeRequest>({
       query: (body) => ({ url: "/reconciliation/price-disputes", method: "POST", body }),
@@ -630,6 +637,8 @@ export const {
   useGetSaveStatusQuery,
   // Shipping quote
   useGetShippingQuoteMutation,
+  // Landed cost quote
+  useGetLandedCostQuoteMutation,
   // User reconciliation
   useCreatePriceDisputeMutation,
   useCreateUserIssueMutation,

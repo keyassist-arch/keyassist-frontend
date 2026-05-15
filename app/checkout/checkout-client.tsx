@@ -14,9 +14,20 @@ import {
   useGetMeQuery,
   useGetOrderQuery,
   useGetPaymentMethodsQuery,
+  useGetLandedCostQuoteMutation,
   useInitializePaymentMutation,
 } from "@/store/routes/unified-commerce-api";
-import type { OrderResponse, PaymentInitResponse, PaymentMethodEntry, PaymentProvider } from "@/types/api";
+import type {
+  LandedCostDestination,
+  LandedCostService,
+  LandedCostCategory,
+  LandedCostQuoteResponse,
+  OrderDisplaySummary,
+  OrderResponse,
+  PaymentInitResponse,
+  PaymentMethodEntry,
+  PaymentProvider,
+} from "@/types/api";
 import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { coerceNumber } from "@/lib/coerce-number";
@@ -32,6 +43,36 @@ import { isUuid } from "@/lib/uuid";
 import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 
 const PAYPAL_STORAGE = "uc_paypal_checkout";
+
+function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
+  const cur = summary.currency;
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <span>Product</span>
+        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.product), cur)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-black/60">Import &amp; delivery</span>
+        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-black/60">Service fee</span>
+        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
+      </div>
+      {Number(summary.discount) > 0 && (
+        <div className="flex items-center justify-between">
+          <span className="text-black/60">Discount</span>
+          <span className="font-medium tabular-nums text-emerald-600">-{formatApiMoney(Number(summary.discount), cur)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
+        <span>Total</span>
+        <span className="tabular-nums">{formatApiMoney(Number(summary.total), cur)}</span>
+      </div>
+    </>
+  );
+}
 
 const DEFAULT_METHODS: PaymentMethodEntry[] = [
   { provider: "paystack", available: true, reason: null },
@@ -53,10 +94,12 @@ export function CheckoutClient() {
   const { data: cart, isLoading: cartLoading, refetch: refetchCart } = useGetCartQuery(undefined, { skip: !token });
   const { data: paymentMethods, isLoading: methodsLoading, isError: methodsError } = useGetPaymentMethodsQuery();
   const [createOrder, { isLoading: creating, isError: createErr, error: createError }] = useCreateOrderMutation();
+  const [getLandedCostQuote, { isLoading: quoting }] = useGetLandedCostQuoteMutation();
   const [initPayment, { isLoading: paying, isError: payErr, error: payError, reset: resetPayError }] =
     useInitializePaymentMutation();
 
   const [mounted, setMounted] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [orderSnapshot, setOrderSnapshot] = useState<OrderResponse | null>(null);
   const [formError, setFormError] = useState("");
@@ -65,6 +108,16 @@ export function CheckoutClient() {
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
+
+  const [destination, setDestination] = useState<LandedCostDestination>("lagos");
+  const [shippingService, setShippingService] = useState<LandedCostService>("air");
+  const [category, setCategory] = useState<LandedCostCategory>("generic");
+  const [landedCostQuote, setLandedCostQuote] = useState<LandedCostQuoteResponse | null>(null);
+  const [quoteError, setQuoteError] = useState("");
+  const [pendingFormData, setPendingFormData] = useState<{
+    fullName: string; line1: string; line2?: string; city: string;
+    state?: string; country: string; postalCode?: string; phone?: string;
+  } | null>(null);
 
   const { data: orderFetched, isLoading: orderLoading, refetch: refetchOrder } = useGetOrderQuery(activeOrderId ?? "", {
     skip: !token || !activeOrderId,
@@ -132,7 +185,6 @@ export function CheckoutClient() {
   const oDisc = coerceNumber(displayOrder?.discount, 0);
   const oFees = coerceNumber(displayOrder?.fees, oSvc - oDisc);
   const oTotal = coerceNumber(displayOrder?.total, oSub + oFees);
-
   const methodRows: PaymentMethodEntry[] = useMemo(
     () => (methodsError || !paymentMethods?.methods?.length ? DEFAULT_METHODS : paymentMethods.methods),
     [paymentMethods, methodsError]
@@ -211,9 +263,10 @@ export function CheckoutClient() {
     [provider, initPayment, resetPayError, refetchOrder]
   );
 
-  const onPlaceOrder = async (e: FormEvent<HTMLFormElement>) => {
+  const onGetQuote = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError("");
+    setQuoteError("");
     if (inPaymentStep) return;
     if (apiItems.length === 0) {
       setFormError("Your cart is empty. Add something from the shop, then come back to checkout.");
@@ -228,6 +281,32 @@ export function CheckoutClient() {
       setFormError("Full name, address line, and city are required.");
       return;
     }
+    setPendingFormData({
+      fullName, line1, city, country,
+      line2: String(fd.get("line2") ?? "").trim() || undefined,
+      state: String(fd.get("state") ?? "").trim() || undefined,
+      postalCode: String(fd.get("postalCode") ?? "").trim() || undefined,
+      phone: String(fd.get("phone") ?? "").trim() || undefined,
+    });
+    try {
+      const firstItem = cart?.items?.[0];
+      const productId = firstItem && typeof firstItem.product === "object" && "id" in firstItem.product
+        ? firstItem.product.id
+        : undefined;
+      const quoteResult = await getLandedCostQuote(
+        productId
+          ? { productId, quantity: firstItem?.quantity ?? 1, destination, shippingService, category, displayCurrency: "NGN" }
+          : { productPriceUsd: apiSubtotal || 1, marketplace: "generic", quantity: 1, destination, shippingService, category, displayCurrency: "NGN" }
+      ).unwrap();
+      setLandedCostQuote(quoteResult);
+    } catch {
+      setQuoteError("Could not fetch landed cost estimate. You can still place the order.");
+      setLandedCostQuote(null);
+    }
+  };
+
+  const onPlaceOrder = async () => {
+    if (!pendingFormData) return;
     if (availableProviders.length > 0 && !availableProviders.includes(provider) && !methodsError) {
       setFormError("That payment method is not available right now. Choose another option.");
       return;
@@ -235,22 +314,16 @@ export function CheckoutClient() {
     setPlaceOrderBusy(true);
     try {
       const order = await createOrder({
-        shippingAddress: {
-          fullName,
-          line1,
-          city,
-          country,
-          line2: String(fd.get("line2") ?? "").trim() || undefined,
-          state: String(fd.get("state") ?? "").trim() || undefined,
-          postalCode: String(fd.get("postalCode") ?? "").trim() || undefined,
-          phone: String(fd.get("phone") ?? "").trim() || undefined,
-        },
+        shippingAddress: pendingFormData,
+        landedCost: { destination, shippingService, category },
       }).unwrap();
       setOrderSnapshot(order);
       setActiveOrderId(order.id);
       setPendingCheckoutOrderId(order.id);
       setMyazaSession(null);
       setMyazaOrderId(null);
+      setLandedCostQuote(null);
+      setPendingFormData(null);
       dispatch(unifiedCommerceApi.util.invalidateTags(["Cart"]));
       void refetchCart();
     } catch (err) {
@@ -274,6 +347,7 @@ export function CheckoutClient() {
     void runInitialize(displayOrder);
   };
 
+  const showQuoteConfirm = Boolean(pendingFormData && !inPaymentStep);
   const loading = meLoading || cartLoading || methodsLoading;
   const providerLabels: Record<PaymentProvider, string> = {
     paystack: "Paystack",
@@ -386,7 +460,21 @@ export function CheckoutClient() {
                   </div>
                   <div>
                     <dt className="text-black/50">Deposit address</dt>
-                    <dd className="break-all font-mono text-xs">{myazaSession.depositAddress}</dd>
+                    <dd className="mt-1 flex items-start gap-2">
+                      <span className="break-all font-mono text-xs leading-relaxed">{myazaSession.depositAddress}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(myazaSession.depositAddress).then(() => {
+                            setCopiedAddress(true);
+                            setTimeout(() => setCopiedAddress(false), 2000);
+                          });
+                        }}
+                        className="shrink-0 rounded-lg border border-black/10 bg-white px-2 py-1 text-xs font-medium text-shop-ink transition hover:bg-black/5 active:scale-95"
+                      >
+                        {copiedAddress ? "Copied!" : "Copy"}
+                      </button>
+                    </dd>
                   </div>
                   {myazaSession.checkoutUrl ? (
                     <dd>
@@ -521,8 +609,8 @@ export function CheckoutClient() {
                 If payment didn't start, you can <span className="font-medium">try again</span> with the same or a different method. Your order stays open.
               </p>
             </form>
-          ) : !inPaymentStep && !showMyaza ? (
-            <form className="card space-y-4" onSubmit={onPlaceOrder}>
+          ) : !inPaymentStep && !showMyaza && !showQuoteConfirm ? (
+            <form className="card space-y-4" onSubmit={onGetQuote}>
               <h2 className="text-lg font-semibold">Shipping</h2>
               <p className="text-xs text-black/60">
                 Placing the order <span className="font-medium">clears your cart</span>. You'll complete payment on the next step.
@@ -608,20 +696,116 @@ export function CheckoutClient() {
                   defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""}
                 />
               </label>
+
+              <div className="border-t border-black/10 pt-4 space-y-3">
+                <p className="text-sm font-medium">Delivery options</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="text-black/70">Destination</span>
+                    <select
+                      className="input w-full"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value as LandedCostDestination)}
+                    >
+                      <option value="lagos">Lagos</option>
+                      <option value="outside_lagos">Outside Lagos</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="text-black/70">Shipping service</span>
+                    <select
+                      className="input w-full"
+                      value={shippingService}
+                      onChange={(e) => setShippingService(e.target.value as LandedCostService)}
+                    >
+                      <option value="air">Air (faster)</option>
+                      <option value="ocean_small">Ocean small box</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="block space-y-1 text-sm">
+                  <span className="text-black/70">Product category</span>
+                  <select
+                    className="input w-full"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as LandedCostCategory)}
+                  >
+                    <option value="generic">General / Other</option>
+                    <option value="sneakers">Sneakers</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="phone">Phone</option>
+                    <option value="laptop">Laptop</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="tv">TV</option>
+                    <option value="electronics_small">Electronics (small)</option>
+                    <option value="electronics_large">Electronics (large)</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="books">Books</option>
+                  </select>
+                </label>
+              </div>
+
               {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
               <button
                 className="btn-primary w-full"
                 type="submit"
-                disabled={creating || placeOrderBusy || apiItems.length === 0 || loading}
+                disabled={quoting || apiItems.length === 0 || loading}
               >
-                {creating || placeOrderBusy ? "Placing order…" : "Place order"}
+                {quoting ? "Getting estimate…" : "Get cost estimate"}
               </button>
             </form>
+          ) : showQuoteConfirm && !inPaymentStep && !showMyaza ? (
+            <div className="card space-y-4">
+              <h2 className="text-lg font-semibold">Confirm your order</h2>
+              <p className="text-xs text-black/60">
+                Review the estimated landed cost below. Once you place the order, your cart is cleared.
+              </p>
+              {landedCostQuote ? (
+                <div className="rounded-xl border border-black/10 bg-black/[0.02] p-4 space-y-2">
+                  <p className="text-sm font-medium text-shop-ink">Estimated landed cost</p>
+                  {landedCostQuote.marketplaceConfidence === "low" && (
+                    <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
+                      Marketplace estimates are approximate. Final cost may vary slightly.
+                    </p>
+                  )}
+                  <ul className="space-y-1 text-xs text-black/70 font-mono">
+                    {landedCostQuote.breakdown.map((line, i) => (
+                      <li key={i} className="whitespace-pre-wrap">{line}</li>
+                    ))}
+                  </ul>
+                  {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
+                    <p className="pt-2 text-sm font-semibold text-shop-ink border-t border-black/10">
+                      Estimated total: {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ) : quoteError ? (
+                <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{quoteError}</p>
+              ) : null}
+              <div className="flex gap-3">
+                <button
+                  className="btn-secondary"
+                  type="button"
+                  onClick={() => { setLandedCostQuote(null); setPendingFormData(null); setQuoteError(""); }}
+                >
+                  Back
+                </button>
+                <button
+                  className="btn-primary flex-1"
+                  type="button"
+                  disabled={creating || placeOrderBusy}
+                  onClick={onPlaceOrder}
+                >
+                  {creating || placeOrderBusy ? "Placing order…" : "Place order"}
+                </button>
+              </div>
+              {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
+            </div>
           ) : null}
 
           <section className="card h-fit">
             <h2 className="text-lg font-semibold">Summary</h2>
-            {inPaymentStep && displayOrder ? (
+            {(inPaymentStep || showMyaza) && displayOrder ? (
               <>
                 <p className="mt-2 text-sm font-medium text-shop-ink">Order total</p>
                 <p className="mt-1 text-xs text-black/55">Totals are locked in from your order.</p>
@@ -641,34 +825,42 @@ export function CheckoutClient() {
                   ))}
                 </ul>
                 <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>Subtotal</span>
-                    <span className="font-medium tabular-nums">
-                      {orderCurrency} {oSub.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Service charge</span>
-                    <span className="font-medium tabular-nums">
-                      {orderCurrency} {oSvc.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Discount</span>
-                    <span className="font-medium tabular-nums">
-                      -{orderCurrency} {oDisc.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Fees</span>
-                    <span className="font-medium tabular-nums">
-                      {orderCurrency} {oFees.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-                    <span>Total</span>
-                    <span className="tabular-nums">{formatApiMoney(oTotal, displayOrder.currency ?? orderCurrency)}</span>
-                  </div>
+                  {displayOrder.displaySummary ? (
+                    <CheckoutDisplaySummary summary={displayOrder.displaySummary} />
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span>Subtotal</span>
+                        <span className="font-medium tabular-nums">{orderCurrency} {oSub.toFixed(2)}</span>
+                      </div>
+                      {oSvc > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-black/60">Service charge</span>
+                          <span className="font-medium tabular-nums">{orderCurrency} {oSvc.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {oDisc > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-black/60">Discount</span>
+                          <span className="font-medium tabular-nums text-emerald-600">-{orderCurrency} {oDisc.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
+                        <span>Total</span>
+                        <span className="tabular-nums">{formatApiMoney(oTotal, displayOrder.currency ?? orderCurrency)}</span>
+                      </div>
+                    </>
+                  )}
+                  {displayOrder.pricingBreakdown && displayOrder.pricingBreakdown.length > 0 && (
+                    <details className="border-t border-black/10 pt-2 text-xs text-black/50">
+                      <summary className="cursor-pointer select-none hover:text-black/80">Cost breakdown</summary>
+                      <ul className="mt-2 space-y-0.5 font-mono">
+                        {displayOrder.pricingBreakdown.map((line, i) => (
+                          <li key={i} className="whitespace-pre-wrap">{line}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
               </>
             ) : (

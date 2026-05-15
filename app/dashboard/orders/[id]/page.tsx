@@ -14,7 +14,53 @@ import { isUuid } from "@/lib/uuid";
 import { useGetOrderQuery } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
-import type { OrderStatus } from "@/types/api";
+import type { OrderStatus, OrderDisplaySummary } from "@/types/api";
+
+function OrderTotals({
+  summary,
+  fallbackAmount,
+  fallbackCurrency,
+}: {
+  summary?: OrderDisplaySummary;
+  fallbackAmount: number;
+  fallbackCurrency: string;
+}) {
+  if (summary) {
+    const cur = summary.currency;
+    return (
+      <>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Product</span>
+          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.product), cur)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Import &amp; delivery</span>
+          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Service fee</span>
+          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
+        </div>
+        {Number(summary.discount) > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Discount</span>
+            <span className="font-medium text-emerald-600">−{formatApiMoney(Number(summary.discount), cur)}</span>
+          </div>
+        )}
+        <div className="flex justify-between border-t border-black/[0.06] pt-3 text-sm font-semibold">
+          <span className="text-gray-900">Total</span>
+          <span className="text-gray-900">{formatApiMoney(Number(summary.total), cur)}</span>
+        </div>
+      </>
+    );
+  }
+  return (
+    <div className="flex justify-between border-t border-black/[0.06] pt-3 text-sm font-semibold">
+      <span className="text-gray-900">Total</span>
+      <span className="text-gray-900">{formatApiMoney(fallbackAmount, fallbackCurrency)}</span>
+    </div>
+  );
+}
 
 // Status journey — ordered steps for normal fulfilment
 const JOURNEY: { status: OrderStatus; label: string }[] = [
@@ -130,7 +176,9 @@ export default function DashboardOrderDetailPage() {
     );
   }
 
-  const { amount, currency } = orderTotal(order);
+  const { amount, currency } = order.displaySummary
+    ? { amount: Number(order.displaySummary.total), currency: order.displaySummary.currency }
+    : orderTotal(order);
 
   return (
     <div className="space-y-6">
@@ -241,35 +289,22 @@ export default function DashboardOrderDetailPage() {
 
         {/* Totals footer */}
         <div className="space-y-2 border-t border-black/[0.06] px-6 py-4">
-          {order.subtotal != null && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Subtotal</span>
-              <span className="font-medium text-gray-700">{formatApiMoney(Number(order.subtotal), currency)}</span>
-            </div>
-          )}
-          {order.serviceCharge != null && Number(order.serviceCharge) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Service charge</span>
-              <span className="font-medium text-gray-700">{formatApiMoney(Number(order.serviceCharge), currency)}</span>
-            </div>
-          )}
-          {order.discount != null && Number(order.discount) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Discount</span>
-              <span className="font-medium text-emerald-600">−{formatApiMoney(Number(order.discount), currency)}</span>
-            </div>
-          )}
-          {order.shippingFee != null && Number(order.shippingFee) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Shipping</span>
-              <span className="font-medium text-gray-700">{formatApiMoney(Number(order.shippingFee), currency)}</span>
-            </div>
-          )}
-          <div className="flex justify-between border-t border-black/[0.06] pt-3 text-sm font-semibold">
-            <span className="text-gray-900">Total</span>
-            <span className="text-gray-900">{formatApiMoney(amount, currency)}</span>
-          </div>
+          <OrderTotals summary={order.displaySummary} fallbackAmount={amount} fallbackCurrency={currency} />
         </div>
+
+        {/* Pricing breakdown accordion */}
+        {order.pricingBreakdown && order.pricingBreakdown.length > 0 && (
+          <details className="border-t border-black/[0.06] px-6 py-3 text-xs text-gray-500">
+            <summary className="cursor-pointer select-none font-medium text-gray-600 hover:text-gray-900">
+              Cost breakdown
+            </summary>
+            <ul className="mt-3 space-y-0.5 font-mono">
+              {order.pricingBreakdown.map((line, i) => (
+                <li key={i} className="whitespace-pre-wrap">{line}</li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
 
       {/* Payment */}
