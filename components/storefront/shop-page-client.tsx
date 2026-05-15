@@ -98,12 +98,12 @@ function EditorialCarousel() {
       >
         {/* Background */}
         <motion.div
-          className="absolute inset-0 transition-all duration-500"
+          className="absolute inset-0"
           style={{ background: slide.gradient }}
           key={slide.id}
-          initial={{ opacity: 0.4, scale: 1.01 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
         />
         {/* Decorative shape / person silhouette suggestion */}
         <div
@@ -118,9 +118,9 @@ function EditorialCarousel() {
           className="absolute inset-0 flex flex-col justify-end p-7"
           style={{ background: slide.textBg }}
           key={`${slide.id}-text`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, ease: "easeInOut", delay: 0.2 }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
             Curated collection

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, LayoutGrid, ShoppingCart, Tag, Home } from "lucide-react";
+import { Heart, LayoutGrid, ShoppingCart, Tag, Home, User } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import { useCart } from "@/context/cart-context";
 import { useLocalSaves } from "@/context/saves-context";
@@ -78,8 +78,12 @@ export function LeftRail() {
           className={railBtn}
           title={token ? "Your account" : "Sign in / Sign up"}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
-            {token ? "Me" : "→"}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
+            {token ? (
+              <span className="text-[11px] font-bold text-white">Me</span>
+            ) : (
+              <User className="h-4 w-4 text-white" aria-hidden />
+            )}
           </span>
         </Link>
 
@@ -96,8 +100,12 @@ export function LeftRail() {
             className={railBtn}
             title={token ? "Your account" : "Sign in / Sign up"}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
-              {token ? "Me" : "→"}
+            <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
+              {token ? (
+                <span className="text-[11px] font-bold text-white">Me</span>
+              ) : (
+                <User className="h-4 w-4 text-white" aria-hidden />
+              )}
             </span>
           </Link>
         </div>
