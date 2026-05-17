@@ -84,6 +84,7 @@ export function useProductImportFromUrl() {
     setPollPayload(null);
     const trimmed = urlStr.trim();
     if (!trimmed) return;
+    setUrl("");
     try {
       const res = await importProduct({ url: trimmed }).unwrap();
       if (res.requiresManualEntry) {
