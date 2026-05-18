@@ -59,6 +59,7 @@ export function StickySearchBar() {
     if (!val) return;
     setMobileOpen(false);
     if (looksLikeUrl(val)) {
+      setQ("");
       triggerImport(val);
     } else {
       router.push(`/shop?q=${encodeURIComponent(val)}`);
