@@ -183,7 +183,9 @@ export type ProductSource =
   | "generic"
   | "goat"
   | "zara"
-  | "converse";
+  | "converse"
+  | "ebay"
+  | "stockx";
 
 /** One variant dimension; `variantSelection` keys must match `name`. */
 export interface ApiProductVariantDimension {
@@ -207,13 +209,15 @@ export interface ApiConfigurationPrice {
   variantAxis?: string;
   /** Matches the chosen option on that axis. */
   optionValue?: string;
+  /** Multi-axis selection map (e.g. Apple Storage×Color, Nike Width×Size). */
+  variantSelections?: Record<string, string>;
   /** Row-level currency when it differs from product `currency`. */
   currency?: string;
   /** When false, treat line as out of stock for that configuration. */
   available?: boolean;
   /** Preferred human-readable cell label (e.g. "10 — from USD 425.00"). */
   displayLabel?: string;
-  /** Opaque store-specific hints (e.g. GOAT `sizeValue`). */
+  /** Opaque store-specific hints (e.g. GOAT `sizeValue`, StockX `priceNeedsLookup`). */
   metadata?: Record<string, unknown>;
 }
 
@@ -250,6 +254,16 @@ export interface ApiProduct {
   lastVerifiedAt?: string | null;
   /** Per-configuration price rows when the scraper provides them (e.g. Apple). */
   configurationPrices?: ApiConfigurationPrice[];
+  /** Crossed-out "was" / list price. Present on Amazon, eBay, Zara, Nike sale items. */
+  compareAtPrice?: string | null;
+  /** Raw savings badge text from the PDP, e.g. `"-40%"` or `"60% off"`. Amazon, eBay, Nike. */
+  discount?: string | null;
+  /** Absolute saving as decimal string, e.g. `"1020.00"`. Amazon, eBay only. */
+  savingsAmount?: string | null;
+  /** Promotional banner label, e.g. `"Limited-time deal"`. Amazon only. */
+  dealType?: string | null;
+  /** Adapter-specific extra data (Apple `carrierLinkMap`, StockX `styleId`/`priceSource`, etc.). */
+  metadata?: Record<string, unknown> | null;
   /** Optional structured PDP fields. */
   highlights?: string[];
   attributes?: ProductAttribute[];

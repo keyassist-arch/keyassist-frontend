@@ -51,8 +51,12 @@ export interface ProductDetailLayoutProps {
   priceCompareAt?: string;
   /** e.g. “Retailer list” beside struck-through compare price. */
   priceCompareLabel?: string;
-  /** Integer percent for sale badge, e.g. 14 → “-14%”. */
+  /** Integer percent for sale badge, e.g. 14 → “-14%”. Ignored when `discountLabel` is set. */
   discountPercent?: number | null;
+  /** Raw discount text badge, e.g. “-40%” or “60% off”. Takes precedence over `discountPercent`. */
+  discountLabel?: string | null;
+  /** Rendered below the price row — savings amount, shipping, StockX retail-reference note, etc. */
+  priceMeta?: ReactNode;
   /** Short lead under the price row (first paragraph / summary). */
   heroExcerpt?: ReactNode;
   /** 0–5 filled stars; omit for all-outline stars. */

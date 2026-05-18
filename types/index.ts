@@ -11,7 +11,9 @@ export type Marketplace =
   | "Partner"
   | "GOAT"
   | "Zara"
-  | "Converse";
+  | "Converse"
+  | "eBay"
+  | "StockX";
 
 export interface ProductVariant {
   id: string;

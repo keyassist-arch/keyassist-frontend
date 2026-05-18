@@ -15,6 +15,8 @@ export function ProductDetailLayout({
   priceCurrent,
   priceCompareAt,
   discountPercent,
+  discountLabel,
+  priceMeta,
   rating,
   ratingCount,
   availabilitySlot,
@@ -29,7 +31,9 @@ export function ProductDetailLayout({
   footerSlot,
 }: ProductDetailLayoutProps) {
   const pct =
-    discountPercent != null && discountPercent > 0 ? Math.min(99, Math.round(discountPercent)) : null;
+    !discountLabel && discountPercent != null && discountPercent > 0
+      ? Math.min(99, Math.round(discountPercent))
+      : null;
 
   return (
     <div className="pb-16">
@@ -95,10 +99,13 @@ export function ProductDetailLayout({
                 <span className="text-lg font-normal tabular-nums text-gray-400 line-through">{priceCompareAt}</span>
               ) : null}
               <span className="text-4xl font-bold tabular-nums text-gray-900">{priceCurrent}</span>
-              {pct != null ? (
+              {discountLabel ? (
+                <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-sm font-semibold text-red-500">{discountLabel}</span>
+              ) : pct != null ? (
                 <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-sm font-semibold text-red-500">-{pct}%</span>
               ) : null}
             </div>
+            {priceMeta ? <div>{priceMeta}</div> : null}
 
             {/* Variant pickers */}
             {variantSlots?.map((slot, i) => (
