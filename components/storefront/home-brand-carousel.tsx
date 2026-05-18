@@ -1,120 +1,101 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Star } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-type BrandCard = {
+type MarketplaceCard = {
   id: string;
   name: string;
-  rating: number;
-  reviewCount: string;
+  tagline: string;
   heroBg: string;
   heroText: string;
   thumbColors: [string, string, string];
+  href: string;
 };
 
-const MENSWEAR: BrandCard[] = [
+const SNEAKERS_AND_SPORT: MarketplaceCard[] = [
   {
     id: "nike",
     name: "Nike",
-    rating: 4.8,
-    reviewCount: "1.2k",
+    tagline: "Sport & Lifestyle",
     heroBg: "linear-gradient(140deg,#111 0%,#222 100%)",
     heroText: "#ffffff",
     thumbColors: ["#b0b0b0", "#111111", "#e0e0e0"],
+    href: "/shop?q=nike",
   },
   {
-    id: "adidas",
-    name: "Adidas",
-    rating: 4.7,
-    reviewCount: "890",
-    heroBg: "linear-gradient(140deg,#0d0d0d 0%,#1a1a2e 100%)",
+    id: "goat",
+    name: "GOAT",
+    tagline: "Sneakers & Streetwear",
+    heroBg: "linear-gradient(140deg,#1a1a1a 0%,#2d2d2d 100%)",
     heroText: "#ffffff",
-    thumbColors: ["#3333aa", "#ffffff", "#000000"],
+    thumbColors: ["#c8b89a", "#1a1a1a", "#f0ece8"],
+    href: "/shop?q=goat",
   },
   {
-    id: "uniqlo",
-    name: "Uniqlo",
-    rating: 4.6,
-    reviewCount: "2.1k",
+    id: "stockx",
+    name: "StockX",
+    tagline: "Verified Resale",
+    heroBg: "linear-gradient(140deg,#004d63 0%,#006380 100%)",
+    heroText: "#ffffff",
+    thumbColors: ["#00a8cc", "#004d63", "#e0f5fa"],
+    href: "/shop?q=stockx",
+  },
+  {
+    id: "converse",
+    name: "Converse",
+    tagline: "Icons & Classics",
     heroBg: "linear-gradient(140deg,#cc0000 0%,#880000 100%)",
     heroText: "#ffffff",
-    thumbColors: ["#f0f0f0", "#cc0000", "#1a1a1a"],
+    thumbColors: ["#ffffff", "#cc0000", "#1a1a1a"],
+    href: "/shop?q=converse",
+  },
+];
+
+const RETAIL_AND_FASHION: MarketplaceCard[] = [
+  {
+    id: "amazon",
+    name: "Amazon",
+    tagline: "Everything, Delivered",
+    heroBg: "linear-gradient(140deg,#232f3e 0%,#131921 100%)",
+    heroText: "#FF9900",
+    thumbColors: ["#FF9900", "#232f3e", "#37475a"],
+    href: "/shop?q=amazon",
   },
   {
-    id: "zara-men",
+    id: "apple",
+    name: "Apple",
+    tagline: "Tech & Accessories",
+    heroBg: "linear-gradient(140deg,#f0f0f0 0%,#d8d8d8 100%)",
+    heroText: "#1d1d1f",
+    thumbColors: ["#e8e8e8", "#a8a8a8", "#1d1d1f"],
+    href: "/shop?q=apple",
+  },
+  {
+    id: "zara",
     name: "ZARA",
-    rating: 4.5,
-    reviewCount: "3.4k",
+    tagline: "Fashion & Apparel",
     heroBg: "linear-gradient(140deg,#c8b898 0%,#a89060 100%)",
     heroText: "#2a1800",
     thumbColors: ["#e8d8c0", "#b0906a", "#2a1800"],
+    href: "/shop?q=zara",
+  },
+  {
+    id: "ebay",
+    name: "eBay",
+    tagline: "New & Pre-owned",
+    heroBg: "linear-gradient(140deg,#f5f5f5 0%,#e8e8e8 100%)",
+    heroText: "#333333",
+    thumbColors: ["#E53238", "#0064D2", "#F5AF02"],
+    href: "/shop?q=ebay",
   },
 ];
 
-const WOMENSWEAR: BrandCard[] = [
-  {
-    id: "comme-si",
-    name: "Comme Si",
-    rating: 4.8,
-    reviewCount: "508",
-    heroBg: "linear-gradient(140deg,#e8d5c0 0%,#c8a888 100%)",
-    heroText: "#2a1000",
-    thumbColors: ["#f8e8d8", "#e0c0a0", "#c89060"],
-  },
-  {
-    id: "summersvlt",
-    name: "SUMMERSVLT",
-    rating: 4.4,
-    reviewCount: "1.0k",
-    heroBg: "linear-gradient(140deg,#5588aa 0%,#3366aa 100%)",
-    heroText: "#ffffff",
-    thumbColors: ["#88aacc", "#225588", "#ddeeff"],
-  },
-  {
-    id: "good-american",
-    name: "GOOD AMERICAN",
-    rating: 4.1,
-    reviewCount: "890",
-    heroBg: "linear-gradient(140deg,#1a2a3a 0%,#2a3a4a 100%)",
-    heroText: "#ffffff",
-    thumbColors: ["#334466", "#778899", "#aabbcc"],
-  },
-  {
-    id: "gymshark",
-    name: "Gymshark US",
-    rating: 4.8,
-    reviewCount: "25.7k",
-    heroBg: "linear-gradient(140deg,#111 0%,#333 100%)",
-    heroText: "#ffffff",
-    thumbColors: ["#444", "#888", "#cccccc"],
-  },
-];
-
-function RatingRow({ rating, count }: { rating: number; count: string }) {
+function MarketplaceTile({ card }: { card: MarketplaceCard }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px]">
-      <span className="inline-flex items-center gap-px">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Star
-            key={i}
-            size={10}
-            fill={i < Math.floor(rating) ? "#F59E0B" : "none"}
-            strokeWidth={i < Math.floor(rating) ? 0 : 1.5}
-            color={i < Math.floor(rating) ? "#F59E0B" : "#D1D5DB"}
-          />
-        ))}
-      </span>
-      <span className="font-semibold">{rating}</span>
-      <span className="opacity-60">({count})</span>
-    </span>
-  );
-}
-
-function BrandTile({ card }: { card: BrandCard }) {
-  return (
-    <motion.div
+    <motion.a
+      href={card.href}
       className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -122,39 +103,23 @@ function BrandTile({ card }: { card: BrandCard }) {
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
       whileHover={{ y: -2 }}
     >
-      {/* Hero */}
       <div
         className="relative flex h-[210px] flex-col justify-between p-4"
         style={{ background: card.heroBg, color: card.heroText }}
       >
-        <RatingRow rating={card.rating} count={card.reviewCount} />
-        <p className="text-2xl font-black leading-tight tracking-tight">
-          {card.name}
-        </p>
+        <p className="text-[11px] font-medium opacity-70">{card.tagline}</p>
+        <p className="text-2xl font-black leading-tight tracking-tight">{card.name}</p>
       </div>
-      {/* Product thumbnails */}
       <div className="flex gap-1 p-2">
         {card.thumbColors.map((bg, i) => (
-          <div
-            key={i}
-            className="h-[72px] flex-1 rounded-xl"
-            style={{ background: bg }}
-          />
+          <div key={i} className="h-[72px] flex-1 rounded-xl" style={{ background: bg }} />
         ))}
       </div>
-    </motion.div>
+    </motion.a>
   );
 }
 
-function BrandRow({
-  label,
-  href,
-  cards,
-}: {
-  label: string;
-  href: string;
-  cards: BrandCard[];
-}) {
+function MarketplaceRow({ label, href, cards }: { label: string; href: string; cards: MarketplaceCard[] }) {
   return (
     <div className="mb-8">
       <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
@@ -167,7 +132,7 @@ function BrandRow({
         </Link>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {cards.map((card) => (
-            <BrandTile key={card.id} card={card} />
+            <MarketplaceTile key={card.id} card={card} />
           ))}
         </div>
       </div>
@@ -184,8 +149,8 @@ export function HomeBrandCarousel() {
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
     >
-      <BrandRow label="Menswear" href="/shop?q=menswear" cards={MENSWEAR} />
-      <BrandRow label="Womenswear" href="/shop?q=womenswear" cards={WOMENSWEAR} />
+      <MarketplaceRow label="Sneakers & Sport" href="/shop?q=sneakers" cards={SNEAKERS_AND_SPORT} />
+      <MarketplaceRow label="Retail & Fashion"  href="/shop?q=fashion"  cards={RETAIL_AND_FASHION} />
     </motion.section>
   );
 }

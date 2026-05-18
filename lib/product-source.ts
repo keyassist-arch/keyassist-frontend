@@ -2,7 +2,6 @@ import type { Marketplace } from "@/types";
 import type { ProductSource } from "@/types/api";
 
 const SOURCE_LABELS: Record<ProductSource, string> = {
-  jumia: "Jumia",
   amazon: "Amazon",
   nike: "Nike",
   apple: "Apple",
@@ -29,8 +28,6 @@ export function marketplaceFromApiSource(source: string | undefined, brand?: str
       return "Amazon";
     case "apple":
       return "Apple";
-    case "jumia":
-      return "Jumia";
     case "nike":
       return "Nike";
     case "generic":
@@ -47,8 +44,8 @@ export function marketplaceFromApiSource(source: string | undefined, brand?: str
       return "StockX";
     default: {
       const b = brand?.trim();
-      if (b && ["Amazon", "Apple", "Jumia", "Nike", "Shopify Partner"].includes(b)) return b as Marketplace;
-      return "Jumia";
+      if (b && ["Amazon", "Apple", "Nike", "Shopify Partner"].includes(b)) return b as Marketplace;
+      return "Partner";
     }
   }
 }

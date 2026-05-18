@@ -5,7 +5,7 @@ import type { ProductAttribute } from "./product-detail";
 export type Marketplace =
   | "Amazon"
   | "Apple"
-  | "Jumia"
+
   | "Nike"
   | "Shopify Partner"
   | "Partner"
