@@ -4,6 +4,25 @@ import type { ProductAttribute } from "./product-detail";
 
 export type JwtRole = "USER" | "ADMIN_SUPER" | "ADMIN_STAFF";
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  position: number;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedApiProducts {
+  total: number;
+  page: number;
+  limit: number;
+  results: ApiProduct[];
+}
+
 export interface TokenResponse {
   accessToken: string;
   refreshToken: string;

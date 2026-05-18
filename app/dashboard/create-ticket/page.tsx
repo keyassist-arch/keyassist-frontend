@@ -163,7 +163,7 @@ export default function CreateTicketPage() {
           <textarea
             rows={5}
             placeholder="Tell us what happened in detail…"
-            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10 resize-none"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10 resize-none"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required

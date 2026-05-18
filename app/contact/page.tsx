@@ -10,8 +10,12 @@ const SUPPORT_EMAIL = "help@unifiedcommerce.com";
 const SUPPORT_PHONE = "+1 (555) 010-0199";
 
 export const metadata: Metadata = {
-  title: `Contact — ${siteContext.brand}`,
+  title: "Contact",
   description: `Reach ${siteContext.brand} for orders, deliveries, and account help.`,
+  openGraph: {
+    title: `Contact — ${siteContext.brand}`,
+    description: `Reach ${siteContext.brand} for orders, deliveries, and account help.`,
+  },
 };
 
 function InfoBlock({

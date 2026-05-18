@@ -7,6 +7,8 @@ import type {
   AddCartItemRequest,
   ApiProduct,
   CartResponse,
+  Category,
+  PaginatedApiProducts,
   CreateOrderRequest,
   CreateIssueRequest,
   CreatePriceDisputeRequest,
@@ -82,7 +84,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -275,6 +277,23 @@ export const unifiedCommerceApi = createApi({
       providesTags: (result) => (result?.id ? [{ type: "Product", id: result.id }] : ["Product"]),
     }),
 
+    /** Related products for a PDP (`GET /products/:idOrSlug/related`). */
+    getRelatedProducts: builder.query<ApiProduct[], { idOrSlug: string; limit?: number; displayCurrency?: string }>({
+      query: ({ idOrSlug, limit, displayCurrency }) => {
+        const params = new URLSearchParams();
+        if (limit) params.set("limit", String(limit));
+        if (displayCurrency) params.set("displayCurrency", displayCurrency);
+        const qs = params.toString();
+        return {
+          url: qs
+            ? `/products/${encodeURIComponent(idOrSlug)}/related?${qs}`
+            : `/products/${encodeURIComponent(idOrSlug)}/related`,
+          method: "GET",
+        };
+      },
+      providesTags: (_r, _e, { idOrSlug }) => [{ type: "Product", id: `related-${idOrSlug}` }],
+    }),
+
     /** Public catalog list (`GET /products` or `GET /products?limit=`). */
     getCatalogProducts: builder.query<ApiProduct[], number | void>({
       query: (limit) => ({
@@ -282,6 +301,29 @@ export const unifiedCommerceApi = createApi({
         method: "GET",
       }),
       providesTags: ["CatalogProducts"],
+    }),
+
+    /* ---------- Categories (public) ---------- */
+    getCategories: builder.query<Category[], void>({
+      query: () => ({ url: "/categories", method: "GET" }),
+      providesTags: ["Categories"],
+    }),
+
+    getCategory: builder.query<Category, string>({
+      query: (idOrSlug) => ({ url: `/categories/${encodeURIComponent(idOrSlug)}`, method: "GET" }),
+      providesTags: (_r, _e, idOrSlug) => [{ type: "Categories", id: idOrSlug }],
+    }),
+
+    getCategoryProducts: builder.query<PaginatedApiProducts, { idOrSlug: string; page?: number; limit?: number; displayCurrency?: string }>({
+      query: ({ idOrSlug, page, limit, displayCurrency }) => {
+        const params = new URLSearchParams();
+        if (page) params.set("page", String(page));
+        if (limit) params.set("limit", String(limit));
+        if (displayCurrency) params.set("displayCurrency", displayCurrency);
+        const qs = params.toString();
+        return { url: qs ? `/categories/${encodeURIComponent(idOrSlug)}/products?${qs}` : `/categories/${encodeURIComponent(idOrSlug)}/products`, method: "GET" };
+      },
+      providesTags: (_r, _e, { idOrSlug }) => [{ type: "Categories", id: `products-${idOrSlug}` }],
     }),
 
     /* ---------- Cart (protected) ---------- */
@@ -580,6 +622,9 @@ export const unifiedCommerceApi = createApi({
 });
 
 export const {
+  useGetCategoriesQuery,
+  useGetCategoryQuery,
+  useGetCategoryProductsQuery,
   useGetHealthQuery,
   useRegisterMutation,
   useResendVerificationMutation,
@@ -603,6 +648,7 @@ export const {
   useLazyGetImportStatusQuery,
   useGetProductQuery,
   useLazyGetProductQuery,
+  useGetRelatedProductsQuery,
   useGetCatalogProductsQuery,
   useGetCartQuery,
   useAddCartItemMutation,

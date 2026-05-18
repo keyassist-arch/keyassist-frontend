@@ -190,6 +190,10 @@ input.input[type="search"]::-webkit-search-results-decoration {
   appearance: none;
 }
 
+textarea.input {
+  border-radius: 0.75rem; /* rounded-xl — pill looks wrong on tall fields */
+}
+
 .shop-surface {
   background: var(--shop-surface);
   color: var(--shop-ink);

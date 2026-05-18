@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import type { Product } from "@/types";
-import { StoreProductCard } from "@/components/storefront/store-product-card";
+import { StoreProductCard, StoreProductCardSkeleton } from "@/components/storefront/store-product-card";
 
 type SortKey = "recommend" | "price-asc" | "price-desc" | "title-asc";
 
@@ -362,10 +362,10 @@ function CatalogFallback() {
   return (
     <section className="bg-white py-8">
       <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
-        <div className="h-7 w-40 animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-7 w-40 animate-pulse rounded-full bg-gray-100" />
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {Array.from({ length: 12 }, (_, i) => (
-            <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-gray-100" />
+            <StoreProductCardSkeleton key={i} />
           ))}
         </div>
       </div>

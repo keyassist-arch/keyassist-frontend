@@ -3,11 +3,13 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { useGetCatalogProductsQuery } from "@/store/routes/unified-commerce-api";
+import { useGetCatalogProductsQuery, useGetCategoriesQuery } from "@/store/routes/unified-commerce-api";
+import { StoreProductCardSkeleton } from "@/components/storefront/store-product-card";
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { CommunityCatalog } from "@/components/storefront/community-catalog";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { motion } from "framer-motion";
+import type { Category } from "@/types/api";
 
 /* ── Editorial carousel slides ── */
 const SLIDES = [
@@ -45,13 +47,15 @@ const SLIDES = [
   },
 ];
 
-/* ── Browse categories ── */
-const BROWSE_CATS = [
-  { label: "Beauty",     href: "/shop?q=beauty",     bg: "#e8547a", text: "#fff" },
-  { label: "Womenswear", href: "/shop?q=women",       bg: "#d8ccc4", text: "#2a1800" },
-  { label: "Menswear",   href: "/shop?q=men",          bg: "#2d3a4a", text: "#fff" },
-  { label: "Home",       href: "/shop?q=home",         bg: "#c8956c", text: "#fff" },
-  { label: "Fitness & nutrition", href: "/shop?q=fitness", bg: "#4a7c59", text: "#fff" },
+const CAT_PALETTE = [
+  { bg: "#e8547a", text: "#fff" },
+  { bg: "#d8ccc4", text: "#2a1800" },
+  { bg: "#2d3a4a", text: "#fff" },
+  { bg: "#c8956c", text: "#fff" },
+  { bg: "#4a7c59", text: "#fff" },
+  { bg: "#6b5b9f", text: "#fff" },
+  { bg: "#3a7ca8", text: "#fff" },
+  { bg: "#b8d5c8", text: "#2a1800" },
 ];
 
 /* ── Carousel ── */
@@ -180,6 +184,8 @@ function EditorialCarousel() {
 
 /* ── Browse categories row ── */
 function BrowseCategories() {
+  const { data: categories, isLoading } = useGetCategoriesQuery();
+
   return (
     <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
       <motion.h2
@@ -191,41 +197,60 @@ function BrowseCategories() {
       >
         Browse categories
       </motion.h2>
-      <motion.div
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={{
-          hidden: {},
-          show: { transition: { staggerChildren: 0.06 } },
-        }}
-      >
-        {BROWSE_CATS.map((cat) => (
-          <motion.div
-            key={cat.label}
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] } },
-            }}
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <Link
-              href={cat.href}
-              className="relative flex h-[110px] items-end overflow-hidden rounded-2xl p-4 transition hover:opacity-90"
-              style={{ background: cat.bg }}
-            >
-              <span
-                className="text-[13px] font-bold leading-tight"
-                style={{ color: cat.text }}
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="h-[110px] animate-pulse rounded-2xl bg-gray-100" />
+          ))}
+        </div>
+      ) : (categories ?? []).length === 0 ? null : (
+        <motion.div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.06 } },
+          }}
+        >
+          {(categories ?? []).map((cat: Category, i: number) => {
+            const palette = CAT_PALETTE[i % CAT_PALETTE.length];
+            return (
+              <motion.div
+                key={cat.id}
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] } },
+                }}
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
               >
-                {cat.label}
-              </span>
-            </Link>
-          </motion.div>
-        ))}
-      </motion.div>
+                <Link
+                  href={`/shop/${cat.slug}`}
+                  className="relative flex h-[110px] items-end overflow-hidden rounded-2xl p-4 transition hover:opacity-90"
+                  style={
+                    cat.imageUrl
+                      ? { backgroundImage: `url(${cat.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : { background: palette.bg }
+                  }
+                >
+                  {cat.imageUrl && (
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
+                  )}
+                  <span
+                    className="relative text-[13px] font-bold leading-tight"
+                    style={{ color: cat.imageUrl ? "#fff" : palette.text }}
+                  >
+                    {cat.name}
+                  </span>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -272,8 +297,13 @@ export function ShopPageClient() {
 
       {/* Catalog */}
       {isLoading && (
-        <section className="border-t border-gray-100 py-16 text-center text-sm text-gray-400">
-          Loading products…
+        <section className="border-t border-gray-100 py-8">
+          <div className="mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
+            <div className="h-7 w-40 animate-pulse rounded-full bg-gray-100" />
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {Array.from({ length: 12 }, (_, i) => <StoreProductCardSkeleton key={i} />)}
+            </div>
+          </div>
         </section>
       )}
 

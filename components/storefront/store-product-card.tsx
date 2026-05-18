@@ -20,6 +20,30 @@ import { getErrorMessage } from "@/lib/rtk-error";
 import { formatApiMoney } from "@/lib/format-price";
 import { getStorefrontActivitySignals } from "@/lib/storefront-activity";
 
+export function StoreProductCardSkeleton() {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl bg-white">
+      {/* Image placeholder */}
+      <div className="h-[180px] animate-pulse bg-gray-100 sm:h-[200px]" />
+      {/* Info placeholder */}
+      <div className="flex flex-1 flex-col gap-2 px-3 py-2.5">
+        <div className="h-3 w-16 animate-pulse rounded-full bg-gray-100" />
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-full animate-pulse rounded-full bg-gray-100" />
+          <div className="h-3.5 w-3/4 animate-pulse rounded-full bg-gray-100" />
+        </div>
+        <div className="flex gap-1">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="h-3 w-3 animate-pulse rounded-full bg-gray-100" />
+          ))}
+          <div className="ml-1 h-3 w-8 animate-pulse rounded-full bg-gray-100" />
+        </div>
+        <div className="h-4 w-20 animate-pulse rounded-full bg-gray-100" />
+      </div>
+    </div>
+  );
+}
+
 function StarRow({ filled, count }: { filled: number; count: number }) {
   const n = Math.min(5, Math.max(0, Math.round(filled)));
   const display = count >= 1000 ? `(${(count / 1000).toFixed(1)}k)` : `(${count})`;

@@ -17,10 +17,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://keyassist.shop";
+
 export const metadata: Metadata = {
-  title: "Key Assist — multi-marketplace storefront",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Key Assist — Shop from Multiple Marketplaces",
+    template: "%s | Key Assist",
+  },
   description:
-    "Key Assist: shop and track products from multiple marketplaces in one cart—paste URLs, compare listings, and check out in one flow.",
+    "Key Assist: shop and track products from Amazon, Apple, Nike, Jumia and more in one cart. Paste a product URL to import it instantly.",
+  openGraph: {
+    siteName: "Key Assist",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

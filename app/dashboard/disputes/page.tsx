@@ -167,7 +167,7 @@ export default function DisputesPage() {
               <textarea
                 rows={4}
                 placeholder="E.g. I was charged for the 512 GB model but selected 256 GB…"
-                className="input resize-none rounded-xl"
+                className="input resize-none"
                 value={formReason}
                 onChange={(e) => setFormReason(e.target.value)}
                 required
