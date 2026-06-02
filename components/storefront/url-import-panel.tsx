@@ -40,7 +40,7 @@ export function UrlImportPanel() {
             className="input w-full"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.jumia.com.ng/..."
+            placeholder="https://www.amazon.com/..."
           />
         </label>
         <button type="submit" className="btn-primary shrink-0" disabled={importing || (Boolean(importId) && waiting)}>
@@ -53,12 +53,12 @@ export function UrlImportPanel() {
       )}
       {importId && waiting ? (
         <div className="space-y-2 rounded-2xl border border-black/10 bg-shop-surface px-4 py-3 text-sm text-shop-muted">
-          <LoadingState label={effective?.userMessage ?? "Getting your product ready…"} />
+          <LoadingState label="Fetching product details…" />
           <p className="text-xs text-black/50">{waitCopy}</p>
         </div>
       ) : null}
       <p className="text-xs text-black/50">
-        Heavy use may be slowed to keep imports reliable. Questions? See our{" "}
+        We'll take you straight to the product page when it's ready. Questions? See our{" "}
         <Link href="/faq" className="text-shop-accent underline">
           FAQ
         </Link>

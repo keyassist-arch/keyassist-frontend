@@ -85,7 +85,7 @@ export function ShopImportFromUrl() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onPaste={onPaste}
-              placeholder="https://www.jumia.com.ng/..."
+              placeholder="https://www.amazon.com/..."
               disabled={isImportBlocking}
             />
           </label>

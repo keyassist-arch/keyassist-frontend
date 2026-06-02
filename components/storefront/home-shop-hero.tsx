@@ -9,15 +9,25 @@ import { motion } from "framer-motion";
 
 const BRAND_COLOR = "#5C4AE6";
 
-const MARKETPLACES = [
-  { label: "Amazon",  href: "/shop?q=amazon",  slug: "amazon",  hex: "FF9900", iconBg: "#FFF8EE" },
-  { label: "Apple",   href: "/shop?q=apple",   slug: "apple",   hex: "555555", iconBg: "#F5F5F7" },
-  { label: "Nike",    href: "/shop?q=nike",     slug: "nike",    hex: "111111", iconBg: "#F5F5F5" },
-  { label: "Jumia",   href: "/shop?q=jumia",    slug: "jumia",   hex: "F68B1E", iconBg: "#FFF5E6" },
-  { label: "Walmart", href: "/shop?q=walmart",  slug: "walmart", hex: "0071CE", iconBg: "#EBF5FF" },
-  { label: "eBay",    href: "/shop?q=ebay",     slug: "ebay",    hex: "E53238", iconBg: "#FFF0F0" },
-  { label: "Etsy",    href: "/shop?q=etsy",     slug: "etsy",    hex: "F16521", iconBg: "#FFF2EC" },
-  { label: "Target",  href: "/shop?q=target",   slug: "target",  hex: "CC0000", iconBg: "#FFF0F0" },
+type MarketplaceChip = {
+  label: string;
+  href: string;
+  iconBg: string;
+  slug?: string;
+  hex?: string;
+  initial?: string;
+  initialColor?: string;
+};
+
+const MARKETPLACES: MarketplaceChip[] = [
+  { label: "Amazon",   href: "/shop?q=amazon",   slug: "amazon",   hex: "FF9900", iconBg: "#FFF8EE" },
+  { label: "Apple",    href: "/shop?q=apple",    slug: "apple",    hex: "555555", iconBg: "#F5F5F7" },
+  { label: "Nike",     href: "/shop?q=nike",     slug: "nike",     hex: "111111", iconBg: "#F5F5F5" },
+  { label: "GOAT",     href: "/shop?q=goat",     initial: "G",     initialColor: "#111", iconBg: "#F0F0F0" },
+  { label: "Zara",     href: "/shop?q=zara",     slug: "zara",     hex: "000000", iconBg: "#F5F0E8" },
+  { label: "eBay",     href: "/shop?q=ebay",     slug: "ebay",     hex: "E53238", iconBg: "#FFF0F0" },
+  { label: "StockX",   href: "/shop?q=stockx",   slug: "stockx",   hex: "006380", iconBg: "#E8F5F7" },
+  { label: "Converse", href: "/shop?q=converse",  slug: "converse", hex: "000000", iconBg: "#F5F5F5" },
 ];
 
 type FloatItem =
@@ -28,7 +38,7 @@ const FLOAT_ITEMS: FloatItem[] = [
   { kind: "card", title: "AirPods Pro (2nd gen)", sub: "(2.4k)", gradient: "linear-gradient(140deg,#e8eef5 0%,#c8d5e5 100%)" },
   { kind: "box",  label: "amazon",                gradient: "linear-gradient(140deg,#232f3e 0%,#131921 100%)",  textColor: "#FF9900" },
   { kind: "card", title: "Nike Air Max 90",        sub: "(1.8k)", gradient: "linear-gradient(140deg,#f0f0f0 0%,#d8d8d8 100%)" },
-  { kind: "box",  label: "MUJI",                  gradient: "linear-gradient(140deg,#f5f5f5 0%,#e0e0e0 100%)", textColor: "#333333" },
+  { kind: "box",  label: "GOAT",                  gradient: "linear-gradient(140deg,#1a1a1a 0%,#2d2d2d 100%)", textColor: "#ffffff" },
   { kind: "card", title: "Jordan 1 Retro Low OG", sub: "(980)",  gradient: "linear-gradient(140deg,#ffe8d5 0%,#f5c4a0 100%)" },
   { kind: "box",  label: "eBay",                  gradient: "linear-gradient(140deg,#f5f5f5 0%,#e8e8e8 100%)", textColor: "#E53238" },
 ];
@@ -127,9 +137,7 @@ export function HomeShopHero() {
         >
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
           <div className="max-w-md text-center">
-            <p className="text-base font-semibold text-white">
-              {effective?.userMessage ?? "On it — pulling in that listing"}
-            </p>
+            <p className="text-base font-semibold text-white">Fetching product details…</p>
             <p className="mt-3 text-sm text-white/75">{waitCopy}</p>
           </div>
         </div>
@@ -182,7 +190,7 @@ export function HomeShopHero() {
               show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
             }}
           >
-            Search across Amazon, Nike, Apple, Jumia and more — or paste a product link to import it instantly.
+            Shop Amazon, Apple, Nike, GOAT, Zara, eBay, StockX and more — or paste a product link to import it instantly.
           </motion.p>
 
           {/* Search / import bar */}
@@ -241,7 +249,7 @@ export function HomeShopHero() {
               show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] } },
             }}
           >
-            {MARKETPLACES.map(({ label, href, slug, hex, iconBg }) => (
+            {MARKETPLACES.map(({ label, href, slug, hex, iconBg, initial, initialColor }) => (
               <motion.a
                 key={label}
                 href={href}
@@ -253,14 +261,20 @@ export function HomeShopHero() {
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
                   style={{ background: iconBg }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://cdn.simpleicons.org/${slug}/${hex}`}
-                    alt=""
-                    width={14}
-                    height={14}
-                    aria-hidden
-                  />
+                  {slug ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`https://cdn.simpleicons.org/${slug}/${hex}`}
+                      alt=""
+                      width={14}
+                      height={14}
+                      aria-hidden
+                    />
+                  ) : (
+                    <span className="text-[9px] font-black leading-none" style={{ color: initialColor ?? "#111" }}>
+                      {initial ?? label[0]}
+                    </span>
+                  )}
                 </span>
                 {label}
               </motion.a>

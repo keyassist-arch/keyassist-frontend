@@ -7,14 +7,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Key Assist — Shop from Multiple Marketplaces",
     description:
-      "Search, discover, and buy products from Amazon, Apple, Nike, Jumia and more — all from one place.",
+      "Shop Amazon, Apple, Nike, GOAT, Zara, eBay, StockX and more — all from one place.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Key Assist — Shop from Multiple Marketplaces",
     description:
-      "Search, discover, and buy products from Amazon, Apple, Nike, Jumia and more — all from one place.",
+      "Shop Amazon, Apple, Nike, GOAT, Zara, eBay, StockX and more — all from one place.",
   },
 };
 

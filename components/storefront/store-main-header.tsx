@@ -22,8 +22,7 @@ const MARKET_CHIPS = [
   { label: "Amazon",  q: "amazon"  },
   { label: "Apple",   q: "apple"   },
   { label: "Nike",    q: "nike"    },
-  { label: "Jumia",   q: "jumia"   },
-  { label: "Walmart", q: "walmart" },
+  { label: "GOAT",    q: "goat"    },
   { label: "eBay",    q: "ebay"    },
 ];
 
@@ -214,7 +213,7 @@ export function StoreMainHeader() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onPaste={onPaste}
-                placeholder="Search or paste a product URL — Amazon, Nike, Apple, Jumia…"
+                placeholder="Search or paste a product URL — Amazon, Nike, Apple, GOAT…"
                 className="input min-h-11 w-full text-sm"
                 style={{ borderColor: isUrl ? "var(--shop-accent)" : "var(--shop-border)" }}
                 disabled={isImportBlocking}

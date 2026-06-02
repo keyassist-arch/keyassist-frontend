@@ -6,7 +6,7 @@ export const siteContext = {
   brand: "Key Assist",
   tagline: "One cart. Many marketplaces.",
   topBar: {
-    left: "Track orders in your dashboard · Paste product URLs to add from Amazon, Apple, Jumia, Nike & more",
+    left: "Track orders in your dashboard · Paste product URLs to add from Amazon, Apple, Nike, GOAT & more",
   },
   hero: {
     /** Small uppercase promo line (Woodisa-style rail). */
@@ -16,7 +16,7 @@ export const siteContext = {
       {
         title: "Choose from listings across every marketplace you use.",
         body:
-          "Search or paste a product link from Amazon, Apple, Jumia, Nike, and more. See titles, prices, and options clearly so you can compare before you buy.",
+          "Search or paste a product link from Amazon, Apple, Nike, GOAT, and more. See titles, prices, and options clearly so you can compare before you buy.",
       },
       {
         title: "One cart. One checkout. Real seller context.",

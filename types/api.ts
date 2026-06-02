@@ -176,7 +176,6 @@ export interface Me2faDisableRequest {
 
 /** Public catalog / PDP `source` field (lowercase enum from API; more values may appear at runtime). */
 export type ProductSource =
-  | "jumia"
   | "amazon"
   | "nike"
   | "apple"
@@ -718,7 +717,6 @@ export type LandedCostMarketplace =
   | "goat"
   | "ebay"
   | "shein"
-  | "jumia"
   | "generic";
 
 /** `POST /landed-cost/quote` — Mode A (by productId) or Mode B (raw inputs). */

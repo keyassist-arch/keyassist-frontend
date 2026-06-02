@@ -17,7 +17,7 @@ export function MarketingHero() {
           <span className="text-black/60"> Checkout in one flow.</span>
         </h1>
         <p className="mt-4 max-w-3xl text-base text-black/70">
-          Paste marketplace URLs (Amazon, Apple, Jumia, Nike) and add items into a unified cart with delivery estimates
+          Paste marketplace URLs (Amazon, Apple, Nike, GOAT) and add items into a unified cart with delivery estimates
           and seller context when available.
         </p>
 

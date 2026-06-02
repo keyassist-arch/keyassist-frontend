@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useGetRelatedProductsQuery } from "@/store/routes/unified-commerce-api";
+import { useGetCatalogProductsQuery, useGetRelatedProductsQuery } from "@/store/routes/unified-commerce-api";
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { StoreProductCard, StoreProductCardSkeleton } from "@/components/storefront/store-product-card";
 
@@ -11,14 +11,26 @@ interface Props {
 }
 
 export function RelatedProducts({ idOrSlug }: Props) {
-  const { data, isLoading, isError } = useGetRelatedProductsQuery(
+  const { data: relatedData, isLoading: relatedLoading, isError: relatedError } = useGetRelatedProductsQuery(
     { idOrSlug, limit: 8 },
     { skip: !idOrSlug },
   );
 
-  const products = useMemo(() => (data ?? []).map(apiProductToProduct), [data]);
+  // Fall back to the general catalog when the /related endpoint isn't available
+  const { data: catalogData, isLoading: catalogLoading } = useGetCatalogProductsQuery(
+    9,
+    { skip: !relatedError },
+  );
 
-  if (isError) return null;
+  const products = useMemo(() => {
+    const raw = relatedError ? (catalogData ?? []) : (relatedData ?? []);
+    return raw
+      .filter((p) => p.id !== idOrSlug && p.slug !== idOrSlug)
+      .slice(0, 8)
+      .map(apiProductToProduct);
+  }, [relatedData, catalogData, relatedError, idOrSlug]);
+
+  const isLoading = relatedLoading || (relatedError && catalogLoading);
 
   if (isLoading) {
     return (

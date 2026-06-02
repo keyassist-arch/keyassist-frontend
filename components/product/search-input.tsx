@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 
-const allowedSources = ["jumia", "nike", "amazon", "apple"];
+const allowedSources = ["nike", "amazon", "apple", "goat", "zara", "ebay", "stockx", "converse"];
 
 interface SearchInputProps {
   onSearch?: (query: string) => void;
@@ -33,7 +33,7 @@ export function SearchInput({ onSearch, variant = "default" }: SearchInputProps)
           type="search"
           enterKeyHint="search"
           className={variant === "hero" ? "input flex-1" : "input"}
-          placeholder="Paste: Amazon / Apple / Jumia / Nike URL"
+          placeholder="Paste: Amazon / Apple / Nike / GOAT URL"
           value={value}
           onChange={(event) => setValue(event.target.value)}
         />

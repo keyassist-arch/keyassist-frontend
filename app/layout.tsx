@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Key Assist",
   },
   description:
-    "Key Assist: shop and track products from Amazon, Apple, Nike, Jumia and more in one cart. Paste a product URL to import it instantly.",
+    "Key Assist: shop and track products from Amazon, Apple, Nike, GOAT and more in one cart. Paste a product URL to import it instantly.",
   openGraph: {
     siteName: "Key Assist",
     type: "website",
