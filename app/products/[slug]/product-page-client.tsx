@@ -60,7 +60,8 @@ function isAmazon(source?: string | null) { return source === "amazon"; }
 function isZara(source?: string | null)   { return source === "zara"; }
 function isStockX(source?: string | null) { return source === "stockx"; }
 function isEbay(source?: string | null)   { return source === "ebay"; }
-function isNike(source?: string | null)   { return source === "nike"; }
+function isNike(source?: string | null)     { return source === "nike"; }
+function isConverse(source?: string | null) { return source === "converse"; }
 
 // ─── eBay description helpers ─────────────────────────────────────────────────
 
@@ -79,6 +80,15 @@ function parseShippingFromDescription(desc?: string | null): string | null {
 // ─── Shared UI helpers ────────────────────────────────────────────────────────
 
 const SWATCH_BG = ["#9ca3af", "#d6c4a8", "#374151", "#e8e4df", "#78716c", "#b45309", "#0d9488"];
+
+function sortAppleStorage(options: string[]): string[] {
+  const toGB = (s: string): number => {
+    const m = s.match(/^(\d+(?:\.\d+)?)\s*(GB|TB)/i);
+    if (!m) return 0;
+    return m[2].toUpperCase() === "TB" ? parseFloat(m[1]) * 1024 : parseFloat(m[1]);
+  };
+  return [...options].sort((a, b) => toGB(a) - toGB(b));
+}
 
 function swatchColorForOption(opt: string, index: number) {
   let h = 0;
@@ -223,6 +233,10 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const nikeHasFit   = adapterNike && dimensions.some((d) => d.name === "Fit");
   const nikeHasWidth = adapterNike && dimensions.some((d) => d.name === "Width");
 
+  const adapterConverse = isConverse(src);
+  const adapterConverseMagento = adapterConverse &&
+    !!(api?.configurationPrices?.some((r) => r.metadata?.source === "converse-magento"));
+
   // ─── Variant selection ──────────────────────────────────────────────────────
 
   const variantSelection = useMemo(() => {
@@ -247,8 +261,16 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         (r) => r.variantSelections?.["Storage"] === storage && r.variantSelections?.["Color"] === color
       ) ?? null;
     }
+    if (adapterConverseMagento) {
+      const color = selection["Color"] ?? variantSelection["Color"];
+      const size  = selection["Size"]  ?? variantSelection["Size"];
+      return api.configurationPrices.find(
+        (r) => (r.metadata?.selection as Record<string, string> | undefined)?.["Color"] === color &&
+               (r.metadata?.selection as Record<string, string> | undefined)?.["Size"] === size
+      ) ?? null;
+    }
     return null;
-  }, [api, selection, variantSelection, adapterGoat, adapterApple]);
+  }, [api, selection, variantSelection, adapterGoat, adapterApple, adapterConverseMagento]);
 
   // ─── StockX selected size row ───────────────────────────────────────────────
 
@@ -286,19 +308,19 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   // Displayed price — may update with GOAT/Apple selection
   const displayedPriceStr = useMemo(() => {
-    if ((adapterGoat || adapterApple) && activeConfigPrice?.originalPrice) {
+    if ((adapterGoat || adapterApple || adapterConverseMagento) && activeConfigPrice?.originalPrice) {
       return formatApiMoney(activeConfigPrice.originalPrice, currency);
     }
     return formatApiMoney(api?.salePrice ?? api?.originalPrice, currency);
-  }, [adapterGoat, adapterApple, activeConfigPrice, api, currency]);
+  }, [adapterGoat, adapterApple, adapterConverseMagento, activeConfigPrice, api, currency]);
 
   // Unit price for cart (follows displayed price)
   const unitPrice = useMemo(() => {
-    if ((adapterGoat || adapterApple) && activeConfigPrice?.originalPrice) {
+    if ((adapterGoat || adapterApple || adapterConverseMagento) && activeConfigPrice?.originalPrice) {
       return coerceNumber(activeConfigPrice.originalPrice, 0);
     }
     return coerceNumber(api?.salePrice ?? api?.originalPrice ?? 0, 0);
-  }, [adapterGoat, adapterApple, activeConfigPrice, api]);
+  }, [adapterGoat, adapterApple, adapterConverseMagento, activeConfigPrice, api]);
 
   // Discount badge — prefer raw text from adapter
   const discountLabel = api?.discount?.trim() || null;
@@ -364,8 +386,25 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       return !row || row.available !== false;
     }
 
+    if (adapterConverse) {
+      if (adapterConverseMagento) {
+        const color = selection["Color"] ?? variantSelection["Color"];
+        const size  = selection["Size"]  ?? variantSelection["Size"];
+        if (!color || !size) return true;
+        const row = api.configurationPrices.find(
+          (r) => (r.metadata?.selection as Record<string, string> | undefined)?.["Color"] === color &&
+                 (r.metadata?.selection as Record<string, string> | undefined)?.["Size"] === size
+        );
+        return !row || row.available !== false;
+      }
+      const color = selection["Color"] ?? variantSelection["Color"];
+      if (!color) return true;
+      const row = api.configurationPrices.find((r) => r.variantAxis === "Color" && r.optionValue === color);
+      return !row || row.available !== false;
+    }
+
     return true;
-  }, [api, selection, variantSelection, adapterGoat, adapterZara, adapterNike, nikeHasFit, nikeHasWidth]);
+  }, [api, selection, variantSelection, adapterGoat, adapterZara, adapterNike, nikeHasFit, nikeHasWidth, adapterConverse, adapterConverseMagento]);
 
   const inStock = (stockNum == null || stockNum > 0) && variantIsAvailable;
 
@@ -383,7 +422,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   // ─── Configuration prices table (suppressed for adapters with variant-level UX) ─
 
   const configurationPricesSlot = useMemo(() => {
-    if (adapterGoat || adapterApple || adapterStockX || adapterZara || adapterNike || adapterEbay) {
+    if (adapterGoat || adapterApple || adapterStockX || adapterZara || adapterNike || adapterEbay || adapterConverse) {
       return undefined;
     }
     const rows = api?.configurationPrices?.filter((r) => {
@@ -393,7 +432,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     });
     if (!rows?.length) return undefined;
     return <ConfigurationPricesTable rows={rows} currency={currency} />;
-  }, [api, currency, adapterGoat, adapterApple, adapterStockX, adapterZara, adapterNike, adapterEbay]);
+  }, [api, currency, adapterGoat, adapterApple, adapterStockX, adapterZara, adapterNike, adapterEbay, adapterConverse]);
 
   // ─── StockX live price handler (stub — wire to endpoint when available) ──────
 
@@ -414,11 +453,14 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const variantSlots: ProductDetailVariantSlot[] | undefined = useMemo(() => {
     if (!dimensions.length) return undefined;
 
-    const adGOAT   = isGoat(api?.source);
-    const adApple  = isApple(api?.source);
-    const adStockX = isStockX(api?.source);
-    const adZara   = isZara(api?.source);
-    const adNike   = isNike(api?.source);
+    const adGOAT        = isGoat(api?.source);
+    const adApple       = isApple(api?.source);
+    const adStockX      = isStockX(api?.source);
+    const adZara        = isZara(api?.source);
+    const adNike        = isNike(api?.source);
+    const adConverse    = isConverse(api?.source);
+    const adConvMagento = adConverse &&
+      !!(api?.configurationPrices?.some((r) => r.metadata?.source === "converse-magento"));
     const hasFit   = adNike && dimensions.some((d) => d.name === "Fit");
     const hasWidth = adNike && dimensions.some((d) => d.name === "Width");
 
@@ -512,13 +554,19 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     // ── Apple: Storage (pill) → Color (swatch, price updates) → Carrier ────
     if (adApple) {
       return dimensions.map((dim) => {
+        const sortedOptions = dim.name === "Storage"
+          ? sortAppleStorage(dim.options)
+          : isColorLikeDimension(dim.name)
+            ? [...dim.options].sort((a, b) => a.localeCompare(b))
+            : dim.options;
+
         if (isColorLikeDimension(dim.name)) {
           return {
             title: dim.name,
             content: (
               <div className="flex flex-wrap gap-3">
-                {dim.options.map((opt, oi) => {
-                  const sel    = selection[dim.name] ?? dim.options[0] ?? "";
+                {sortedOptions.map((opt, oi) => {
+                  const sel    = selection[dim.name] ?? sortedOptions[0] ?? "";
                   const active = sel === opt;
                   return (
                     <button key={opt} type="button" title={opt}
@@ -574,8 +622,8 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
           title: dim.name,
           content: (
             <div className="flex flex-wrap gap-2" role="group" aria-label={dim.name}>
-              {dim.options.map((opt) => {
-                const sel    = selection[dim.name] ?? dim.options[0] ?? "";
+              {sortedOptions.map((opt) => {
+                const sel    = selection[dim.name] ?? sortedOptions[0] ?? "";
                 const active = sel === opt;
                 return (
                   <button key={opt} type="button"
@@ -591,7 +639,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       });
     }
 
-    // ── StockX: size buttons with US + EU labels ────────────────────────────
+    // ── StockX: size buttons with US + EU + UK labels ──────────────────────
     if (adStockX) {
       return dimensions.map((dim) => {
         if (dim.name !== "Size") return makeDefault(dim);
@@ -600,9 +648,10 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
           content: (
             <div className="flex flex-wrap gap-2" role="group" aria-label="Size">
               {dim.options.map((opt) => {
-                const row   = api?.configurationPrices?.find((r) => r.optionValue === opt);
+                const row    = api?.configurationPrices?.find((r) => r.optionValue === opt);
                 const euSize = row?.metadata?.sizeEU as string | undefined;
-                const sel   = selection["Size"] ?? dim.options[0] ?? "";
+                const ukSize = row?.metadata?.sizeUK as string | undefined;
+                const sel    = selection["Size"] ?? dim.options[0] ?? "";
                 const active = sel === opt;
                 return (
                   <button key={opt} type="button"
@@ -617,7 +666,8 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
                     aria-pressed={active}
                   >
                     <span className="font-medium">{opt}</span>
-                    {euSize ? <span className={`text-[11px] leading-tight ${active ? "text-white/75" : "text-gray-500"}`}>{euSize}</span> : null}
+                    {euSize ? <span className={`text-[11px] leading-tight ${active ? "text-white/75" : "text-gray-500"}`}>EU {euSize}</span> : null}
+                    {ukSize ? <span className={`text-[11px] leading-tight ${active ? "text-white/60" : "text-gray-400"}`}>UK {ukSize}</span> : null}
                   </button>
                 );
               })}
@@ -794,6 +844,80 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       });
     }
 
+    // ── Converse: Color swatch + Size (per-child pricing for Magento) ──────
+    if (adConverse) {
+      return dimensions.map((dim) => {
+        if (isColorLikeDimension(dim.name)) {
+          return {
+            title: dim.name,
+            content: (
+              <div className="flex flex-wrap gap-3">
+                {dim.options.map((opt, oi) => {
+                  const sel    = selection[dim.name] ?? dim.options[0] ?? "";
+                  const active = sel === opt;
+                  return (
+                    <button key={opt} type="button" title={opt}
+                      onClick={() => setSelection((prev) => ({ ...prev, [dim.name]: opt }))}
+                      className={`relative h-11 w-11 rounded-full border-2 transition ${active ? "border-shop-ink ring-2 ring-shop-ink ring-offset-2" : "border-black/15 hover:border-black/35"}`}
+                      style={{ backgroundColor: swatchColorForOption(opt, oi) }}
+                      aria-label={`${dim.name}: ${opt}`} aria-pressed={active}
+                    >
+                      {active ? <span className="absolute inset-0 flex items-center justify-center text-white drop-shadow"><Check size={18} strokeWidth={2.25} aria-hidden /></span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ),
+          };
+        }
+
+        if (dim.name === "Size") {
+          const selectedColor = selection["Color"] ?? variantSelection["Color"];
+          return {
+            title: "Size",
+            content: (
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Size">
+                {dim.options.map((opt) => {
+                  const row = adConvMagento
+                    ? api?.configurationPrices?.find(
+                        (r) => (r.metadata?.selection as Record<string, string> | undefined)?.["Color"] === selectedColor &&
+                               (r.metadata?.selection as Record<string, string> | undefined)?.["Size"] === opt
+                      )
+                    : api?.configurationPrices?.find((r) => r.variantAxis === "Size" && r.optionValue === opt);
+                  const available = !row || row.available !== false;
+                  const priceStr  = adConvMagento && row?.originalPrice
+                    ? formatApiMoney(row.originalPrice, row.currency?.trim() || currency)
+                    : null;
+                  const sel    = selection["Size"] ?? dim.options[0] ?? "";
+                  const active = sel === opt;
+                  return (
+                    <button key={opt} type="button"
+                      disabled={!available}
+                      onClick={() => available && setSelection((prev) => ({ ...prev, Size: opt }))}
+                      title={!available ? "Out of stock" : undefined}
+                      className={[
+                        priceStr ? "flex flex-col items-center" : "",
+                        "rounded-xl border px-4 py-2 text-sm transition",
+                        active ? "border-gray-900 bg-gray-900 text-white"
+                          : available ? "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                          : "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300",
+                      ].filter(Boolean).join(" ")}
+                      aria-pressed={active}
+                    >
+                      <span className={priceStr ? "font-medium" : ""}>{opt}</span>
+                      {priceStr ? <span className={`text-[11px] leading-tight ${active ? "text-white/75" : "text-gray-500"}`}>{priceStr}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ),
+          };
+        }
+
+        return makeDefault(dim);
+      });
+    }
+
     // ── Default (generic / Amazon / eBay) ───────────────────────────────────
     return dimensions.map(makeDefault);
   }, [dimensions, selection, api, currency, variantSelection]);
@@ -876,8 +1000,41 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       }
     }
 
+    if (adapterApple && api?.configurationPrices?.length) {
+      const prices = api.configurationPrices
+        .map((r) => coerceNumber(r.originalPrice, 0))
+        .filter((n) => n > 0);
+      if (prices.length > 1) {
+        const lo = Math.min(...prices);
+        const hi = Math.max(...prices);
+        if (hi - lo > 50) {
+          parts.push(
+            <p key="apple-range" className="text-sm text-shop-muted">
+              Range: {formatApiMoney(lo, currency)} – {formatApiMoney(hi, currency)}
+            </p>
+          );
+        }
+      }
+    }
+
+    if (adapterAmazon && api?.configurationPrices?.length) {
+      const currentRow = api.configurationPrices.find((r) => !r.metadata?.priceNeedsLookup);
+      if (currentRow?.variantSelections) {
+        const isCurrentSel = Object.entries(currentRow.variantSelections).every(
+          ([k, v]) => variantSelection[k] === v
+        );
+        if (!isCurrentSel) {
+          parts.push(
+            <p key="amazon-lookup" className="text-xs text-amber-700">
+              Price shown is for the current Amazon listing. This variant&apos;s price requires a separate lookup.
+            </p>
+          );
+        }
+      }
+    }
+
     return parts.length ? <div className="mt-1 space-y-1">{parts}</div> : null;
-  }, [savingsAmount, currency, ebayShipping, adapterStockX, api]);
+  }, [savingsAmount, currency, ebayShipping, adapterStockX, adapterApple, adapterAmazon, api, variantSelection]);
 
   // ─── Meta lines ──────────────────────────────────────────────────────────────
 
