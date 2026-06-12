@@ -19,10 +19,11 @@ export function useProductImportFromUrl() {
   const [url, setUrl] = useState("");
   const [importId, setImportId] = useState<string | null>(null);
   const navigatedRef = useRef(false);
+  const lastAttemptedUrlRef = useRef("");
   const [postHint, setPostHint] = useState<ProductImportResponse | null>(null);
   const [socketPayload, setSocketPayload] = useState<ProductImportResponse | null>(null);
   const [pollPayload, setPollPayload] = useState<ProductImportResponse | null>(null);
-  const [importProduct, { isLoading: importing, isError: importErr, error: importError }] = useImportProductMutation();
+  const [importProduct, { isLoading: importing, isError: importErr, error: importError, reset: resetImportMutation }] = useImportProductMutation();
   const [pollImport] = useLazyGetImportStatusQuery();
 
   const effective = useMemo(
@@ -76,14 +77,25 @@ export function useProductImportFromUrl() {
     router.push(productDetailPathFromApi(effective.product));
   }, [effective, router]);
 
+  const reset = () => {
+    navigatedRef.current = false;
+    setImportId(null);
+    setPostHint(null);
+    setSocketPayload(null);
+    setPollPayload(null);
+    resetImportMutation();
+  };
+
   const runImport = async (urlStr: string) => {
     navigatedRef.current = false;
     setImportId(null);
     setPostHint(null);
     setSocketPayload(null);
     setPollPayload(null);
+    resetImportMutation();
     const trimmed = urlStr.trim();
     if (!trimmed) return;
+    lastAttemptedUrlRef.current = trimmed;
     setUrl("");
     try {
       const res = await importProduct({ url: trimmed }).unwrap();
@@ -132,6 +144,8 @@ export function useProductImportFromUrl() {
     setUrl,
     onSubmit,
     triggerImport,
+    reset,
+    lastAttemptedUrl: lastAttemptedUrlRef.current,
     hasApiBase,
     importing,
     importErr,

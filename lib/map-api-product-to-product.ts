@@ -21,16 +21,28 @@ export function apiProductToProduct(api: ApiProduct): Product {
   const original = coerceNumber(api.originalPrice, 0);
   const stock = api.stockQuantity == null ? UNLIMITED_STOCK : coerceNumber(api.stockQuantity, 0);
 
+  // Prefer adapter-provided compareAtPrice over originalPrice
+  const adapterCompareAt = api.compareAtPrice ? coerceNumber(api.compareAtPrice, 0) : 0;
+  const compareAtRaw = adapterCompareAt > price ? adapterCompareAt : original;
+
   let compareAtPrice: number | undefined;
   let discountPercent: number | undefined;
   if (
-    original > 0 &&
+    compareAtRaw > 0 &&
     price > 0 &&
-    price < original &&
-    !pricesAreEqual(api.originalPrice, api.salePrice)
+    price < compareAtRaw &&
+    !pricesAreEqual(compareAtRaw, api.salePrice)
   ) {
-    compareAtPrice = original;
-    discountPercent = Math.min(99, Math.round((1 - price / original) * 100));
+    compareAtPrice = compareAtRaw;
+    discountPercent = Math.min(99, Math.round((1 - price / compareAtRaw) * 100));
+  }
+
+  // Use raw discount text as percent when possible
+  if (api.discount) {
+    const parsed = parseInt(api.discount.replace(/[^0-9]/g, ""), 10);
+    if (Number.isFinite(parsed) && parsed > 0 && parsed <= 99) {
+      discountPercent = parsed;
+    }
   }
 
   return {

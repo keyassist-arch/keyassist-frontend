@@ -3,49 +3,17 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useGetCatalogProductsQuery, useGetCategoriesQuery } from "@/store/routes/unified-commerce-api";
 import { StoreProductCardSkeleton } from "@/components/storefront/store-product-card";
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { CommunityCatalog } from "@/components/storefront/community-catalog";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { formatApiMoney } from "@/lib/format-price";
+import { productDetailPath } from "@/lib/product-detail-path";
 import { motion } from "framer-motion";
 import type { Category } from "@/types/api";
-
-/* ── Editorial carousel slides ── */
-const SLIDES = [
-  {
-    id: "wedding",
-    title: "Warm weather wedding looks",
-    body: "Shop breezy midi dresses, wrap silhouettes, more",
-    href: "/shop?q=wedding",
-    gradient: "linear-gradient(135deg,#d8ccc4 0%,#c0b0a8 40%,#b8a89e 100%)",
-    textBg: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-  },
-  {
-    id: "coastal",
-    title: "Coastal style",
-    body: "Shop elevated swim trunks, linen shirts, beachwear",
-    href: "/shop?q=coastal",
-    gradient: "linear-gradient(135deg,#a8c4d8 0%,#88aac4 40%,#6890b0 100%)",
-    textBg: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-  },
-  {
-    id: "spf",
-    title: "Sun-ready SPF",
-    body: "Shop SPF sticks, tinted SPF, mineral sunscreens",
-    href: "/shop?q=sunscreen",
-    gradient: "linear-gradient(135deg,#e8d0b8 0%,#d4b898 40%,#c0a080 100%)",
-    textBg: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-  },
-  {
-    id: "tech",
-    title: "Tech essentials",
-    body: "Shop earbuds, laptops, wearables across top stores",
-    href: "/shop?q=tech",
-    gradient: "linear-gradient(135deg,#1a1a2e 0%,#2d2d4e 40%,#3d3d6e 100%)",
-    textBg: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)",
-  },
-];
+import type { Product } from "@/types";
 
 const CAT_PALETTE = [
   { bg: "#e8547a", text: "#fff" },
@@ -58,33 +26,34 @@ const CAT_PALETTE = [
   { bg: "#b8d5c8", text: "#2a1800" },
 ];
 
-/* ── Carousel ── */
-function EditorialCarousel() {
+/* ── Product carousel ── */
+function ProductCarousel({ products }: { products: Product[] }) {
+  const slides = products.slice(0, 6);
+  const count = slides.length;
   const [idx, setIdx] = useState(0);
-  const slide = SLIDES[idx];
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pausedRef = useRef(false);
 
-  const goTo = (i: number) => setIdx((SLIDES.length + i) % SLIDES.length);
+  const goTo = (i: number) => setIdx((count + i) % count);
 
   const startAuto = () => {
-    stopAuto();
+    if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      if (!pausedRef.current) goTo(idx + 1);
-    }, 4000);
-  };
-
-  const stopAuto = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+      if (!pausedRef.current) setIdx((prev) => (prev + 1) % count);
+    }, 4500);
   };
 
   useEffect(() => {
+    if (!count) return;
     startAuto();
-    return stopAuto;
-  }, [idx]);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count]);
+
+  if (!count) return null;
+
+  const product = slides[idx];
+  const image = product.images?.[0];
 
   return (
     <motion.div
@@ -95,49 +64,61 @@ function EditorialCarousel() {
       transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
     >
       <div
-        className="relative overflow-hidden rounded-3xl"
+        className="relative overflow-hidden rounded-3xl bg-gray-100"
         style={{ height: 340 }}
         onMouseEnter={() => { pausedRef.current = true; }}
         onMouseLeave={() => { pausedRef.current = false; }}
       >
-        {/* Background */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: slide.gradient }}
-          key={slide.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-        />
-        {/* Decorative shape / person silhouette suggestion */}
+        {/* Product image */}
+        {image && (
+          <motion.div
+            key={`img-${product.id}`}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+          >
+            <Image
+              src={image}
+              alt={product.title}
+              fill
+              className="object-cover"
+              unoptimized
+              priority={idx === 0}
+            />
+          </motion.div>
+        )}
+
+        {/* Gradient overlay */}
         <div
           className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 90% at 65% 50%, rgba(255,255,255,0.08) 0%, transparent 70%)",
-          }}
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)" }}
         />
-        {/* Text overlay */}
+
+        {/* Text */}
         <motion.div
-          className="absolute inset-0 flex flex-col justify-end p-7"
-          style={{ background: slide.textBg }}
-          key={`${slide.id}-text`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, ease: "easeInOut", delay: 0.2 }}
+          key={`text-${product.id}`}
+          className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1], delay: 0.15 }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
-            Curated collection
-          </p>
-          <h2 className="mt-1 text-2xl font-bold leading-tight text-white sm:text-3xl">
-            {slide.title}
+          {product.marketplace && (
+            <span className="mb-2 w-fit rounded-full bg-white/15 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+              {product.marketplace}
+            </span>
+          )}
+          <h2 className="line-clamp-2 max-w-lg text-xl font-bold leading-snug text-white sm:text-2xl">
+            {product.title}
           </h2>
-          <p className="mt-1 text-sm text-white/80">{slide.body}</p>
+          <p className="mt-1.5 text-base font-semibold text-white/90 tabular-nums">
+            {formatApiMoney(product.price, product.currency)}
+          </p>
           <Link
-            href={slide.href}
+            href={productDetailPath(product)}
             className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/30"
           >
-            Shop now <ChevronRight className="h-3.5 w-3.5" />
+            View product <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </motion.div>
 
@@ -163,22 +144,31 @@ function EditorialCarousel() {
 
         {/* Dots */}
         <div className="absolute bottom-4 right-6 flex gap-1.5">
-          {SLIDES.map((_, i) => (
+          {slides.map((_, i) => (
             <button
               key={i}
               type="button"
-              onClick={() => { setIdx(i); }}
+              onClick={() => setIdx(i)}
               aria-label={`Slide ${i + 1}`}
               className="h-1.5 rounded-full transition-all"
               style={{
                 width: i === idx ? 20 : 6,
-                background: i === idx ? "white" : "rgba(255,255,255,0.45)",
+                background: i === idx ? "white" : "rgba(255,255,255,0.4)",
               }}
             />
           ))}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/* ── Carousel skeleton (while products load) ── */
+function CarouselSkeleton() {
+  return (
+    <div className="relative mx-auto max-w-(--shop-layout-max) px-4 sm:px-8">
+      <div className="h-[340px] animate-pulse rounded-3xl bg-gray-100" />
+    </div>
   );
 }
 
@@ -281,8 +271,12 @@ export function ShopPageClient() {
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Explore</h1>
       </motion.div>
 
-      {/* Editorial carousel */}
-      <EditorialCarousel />
+      {/* Product carousel */}
+      {isLoading ? (
+        <CarouselSkeleton />
+      ) : (
+        <ProductCarousel products={products} />
+      )}
 
       {/* Browse categories */}
       <motion.section

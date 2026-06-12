@@ -2,9 +2,11 @@
 
 import { ClipboardEvent, FormEvent, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Store, Link2, PackageCheck } from "lucide-react";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+import { ImportFailedModal } from "@/components/ui/import-failed-modal";
+import { getErrorMessage } from "@/lib/rtk-error";
 import { motion } from "framer-motion";
 
 const BRAND_COLOR = "#5C4AE6";
@@ -30,56 +32,15 @@ const MARKETPLACES: MarketplaceChip[] = [
   { label: "Converse", href: "/shop?q=converse",  slug: "converse", hex: "000000", iconBg: "#F5F5F5" },
 ];
 
-type FloatItem =
-  | { kind: "card"; title: string; sub: string; gradient: string }
-  | { kind: "box";  label: string; gradient: string; textColor: string };
-
-const FLOAT_ITEMS: FloatItem[] = [
-  { kind: "card", title: "AirPods Pro (2nd gen)", sub: "(2.4k)", gradient: "linear-gradient(140deg,#e8eef5 0%,#c8d5e5 100%)" },
-  { kind: "box",  label: "amazon",                gradient: "linear-gradient(140deg,#232f3e 0%,#131921 100%)",  textColor: "#FF9900" },
-  { kind: "card", title: "Nike Air Max 90",        sub: "(1.8k)", gradient: "linear-gradient(140deg,#f0f0f0 0%,#d8d8d8 100%)" },
-  { kind: "box",  label: "GOAT",                  gradient: "linear-gradient(140deg,#1a1a1a 0%,#2d2d2d 100%)", textColor: "#ffffff" },
-  { kind: "card", title: "Jordan 1 Retro Low OG", sub: "(980)",  gradient: "linear-gradient(140deg,#ffe8d5 0%,#f5c4a0 100%)" },
-  { kind: "box",  label: "eBay",                  gradient: "linear-gradient(140deg,#f5f5f5 0%,#e8e8e8 100%)", textColor: "#E53238" },
+const MINI_LOGOS = [
+  { slug: "amazon",  hex: "FF9900", bg: "#FFF8EE" },
+  { slug: "apple",   hex: "555555", bg: "#F5F5F7" },
+  { slug: "nike",    hex: "111111", bg: "#F5F5F5" },
+  { slug: "stockx",  hex: "006380", bg: "#E8F5F7" },
 ];
-
-const HEIGHTS    = [148, 120, 190, 100, 148, 88];
-const ROTATIONS  = ["-2deg", "0deg", "0deg", "0deg", "2deg", "0deg"];
-const MARGINS_B  = [16, 32, 0, 52, 16, 68];
 
 function looksLikeUrl(v: string) {
   return /^https?:\/\//i.test(v.trim());
-}
-
-function FloatCard({ title, sub, gradient, h, rotate, mb }: { title: string; sub: string; gradient: string; h: number; rotate: string; mb: number }) {
-  return (
-    <div
-      className="shrink-0 overflow-hidden rounded-[18px] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.10)]"
-      style={{ transform: `rotate(${rotate})`, marginBottom: mb, width: 148 }}
-    >
-      <div style={{ background: gradient, height: h }} />
-      <div className="px-3 py-2">
-        <p className="line-clamp-1 text-[11px] font-semibold text-gray-800">{title}</p>
-        <span className="mt-0.5 inline-flex items-center gap-px">
-          {[0,1,2,3,4].map(i => <Star key={i} size={9} fill="#F59E0B" strokeWidth={0} color="#F59E0B" />)}
-          <span className="ml-1 text-[10px] text-gray-400">{sub}</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function FloatBox({ label, gradient, textColor, h, rotate, mb }: { label: string; gradient: string; textColor: string; h: number; rotate: string; mb: number }) {
-  return (
-    <div
-      className="shrink-0 overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.12)]"
-      style={{ background: gradient, height: h, width: 96, transform: `rotate(${rotate})`, marginBottom: mb, display: "flex", alignItems: "center", justifyContent: "center" }}
-    >
-      <span className="text-center text-[11px] font-black uppercase tracking-wider px-2" style={{ color: textColor }}>
-        {label}
-      </span>
-    </div>
-  );
 }
 
 export function HomeShopHero() {
@@ -90,11 +51,34 @@ export function HomeShopHero() {
 
   const {
     triggerImport,
-    hasApiBase,
+    reset,
+    lastAttemptedUrl,
     isImportBlocking,
+    importErr,
+    importError,
     effective,
+    failed,
     waitCopy,
   } = useProductImportFromUrl();
+
+  const importFailed = Boolean(importErr || failed);
+  const failedMessage = failed
+    ? (effective?.message ?? effective?.errorMessage)
+    : importErr
+      ? getErrorMessage(importError)
+      : null;
+
+  const handleRetry = () => {
+    if (lastAttemptedUrl) triggerImport(lastAttemptedUrl);
+  };
+
+  const handleManualImport = () => {
+    router.push(`/products/add-manual?url=${encodeURIComponent(lastAttemptedUrl)}`);
+  };
+
+  const handleDismiss = () => {
+    reset();
+  };
 
   const isUrl = looksLikeUrl(q);
 
@@ -143,6 +127,14 @@ export function HomeShopHero() {
         </div>
       )}
 
+      <ImportFailedModal
+        open={importFailed}
+        onClose={handleDismiss}
+        onRetry={handleRetry}
+        onManualImport={handleManualImport}
+        errorMessage={failedMessage}
+      />
+
       {/* ── Announcement bar ── */}
       <motion.div
         className="flex w-full items-center justify-center gap-2 bg-black px-4 py-2.5 text-[13px] font-medium text-white"
@@ -159,16 +151,59 @@ export function HomeShopHero() {
       {/* ── Hero body ── */}
       <div className="bg-white px-4 pb-10 pt-8 sm:px-8">
 
-        {/* Floating items row — desktop */}
-        <div className="mx-auto mb-4 hidden max-w-[860px] items-end justify-center gap-2 lg:flex">
-          {FLOAT_ITEMS.map((item, i) =>
-            item.kind === "card" ? (
-              <FloatCard key={i} title={item.title} sub={item.sub} gradient={item.gradient} h={HEIGHTS[i]} rotate={ROTATIONS[i]} mb={MARGINS_B[i]} />
-            ) : (
-              <FloatBox key={i} label={item.label} gradient={item.gradient} textColor={item.textColor} h={HEIGHTS[i]} rotate={ROTATIONS[i]} mb={MARGINS_B[i]} />
-            )
-          )}
-        </div>
+        {/* ── Trust cards ── */}
+        <motion.div
+          className="mx-auto mb-8 flex max-w-3xl items-stretch gap-3 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center sm:overflow-visible sm:px-0"
+          variants={{
+            hidden: { opacity: 0, y: 14 },
+            show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] } },
+          }}
+        >
+          {/* Card 1 — Marketplaces */}
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:flex-1 sm:shrink">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(92,74,230,0.08)" }}>
+              <Store size={18} style={{ color: BRAND_COLOR }} aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">12 marketplaces</p>
+              <div className="mt-1 flex items-center gap-1">
+                {MINI_LOGOS.map(l => (
+                  <span
+                    key={l.slug}
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: l.bg }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`https://cdn.simpleicons.org/${l.slug}/${l.hex}`} width={11} height={11} alt="" aria-hidden />
+                  </span>
+                ))}
+                <span className="ml-0.5 text-[11px] text-gray-400">+8 more</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 — Import any link */}
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:flex-1 sm:shrink">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "#FFF7ED" }}>
+              <Link2 size={18} className="text-orange-400" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Paste any product link</p>
+              <p className="text-[12px] text-gray-400">Auto-imports in seconds</p>
+            </div>
+          </div>
+
+          {/* Card 3 — Nigerian delivery */}
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:flex-1 sm:shrink">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "#F0FDF4" }}>
+              <PackageCheck size={18} className="text-emerald-500" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Delivered to Nigeria</p>
+              <p className="text-[12px] text-gray-400">Lagos &amp; nationwide</p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Brand + search + chips */}
         <div className="text-center">

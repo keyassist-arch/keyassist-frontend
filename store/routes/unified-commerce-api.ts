@@ -63,6 +63,8 @@ import type {
   ShippingQuoteResponse,
   ShippingRatesResponse,
   UserIssue,
+  VariantPriceResponse,
+  PatchCartItemRequest,
   VerifyEmailRequest,
   VerifyEmailResponse,
   TokenResponse,
@@ -277,6 +279,18 @@ export const unifiedCommerceApi = createApi({
       providesTags: (result) => (result?.id ? [{ type: "Product", id: result.id }] : ["Product"]),
     }),
 
+    /** Variant-aware price lookup (`GET /products/:idOrSlug/variant-price?Axis=value&...`). */
+    getVariantPrice: builder.query<VariantPriceResponse, { idOrSlug: string; variantSelection: Record<string, string>; displayCurrency?: string }>({
+      query: ({ idOrSlug, variantSelection, displayCurrency }) => {
+        const params = new URLSearchParams(variantSelection);
+        if (displayCurrency) params.set("displayCurrency", displayCurrency);
+        return {
+          url: `/products/${encodeURIComponent(idOrSlug)}/variant-price?${params.toString()}`,
+          method: "GET",
+        };
+      },
+    }),
+
     /** Related products for a PDP (`GET /products/:idOrSlug/related`). */
     getRelatedProducts: builder.query<ApiProduct[], { idOrSlug: string; limit?: number; displayCurrency?: string }>({
       query: ({ idOrSlug, limit, displayCurrency }) => {
@@ -337,11 +351,11 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["Cart"],
     }),
 
-    patchCartItem: builder.mutation<unknown, { itemId: string; quantity: number }>({
-      query: ({ itemId, quantity }) => ({
+    patchCartItem: builder.mutation<unknown, PatchCartItemRequest>({
+      query: ({ itemId, quantity, variantSelection }) => ({
         url: `/cart/items/${itemId}`,
         method: "PATCH",
-        body: { quantity },
+        body: { quantity, ...(variantSelection ? { variantSelection } : {}) },
       }),
       invalidatesTags: ["Cart"],
     }),
@@ -648,6 +662,7 @@ export const {
   useLazyGetImportStatusQuery,
   useGetProductQuery,
   useLazyGetProductQuery,
+  useGetVariantPriceQuery,
   useGetRelatedProductsQuery,
   useGetCatalogProductsQuery,
   useGetCartQuery,

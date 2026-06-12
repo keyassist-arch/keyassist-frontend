@@ -383,7 +383,7 @@ function ApiCartSection({
   items: CartItemResponse[];
   totals: TotalsSnapshot;
   currency: string;
-  onQuantityChange: (itemId: string, qty: number) => void;
+  onQuantityChange: (itemId: string, qty: number, variantSelection?: Record<string, string>) => void;
   onRemove: (itemId: string) => void;
   busy: boolean;
   layout: CartContentLayout;
@@ -411,7 +411,7 @@ function ApiCartSection({
                 unitLabel={fmtMoney(unit, currency)}
                 lineTotalLabel={fmtMoney(linePrice(item), currency)}
                 quantity={item.quantity}
-                onQuantityChange={(q) => onQuantityChange(item.id, q)}
+                onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
                 onRemove={() => onRemove(item.id)}
                 disabled={busy}
               />
@@ -451,7 +451,7 @@ function ApiCartSection({
               lineTotal={linePrice(item)}
               currency={currency}
               quantity={item.quantity}
-              onQuantityChange={(q) => onQuantityChange(item.id, q)}
+              onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
               onRemove={() => onRemove(item.id)}
               disabled={busy}
             />
@@ -539,7 +539,7 @@ export function CartPanelBody({
       items={apiItems}
       totals={{ subtotal: apiSubtotal, serviceCharge: apiServiceCharge, discount: apiDiscount, fees: apiFees, total: apiTotal }}
       currency={apiCurrency}
-      onQuantityChange={(itemId, qty) => patchItem({ itemId, quantity: qty })}
+      onQuantityChange={(itemId, qty, variantSelection) => patchItem({ itemId, quantity: qty, variantSelection })}
       onRemove={(itemId) => deleteItem(itemId)}
       busy={isPatching || isDeleting}
       layout={layout}

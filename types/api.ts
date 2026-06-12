@@ -184,7 +184,11 @@ export type ProductSource =
   | "zara"
   | "converse"
   | "ebay"
-  | "stockx";
+  | "stockx"
+  | "etsy"
+  | "reebelo"
+  | "walmart"
+  | "backmarket";
 
 /** One variant dimension; `variantSelection` keys must match `name`. */
 export interface ApiProductVariantDimension {
@@ -643,6 +647,22 @@ export interface ResolveWithRefundRequest {
 export interface ResolveWithRefundResponse {
   issue: ReconciliationIssue;
   refund: ReconciliationRefund;
+}
+
+export interface VariantPriceResponse {
+  price: string;
+  currency: string;
+  variantSelection: Record<string, string>;
+  available?: boolean;
+  sku?: string | null;
+  label?: string;
+  priceNeedsLookup?: boolean;
+}
+
+export interface PatchCartItemRequest {
+  itemId: string;
+  quantity: number;
+  variantSelection?: Record<string, string>;
 }
 
 export interface NestValidationError {

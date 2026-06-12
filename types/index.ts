@@ -5,7 +5,6 @@ import type { ProductAttribute } from "./product-detail";
 export type Marketplace =
   | "Amazon"
   | "Apple"
-
   | "Nike"
   | "Shopify Partner"
   | "Partner"
@@ -13,7 +12,11 @@ export type Marketplace =
   | "Zara"
   | "Converse"
   | "eBay"
-  | "StockX";
+  | "StockX"
+  | "Etsy"
+  | "Reebelo"
+  | "Walmart"
+  | "Back Market";
 
 export interface ProductVariant {
   id: string;

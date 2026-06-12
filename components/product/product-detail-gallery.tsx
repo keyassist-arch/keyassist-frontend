@@ -46,7 +46,7 @@ export function ProductDetailGallery({
 
       {/* Main image */}
       <div className="relative min-w-0 max-h-[500px] flex-1 overflow-hidden rounded-2xl bg-gray-50">
-        <div className="aspect-square w-full max-h-[500px]">
+        <div className="relative aspect-square w-full max-h-[500px]">
           <Image
             src={main}
             alt={alt}

@@ -11,6 +11,10 @@ const SOURCE_LABELS: Record<ProductSource, string> = {
   converse: "Converse",
   ebay: "eBay",
   stockx: "StockX",
+  etsy: "Etsy",
+  reebelo: "Reebelo",
+  walmart: "Walmart",
+  backmarket: "Back Market",
 };
 
 /** Display name for “View on {retailer}”. */
@@ -42,6 +46,14 @@ export function marketplaceFromApiSource(source: string | undefined, brand?: str
       return "eBay";
     case "stockx":
       return "StockX";
+    case "etsy":
+      return "Etsy";
+    case "reebelo":
+      return "Reebelo";
+    case "walmart":
+      return "Walmart";
+    case "backmarket":
+      return "Back Market";
     default: {
       const b = brand?.trim();
       if (b && ["Amazon", "Apple", "Nike", "Shopify Partner"].includes(b)) return b as Marketplace;

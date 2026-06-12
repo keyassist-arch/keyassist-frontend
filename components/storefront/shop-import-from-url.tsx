@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ClipboardEvent, useEffect, useId } from "react";
-import { ErrorState } from "@/components/feedback/query-state";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+import { ImportFailedModal } from "@/components/ui/import-failed-modal";
+import { getErrorMessage } from "@/lib/rtk-error";
 
 /**
  * Marketplace URL import for the shop page — includes a full-screen overlay while the import runs.
  */
 export function ShopImportFromUrl() {
+  const router = useRouter();
   const {
     url,
     setUrl,
     onSubmit,
     triggerImport,
+    reset,
+    lastAttemptedUrl,
     hasApiBase,
     importing,
     importErr,
@@ -25,6 +30,25 @@ export function ShopImportFromUrl() {
     importId,
     isImportBlocking,
   } = useProductImportFromUrl();
+
+  const importFailed = Boolean(importErr || failed);
+  const failedMessage = failed
+    ? (effective?.message ?? effective?.errorMessage)
+    : importErr
+      ? getErrorMessage(importError)
+      : null;
+
+  const handleRetry = () => {
+    if (lastAttemptedUrl) triggerImport(lastAttemptedUrl);
+  };
+
+  const handleManualImport = () => {
+    router.push(`/products/add-manual?url=${encodeURIComponent(lastAttemptedUrl)}`);
+  };
+
+  const handleDismiss = () => {
+    reset();
+  };
 
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const pasted = e.clipboardData.getData("text").trim();
@@ -70,6 +94,14 @@ export function ShopImportFromUrl() {
         </div>
       ) : null}
 
+      <ImportFailedModal
+        open={importFailed}
+        onClose={handleDismiss}
+        onRetry={handleRetry}
+        onManualImport={handleManualImport}
+        errorMessage={failedMessage}
+      />
+
       <div className="rounded-2xl border bg-white p-4 sm:p-5" style={{ borderColor: "var(--shop-border)" }}>
         <p className="text-xs font-medium uppercase tracking-[0.1em] text-shop-muted">Import</p>
         <h2 className="mt-1 text-lg font-semibold text-shop-ink">Add a product from a link</h2>
@@ -93,16 +125,6 @@ export function ShopImportFromUrl() {
             {importing || (importId && waiting) ? "Importing…" : "Import product"}
           </button>
         </form>
-        {importErr ? (
-          <div className="mt-3">
-            <ErrorState error={importError} title="Import failed" />
-          </div>
-        ) : null}
-        {failed ? (
-          <div className="mt-3">
-            <ErrorState error={effective?.message ?? effective?.errorMessage ?? "Import failed"} title="Import failed" />
-          </div>
-        ) : null}
         <p className="mt-3 text-xs text-black/45">
           Imports may take a little while.{" "}
           <Link href="/faq" className="text-shop-accent underline hover:no-underline">
