@@ -6,6 +6,7 @@ import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState, S
 import { ArrowLeft, Fingerprint } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { registerUrl } from "@/lib/auth-redirect";
+import { passkeyPref } from "@/lib/passkey-pref";
 import toast from "react-hot-toast";
 import {
   useLogin2faMutation,
@@ -58,6 +59,7 @@ function LoginPageInner() {
   const [formError, setFormError] = useState("");
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [resendReadyIn, setResendReadyIn] = useState(0);
+  const [passkeyAvailable] = useState(() => passkeyPref.get());
 
   const preAuthTokenRef = useRef<string | null>(null);
   const localLinesRef = useRef<LocalCartLine[]>([]);
@@ -180,7 +182,7 @@ function LoginPageInner() {
 
   // Kick off conditional UI (passkey autofill) silently when the email step mounts
   useEffect(() => {
-    if (step !== "email") return;
+    if (step !== "email" || !passkeyAvailable) return;
     let cancelled = false;
     (async () => {
       const { browserSupportsWebAuthnAutofill } = await import("@simplewebauthn/browser");
@@ -188,7 +190,7 @@ function LoginPageInner() {
       void onPasskeyLogin(true);
     })();
     return () => { cancelled = true; };
-  }, [step, onPasskeyLogin]);
+  }, [step, passkeyAvailable, onPasskeyLogin]);
 
   const onResend = async () => {
     const addr = notVerified?.email;
@@ -226,7 +228,7 @@ function LoginPageInner() {
           <AuthInput
             name="email"
             type="email"
-            autoComplete="username webauthn"
+            autoComplete={passkeyAvailable ? "username webauthn" : "email"}
             placeholder="Enter your email"
             defaultValue={email}
             required
@@ -236,24 +238,28 @@ function LoginPageInner() {
           <AuthButton type="submit">Continue</AuthButton>
         </form>
 
-        <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-white px-3 text-xs text-gray-400">or</span>
-          </div>
-        </div>
+        {passkeyAvailable && (
+          <>
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-xs text-gray-400">or</span>
+              </div>
+            </div>
 
-        <button
-          type="button"
-          onClick={() => void onPasskeyLogin()}
-          disabled={passkeyLoading}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-        >
-          <Fingerprint className={`h-5 w-5 ${passkeyLoading ? "animate-pulse text-[#5C4AE6]" : "text-gray-500"}`} aria-hidden />
-          {passkeyLoading ? "Waiting for passkey…" : "Sign in with a passkey"}
-        </button>
+            <button
+              type="button"
+              onClick={() => void onPasskeyLogin()}
+              disabled={passkeyLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <Fingerprint className={`h-5 w-5 ${passkeyLoading ? "animate-pulse text-[#5C4AE6]" : "text-gray-500"}`} aria-hidden />
+              {passkeyLoading ? "Waiting for passkey…" : "Sign in with a passkey"}
+            </button>
+          </>
+        )}
       </AuthShell>
     );
   }

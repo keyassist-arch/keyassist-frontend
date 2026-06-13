@@ -21,6 +21,7 @@ import { useAppSelector } from "@/store/hooks";
 import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import type { PatchMeRequest, ShippingAddress } from "@/types/api";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { passkeyPref } from "@/lib/passkey-pref";
 import { Fingerprint, Pencil, Shield, Trash2 } from "lucide-react";
 
 function emptyAddress(): ShippingAddress {
@@ -181,6 +182,7 @@ export default function DashboardSettingsPage() {
         response: pendingPasskey,
         friendlyName: friendlyName?.trim() || undefined,
       }).unwrap();
+      passkeyPref.set();
       toast.success("Passkey registered successfully.");
       setPendingPasskey(null);
       void refetchPasskeys();
@@ -205,6 +207,9 @@ export default function DashboardSettingsPage() {
     if (!confirm("Remove this passkey? You won't be able to use it to sign in.")) return;
     try {
       await deletePasskey(id).unwrap();
+      // Clear the pref flag if this was the last passkey
+      const remaining = (passkeys ?? []).filter((pk) => pk.id !== id);
+      if (remaining.length === 0) passkeyPref.clear();
       toast.success("Passkey removed.");
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
