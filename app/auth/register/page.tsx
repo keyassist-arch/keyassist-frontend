@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRegisterMutation } from "@/store/routes/unified-commerce-api";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { loginUrl } from "@/lib/auth-redirect";
 import {
   AuthShell,
   AuthInput,
@@ -12,8 +14,10 @@ import {
   AuthButton,
 } from "@/components/auth/auth-shell";
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "";
   const [register, { isLoading, isError, error }] = useRegisterMutation();
   const [formError, setFormError] = useState("");
 
@@ -43,7 +47,8 @@ export default function RegisterPage() {
         lastName,
         ...(phone ? { phone } : {}),
       }).unwrap();
-      router.replace(`/auth/check-email?email=${encodeURIComponent(data.email)}`);
+      const checkEmailUrl = `/auth/check-email?email=${encodeURIComponent(data.email)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
+      router.replace(checkEmailUrl);
     } catch { /* surfaced via isError */ }
   };
 
@@ -53,7 +58,7 @@ export default function RegisterPage() {
       subAction={
         <>
           Already have one?{" "}
-          <Link href="/auth/login" className="font-medium text-[#5C4AE6] hover:underline">
+          <Link href={loginUrl(redirect)} className="font-medium text-[#5C4AE6] hover:underline">
             Sign in
           </Link>
         </>
@@ -113,5 +118,13 @@ export default function RegisterPage() {
         </AuthButton>
       </form>
     </AuthShell>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterPageInner />
+    </Suspense>
   );
 }

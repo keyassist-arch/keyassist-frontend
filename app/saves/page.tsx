@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type MouseEvent } from "react";
 import Link from "next/link";
+import { loginUrl } from "@/lib/auth-redirect";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
@@ -99,7 +100,7 @@ export default function SavesPage() {
         </div>
         {!token && (
           <Link
-            href="/auth/login"
+            href={loginUrl("/saves")}
             className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
           >
             Sign in to sync

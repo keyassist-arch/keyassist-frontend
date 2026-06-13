@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, LayoutGrid, ShoppingCart, Tag, Home, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Heart, LayoutGrid, ShoppingCart, Package, Home, User } from "lucide-react";
+import { loginUrl } from "@/lib/auth-redirect";
 import { useAppSelector } from "@/store/hooks";
 import { useCart } from "@/context/cart-context";
 import { useLocalSaves } from "@/context/saves-context";
@@ -14,13 +16,14 @@ const railBtn =
 const NAV_LINKS = [
   { href: "/",        label: "Home",     icon: Home },
   { href: "/shop",    label: "Browse",   icon: LayoutGrid },
-  { href: "/products",label: "Products", icon: Tag },
+  { href: "/dashboard/orders", label: "Orders", icon: Package },
   { href: "/",        label: "Saved",    icon: Heart, isCart: false, isSaved: true },
 ];
 
 export function LeftRail() {
   const token = useAppSelector((s) => s.auth.accessToken);
-  const profileHref = token ? "/dashboard" : "/auth/login";
+  const pathname = usePathname();
+  const profileHref = token ? "/dashboard" : loginUrl(pathname);
   const { items } = useCart();
   const { localSavedIds } = useLocalSaves();
   const { data: serverSaves } = useGetSavesQuery(undefined, { skip: !token });
@@ -35,8 +38,8 @@ export function LeftRail() {
       <Link href="/shop" aria-label="Browse" className={railBtn}>
         <LayoutGrid className="h-5 w-5" aria-hidden />
       </Link>
-      <Link href="/products" aria-label="Products" className={railBtn}>
-        <Tag className="h-5 w-5" aria-hidden />
+      <Link href="/dashboard/orders" aria-label="Orders" className={railBtn}>
+        <Package className="h-5 w-5" aria-hidden />
       </Link>
       <Link href="/cart" aria-label="Cart" className={railBtn}>
         <ShoppingCart className="h-5 w-5" aria-hidden />

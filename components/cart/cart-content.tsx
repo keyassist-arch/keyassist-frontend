@@ -16,6 +16,7 @@ import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { formatApiMoney } from "@/lib/format-price";
+import { loginUrl } from "@/lib/auth-redirect";
 
 /* ── helpers ── */
 function lineUnitPrice(item: CartItemResponse): number {
@@ -126,7 +127,7 @@ function DrawerFooter({
     <div className="shrink-0 border-t border-black/10 bg-white px-4 py-4">
       {signInHint && (
         <p className="mb-3 text-center text-xs text-black/55">
-          <Link href="/auth/login" className="font-medium underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
+          <Link href={loginUrl("/cart")} className="font-medium underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
       )}
@@ -278,7 +279,7 @@ function PageSummary({
 
       {signInHint && (
         <p className="mt-4 text-center text-xs text-gray-400">
-          <Link href="/auth/login" className="font-medium hover:underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
+          <Link href={loginUrl("/cart")} className="font-medium hover:underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
       )}

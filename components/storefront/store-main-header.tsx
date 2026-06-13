@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { loginUrl, registerUrl } from "@/lib/auth-redirect";
 import { ClipboardEvent, FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useCart } from "@/context/cart-context";
@@ -53,6 +54,7 @@ export function StoreMainHeader() {
   const token = useAppSelector((s) => s.auth.accessToken);
   const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
   const router = useRouter();
+  const pathname = usePathname();
   const [q, setQ] = useState("");
   const [navOpen, setNavOpen] = useState(false);
   const navPanelId = useId();
@@ -171,13 +173,13 @@ export function StoreMainHeader() {
             ) : (
               <div className="hidden items-center gap-1 sm:flex">
                 <Link
-                  href="/auth/login"
+                  href={loginUrl(pathname)}
                   className="rounded-xl px-3 py-1.5 text-sm text-shop-muted transition hover:bg-shop-accent-soft hover:text-shop-accent"
                 >
                   Sign in
                 </Link>
                 <Link
-                  href="/auth/register"
+                  href={registerUrl(pathname)}
                   className="rounded-xl border px-3 py-1.5 text-sm font-semibold text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent"
                   style={{ borderColor: "var(--shop-border)" }}
                 >
@@ -339,14 +341,14 @@ export function StoreMainHeader() {
               ) : (
                 <div className="flex flex-col gap-2">
                   <Link
-                    href="/auth/login"
+                    href={loginUrl(pathname)}
                     className="btn-primary w-full text-center text-sm"
                     onClick={() => setNavOpen(false)}
                   >
                     Sign in
                   </Link>
                   <Link
-                    href="/auth/register"
+                    href={registerUrl(pathname)}
                     className="btn-secondary w-full text-center text-sm"
                     onClick={() => setNavOpen(false)}
                   >

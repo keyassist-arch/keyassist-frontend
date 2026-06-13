@@ -1,4 +1,5 @@
 import type { BaseQueryApi, FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth, refreshBaseQuery } from "@/store/routes/base-query";
 import { credentialsReceived, profileSynced, tokensRefreshed } from "@/store/slices/authSlice";
@@ -573,11 +574,11 @@ export const unifiedCommerceApi = createApi({
     }),
 
     /* ---------- Passkeys (WebAuthn) ---------- */
-    passkeyLoginStart: builder.mutation<unknown, void>({
+    passkeyLoginStart: builder.mutation<PublicKeyCredentialRequestOptionsJSON, void>({
       queryFn: async (_arg, api, extra) => {
         const result = await refreshBaseQuery({ url: "/auth/passkey/login/start", method: "POST", body: {} }, api, extra);
         if (result.error) return { error: result.error };
-        return { data: result.data };
+        return { data: result.data as PublicKeyCredentialRequestOptionsJSON };
       },
     }),
 
@@ -598,7 +599,7 @@ export const unifiedCommerceApi = createApi({
       },
     }),
 
-    passkeyRegisterStart: builder.mutation<unknown, void>({
+    passkeyRegisterStart: builder.mutation<PublicKeyCredentialCreationOptionsJSON, void>({
       query: () => ({ url: "/auth/passkey/register/start", method: "POST", body: {} }),
     }),
 

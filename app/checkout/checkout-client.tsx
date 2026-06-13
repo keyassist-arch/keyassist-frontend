@@ -40,6 +40,7 @@ import {
 } from "@/lib/pending-checkout-order";
 import { orderCanInitializePayment } from "@/lib/order-checkout";
 import { isUuid } from "@/lib/uuid";
+import { loginUrl } from "@/lib/auth-redirect";
 import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 
 const PAYPAL_STORAGE = "uc_paypal_checkout";
@@ -375,7 +376,7 @@ export function CheckoutClient() {
               ? " Your browsing cart won't carry over after sign-in — you can add items again once you're in."
               : null}
           </p>
-          <Link href="/auth/login" className="btn-primary inline-block text-center">
+          <Link href={loginUrl("/checkout")} className="btn-primary inline-block text-center">
             Sign in
           </Link>
         </div>

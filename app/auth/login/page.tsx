@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState, Suspense } from "react";
 import { ArrowLeft, Fingerprint } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { registerUrl } from "@/lib/auth-redirect";
 import toast from "react-hot-toast";
 import {
   useLogin2faMutation,
@@ -36,8 +38,10 @@ import {
 
 type Step = "email" | "password" | "totp";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
   const dispatch = useAppDispatch();
   const { items } = useCart();
 
@@ -65,14 +69,14 @@ export default function LoginPage() {
   useEffect(() => {
     if (step === "password" && isSuccess && isTokenLoginResult(loginData)) {
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
-      router.replace("/");
+      router.replace(redirect);
     }
   }, [step, isSuccess, loginData, dispatch, router]);
 
   useEffect(() => {
     if (step === "totp" && success2fa) {
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
-      router.replace("/");
+      router.replace(redirect);
     }
   }, [step, success2fa, dispatch, router]);
 
@@ -152,30 +156,39 @@ export default function LoginPage() {
     } catch { /* surfaced via err2fa */ }
   };
 
-  const onPasskeyLogin = async () => {
-    setPasskeyLoading(true);
+  const onPasskeyLogin = useCallback(async (useBrowserAutofill = false) => {
+    if (!useBrowserAutofill) setPasskeyLoading(true);
     setFormError("");
     try {
-      // Dynamic import so the browser WebAuthn library is never bundled for SSR
       const { startAuthentication } = await import("@simplewebauthn/browser");
       const options = await passkeyStart().unwrap();
-      const authResponse = await startAuthentication({
-        optionsJSON: options as Parameters<typeof startAuthentication>[0]["optionsJSON"],
-      });
+      const authResponse = await startAuthentication({ optionsJSON: options, useBrowserAutofill });
       await passkeyFinish(authResponse).unwrap();
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
-      router.replace("/");
+      router.replace(redirect);
     } catch (err: unknown) {
-      // User cancelled the browser dialog — DOMException name is "NotAllowedError"
-      if (err instanceof DOMException && err.name === "NotAllowedError") {
-        setFormError("");
-      } else {
+      if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "AbortError")) {
+        // User cancelled or autofill was superseded by the manual button — silent
+      } else if (!useBrowserAutofill) {
         setFormError(getErrorMessage(err));
       }
     } finally {
-      setPasskeyLoading(false);
+      if (!useBrowserAutofill) setPasskeyLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redirect]);
+
+  // Kick off conditional UI (passkey autofill) silently when the email step mounts
+  useEffect(() => {
+    if (step !== "email") return;
+    let cancelled = false;
+    (async () => {
+      const { browserSupportsWebAuthnAutofill } = await import("@simplewebauthn/browser");
+      if (cancelled || !(await browserSupportsWebAuthnAutofill())) return;
+      void onPasskeyLogin(true);
+    })();
+    return () => { cancelled = true; };
+  }, [step, onPasskeyLogin]);
 
   const onResend = async () => {
     const addr = notVerified?.email;
@@ -203,7 +216,7 @@ export default function LoginPage() {
         subAction={
           <>
             Or{" "}
-            <Link href="/auth/register" className="font-medium text-[#5C4AE6] hover:underline">
+            <Link href={registerUrl(redirect)} className="font-medium text-[#5C4AE6] hover:underline">
               create an account
             </Link>
           </>
@@ -213,7 +226,7 @@ export default function LoginPage() {
           <AuthInput
             name="email"
             type="email"
-            autoComplete="email"
+            autoComplete="username webauthn"
             placeholder="Enter your email"
             defaultValue={email}
             required
@@ -234,7 +247,7 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={onPasskeyLogin}
+          onClick={() => void onPasskeyLogin()}
           disabled={passkeyLoading}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
         >
@@ -352,5 +365,13 @@ export default function LoginPage() {
         </AuthGhostButton>
       </form>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   );
 }

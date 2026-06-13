@@ -18,6 +18,7 @@ import {
   usePostMe2faSetupMutation,
 } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
+import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import type { PatchMeRequest, ShippingAddress } from "@/types/api";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { Fingerprint, Pencil, Shield, Trash2 } from "lucide-react";
@@ -66,6 +67,9 @@ export default function DashboardSettingsPage() {
   const { data: passkeys, refetch: refetchPasskeys } = useGetPasskeyCredentialsQuery(undefined, { skip: !token });
 
   const [passkeyRegistering, setPasskeyRegistering] = useState(false);
+  const [pendingPasskey, setPendingPasskey] = useState<RegistrationResponseJSON | null>(null);
+  const [pendingPasskeyName, setPendingPasskeyName] = useState("");
+  const [savingPasskey, setSavingPasskey] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -157,19 +161,33 @@ export default function DashboardSettingsPage() {
     try {
       const { startRegistration } = await import("@simplewebauthn/browser");
       const options = await passkeyRegisterStart().unwrap();
-      const regResponse = await startRegistration({
-        optionsJSON: options as Parameters<typeof startRegistration>[0]["optionsJSON"],
-      });
-      const friendly = window.prompt('Name this passkey (e.g. "My iPhone")') ?? undefined;
-      await passkeyRegisterFinish({ response: regResponse, friendlyName: friendly }).unwrap();
-      toast.success("Passkey registered successfully.");
-      void refetchPasskeys();
+      const regResponse = await startRegistration({ optionsJSON: options });
+      setPendingPasskey(regResponse);
+      setPendingPasskeyName("");
     } catch (err: unknown) {
       if (!(err instanceof DOMException && err.name === "NotAllowedError")) {
         toast.error(getErrorMessage(err));
       }
     } finally {
       setPasskeyRegistering(false);
+    }
+  };
+
+  const savePasskey = async (friendlyName?: string) => {
+    if (!pendingPasskey) return;
+    setSavingPasskey(true);
+    try {
+      await passkeyRegisterFinish({
+        response: pendingPasskey,
+        friendlyName: friendlyName?.trim() || undefined,
+      }).unwrap();
+      toast.success("Passkey registered successfully.");
+      setPendingPasskey(null);
+      void refetchPasskeys();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSavingPasskey(false);
     }
   };
 
@@ -332,15 +350,52 @@ export default function DashboardSettingsPage() {
             <p className="text-sm text-gray-500">No passkeys registered yet.</p>
           )}
 
-          <button
-            type="button"
-            disabled={passkeyRegistering}
-            onClick={onRegisterPasskey}
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-[#5C4AE6]/40 hover:text-[#5C4AE6] disabled:opacity-50"
-          >
-            <Fingerprint className={`h-4 w-4 ${passkeyRegistering ? "animate-pulse text-[#5C4AE6]" : ""}`} aria-hidden />
-            {passkeyRegistering ? "Waiting for device…" : "Register a passkey"}
-          </button>
+          {pendingPasskey && (
+            <form
+              onSubmit={(e) => { e.preventDefault(); void savePasskey(pendingPasskeyName); }}
+              className="rounded-2xl border border-[#5C4AE6]/20 bg-[#5C4AE6]/04 p-4"
+            >
+              <p className="mb-3 text-sm font-medium text-gray-800">
+                Passkey created — give it a name so you can recognise it later.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  className="input h-9 flex-1 py-1.5 text-sm"
+                  placeholder='e.g. "My iPhone" (optional)'
+                  value={pendingPasskeyName}
+                  onChange={(e) => setPendingPasskeyName(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={savingPasskey}
+                  className="rounded-xl bg-[#5C4AE6] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingPasskey ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  disabled={savingPasskey}
+                  onClick={() => void savePasskey()}
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Skip
+                </button>
+              </div>
+            </form>
+          )}
+
+          {!pendingPasskey && (
+            <button
+              type="button"
+              disabled={passkeyRegistering}
+              onClick={onRegisterPasskey}
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-[#5C4AE6]/40 hover:text-[#5C4AE6] disabled:opacity-50"
+            >
+              <Fingerprint className={`h-4 w-4 ${passkeyRegistering ? "animate-pulse text-[#5C4AE6]" : ""}`} aria-hidden />
+              {passkeyRegistering ? "Waiting for device…" : "Register a passkey"}
+            </button>
+          )}
         </div>
       </SectionCard>
 
