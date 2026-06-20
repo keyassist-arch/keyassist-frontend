@@ -42,6 +42,11 @@ import type {
   PaymentInitResponse,
   PaymentMethodsResponse,
   PaypalCaptureRequest,
+  SavedPaymentMethod,
+  StripeSetupIntentResponse,
+  StripeConfirmSavedMethodRequest,
+  PaypalVaultSetupResponse,
+  PaypalVaultConfirmRequest,
   ProductImportResponse,
   ManualProductImportRequest,
   ManualProductImportResponse,
@@ -87,7 +92,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -633,6 +638,40 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/admin/shipping-rates", method: "PATCH", body }),
       invalidatesTags: ["ShippingRates"],
     }),
+
+    /* ---------- Saved payment methods (protected) ---------- */
+    getSavedPaymentMethods: builder.query<SavedPaymentMethod[], void>({
+      query: () => ({ url: "/payments/saved-methods", method: "GET" }),
+      providesTags: ["PaymentMethods"],
+    }),
+
+    createStripeSetupIntent: builder.mutation<StripeSetupIntentResponse, void>({
+      query: () => ({ url: "/payments/saved-methods/stripe/setup-intent", method: "POST", body: {} }),
+    }),
+
+    confirmStripeSavedMethod: builder.mutation<SavedPaymentMethod, StripeConfirmSavedMethodRequest>({
+      query: (body) => ({ url: "/payments/saved-methods/stripe/confirm", method: "POST", body }),
+      invalidatesTags: ["PaymentMethods"],
+    }),
+
+    createPaypalVaultSetup: builder.mutation<PaypalVaultSetupResponse, { returnUrl: string; cancelUrl: string }>({
+      query: (body) => ({ url: "/payments/saved-methods/paypal/setup-token", method: "POST", body }),
+    }),
+
+    confirmPaypalVaultSetup: builder.mutation<SavedPaymentMethod, PaypalVaultConfirmRequest>({
+      query: (body) => ({ url: "/payments/saved-methods/paypal/confirm", method: "POST", body }),
+      invalidatesTags: ["PaymentMethods"],
+    }),
+
+    setDefaultPaymentMethod: builder.mutation<SavedPaymentMethod, string>({
+      query: (id) => ({ url: `/payments/saved-methods/${id}/default`, method: "PATCH", body: {} }),
+      invalidatesTags: ["PaymentMethods"],
+    }),
+
+    deletePaymentMethod: builder.mutation<void, string>({
+      query: (id) => ({ url: `/payments/saved-methods/${id}`, method: "DELETE" }),
+      invalidatesTags: ["PaymentMethods"],
+    }),
   }),
 });
 
@@ -717,4 +756,12 @@ export const {
   // Admin shipping rates
   useGetAdminShippingRatesQuery,
   usePatchAdminShippingRatesMutation,
+  // Saved payment methods
+  useGetSavedPaymentMethodsQuery,
+  useCreateStripeSetupIntentMutation,
+  useConfirmStripeSavedMethodMutation,
+  useCreatePaypalVaultSetupMutation,
+  useConfirmPaypalVaultSetupMutation,
+  useSetDefaultPaymentMethodMutation,
+  useDeletePaymentMethodMutation,
 } = unifiedCommerceApi;

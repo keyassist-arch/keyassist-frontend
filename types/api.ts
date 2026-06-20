@@ -834,6 +834,41 @@ export interface PasskeyLoginFinishResponse {
   expiresIn: string;
 }
 
+// ─── Saved Payment Methods ────────────────────────────────────────────────────
+
+export type SavedMethodProvider = "stripe" | "paypal";
+export type SavedMethodType = "card" | "paypal_account";
+
+export interface SavedPaymentMethod {
+  id: string;
+  provider: SavedMethodProvider;
+  type: SavedMethodType;
+  isDefault: boolean;
+  last4?: string | null;
+  brand?: string | null;
+  expMonth?: number | null;
+  expYear?: number | null;
+  email?: string | null;
+  createdAt: string;
+}
+
+export interface StripeSetupIntentResponse {
+  clientSecret: string;
+}
+
+export interface StripeConfirmSavedMethodRequest {
+  setupIntentId: string;
+}
+
+export interface PaypalVaultSetupResponse {
+  vaultSetupToken: string;
+  approvalUrl: string;
+}
+
+export interface PaypalVaultConfirmRequest {
+  vaultSetupToken: string;
+}
+
 // ─── Admin shipping rates ──────────────────────────────────────────────────────
 
 export interface ShippingRatesResponse {
