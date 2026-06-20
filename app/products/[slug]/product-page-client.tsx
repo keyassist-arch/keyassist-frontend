@@ -18,6 +18,7 @@ import { ProductDetailLayout } from "@/components/product/product-detail-layout"
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { RelatedProducts } from "@/components/product/related-products";
+import { ProductDetailSkeleton } from "@/components/product/product-detail-skeleton";
 import { formatApiMoney, pricesAreEqual } from "@/lib/format-price";
 import { marketplaceFromApiSource, retailerLabelFromSource } from "@/lib/product-source";
 import type { Product, ProductVariant } from "@/types";
@@ -1325,7 +1326,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   // ─── Loading / error states ──────────────────────────────────────────────────
 
-  if (isLoading) return <InnerShell><LoadingState label="Loading product…" /></InnerShell>;
+  if (isLoading) return <InnerShell><ProductDetailSkeleton /></InnerShell>;
   if (isError || !api) return (
     <InnerShell>
       <ErrorState error={error} title="Product unavailable" />

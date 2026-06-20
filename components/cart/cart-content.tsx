@@ -17,6 +17,7 @@ import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { formatApiMoney } from "@/lib/format-price";
 import { loginUrl } from "@/lib/auth-redirect";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 /* ── helpers ── */
 function lineUnitPrice(item: CartItemResponse): number {
@@ -80,37 +81,52 @@ function DrawerLineItem({
   quantity: number; onQuantityChange: (q: number) => void;
   onRemove: () => void; maxQty?: number; disabled?: boolean;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
-    <article className="border-b border-black/10 py-4 last:border-b-0">
-      <div className="grid grid-cols-[4rem_1fr_minmax(4rem,auto)] gap-3">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
-          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="64px" unoptimized />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs text-black/50">{brand}</p>
-          <h3 className="mt-0.5 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
-          {variantLine ? <p className="mt-1 text-xs text-black/50">{variantLine}</p> : null}
-          <p className="mt-1 text-xs text-black/50 tabular-nums">{unitLabel}</p>
-          <div className="mt-3 flex flex-wrap items-end gap-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-black/60">Quantity</span>
-              <ProductQuantityStepper
-                value={quantity} onChange={onQuantityChange}
-                min={1} max={maxQty} disabled={disabled}
-              />
-            </div>
-            <button
-              type="button" onClick={onRemove} disabled={disabled}
-              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
-              aria-label="Remove item"
-            >
-              <Trash2 size={18} strokeWidth={1.75} aria-hidden />
-            </button>
+    <>
+      <article className="border-b border-black/10 py-4 last:border-b-0">
+        <div className="grid grid-cols-[4rem_1fr_minmax(4rem,auto)] gap-3">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
+            <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="64px" unoptimized />
           </div>
+          <div className="min-w-0">
+            <p className="text-xs text-black/50">{brand}</p>
+            <h3 className="mt-0.5 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
+            {variantLine ? <p className="mt-1 text-xs text-black/50">{variantLine}</p> : null}
+            <p className="mt-1 text-xs text-black/50 tabular-nums">{unitLabel}</p>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-black/60">Quantity</span>
+                <ProductQuantityStepper
+                  value={quantity} onChange={onQuantityChange}
+                  min={1} max={maxQty} disabled={disabled}
+                />
+              </div>
+              <button
+                type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
+                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
+                aria-label="Remove item"
+              >
+                <Trash2 size={18} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
+          </div>
+          <p className="text-right text-sm font-semibold tabular-nums text-shop-ink">{lineTotalLabel}</p>
         </div>
-        <p className="text-right text-sm font-semibold tabular-nums text-shop-ink">{lineTotalLabel}</p>
-      </div>
-    </article>
+      </article>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Remove item"
+        description={`Remove "${title}" from your bag?`}
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        danger
+        onConfirm={() => { setConfirmOpen(false); onRemove(); }}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }
 
@@ -190,43 +206,58 @@ function PageItemCard({
   quantity: number; onQuantityChange: (q: number) => void;
   onRemove: () => void; maxQty?: number; disabled?: boolean;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
-    <article className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-      {/* Image */}
-      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50">
-        <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1.5" sizes="96px" unoptimized />
-      </div>
-
-      {/* Info */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-[11px] font-medium text-gray-400">{brand}</p>
-        <p className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">{title}</p>
-        {variantLine && <p className="text-xs text-gray-400">{variantLine}</p>}
-
-        <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
-          <ProductQuantityStepper
-            value={quantity} onChange={onQuantityChange}
-            min={1} max={maxQty} disabled={disabled}
-          />
-          <button
-            type="button" onClick={onRemove} disabled={disabled}
-            className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-red-500 disabled:opacity-40"
-            aria-label="Remove item"
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden />
-            Remove
-          </button>
+    <>
+      <article className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        {/* Image */}
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1.5" sizes="96px" unoptimized />
         </div>
-      </div>
 
-      {/* Price */}
-      <div className="flex shrink-0 flex-col items-end justify-between">
-        <p className="text-base font-bold tabular-nums text-gray-900">{fmtMoney(lineTotal, currency)}</p>
-        {quantity > 1 && (
-          <p className="text-[11px] tabular-nums text-gray-400">{fmtMoney(unitPrice, currency)} each</p>
-        )}
-      </div>
-    </article>
+        {/* Info */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className="text-[11px] font-medium text-gray-400">{brand}</p>
+          <p className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">{title}</p>
+          {variantLine && <p className="text-xs text-gray-400">{variantLine}</p>}
+
+          <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
+            <ProductQuantityStepper
+              value={quantity} onChange={onQuantityChange}
+              min={1} max={maxQty} disabled={disabled}
+            />
+            <button
+              type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
+              className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-red-500 disabled:opacity-40"
+              aria-label="Remove item"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              Remove
+            </button>
+          </div>
+        </div>
+
+        {/* Price */}
+        <div className="flex shrink-0 flex-col items-end justify-between">
+          <p className="text-base font-bold tabular-nums text-gray-900">{fmtMoney(lineTotal, currency)}</p>
+          {quantity > 1 && (
+            <p className="text-[11px] tabular-nums text-gray-400">{fmtMoney(unitPrice, currency)} each</p>
+          )}
+        </div>
+      </article>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Remove item"
+        description={`Remove "${title}" from your bag?`}
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        danger
+        onConfirm={() => { setConfirmOpen(false); onRemove(); }}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }
 

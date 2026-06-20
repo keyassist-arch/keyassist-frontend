@@ -15,6 +15,8 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { loggedOut } from "@/store/slices/authSlice";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const NAV = [
   { href: "/dashboard",           label: "Overview", icon: LayoutDashboard, end: true  },
@@ -42,6 +44,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { data: me } = useGetMeQuery(undefined, { skip: !token });
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   if (!token) {
     return (
@@ -121,7 +124,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             {/* Sign out */}
             <button
               type="button"
-              onClick={onSignOut}
+              onClick={() => setShowSignOutModal(true)}
               className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
             >
               <LogOut className="h-4 w-4 shrink-0" aria-hidden />
@@ -159,7 +162,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
           <button
             type="button"
-            onClick={onSignOut}
+            onClick={() => setShowSignOutModal(true)}
             className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium text-gray-500 transition hover:text-gray-900"
             aria-label="Sign out"
           >
@@ -168,6 +171,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </nav>
+
+      <ConfirmModal
+        open={showSignOutModal}
+        title="Sign out"
+        description="Are you sure you want to sign out of your account?"
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={() => { setShowSignOutModal(false); onSignOut(); }}
+        onCancel={() => setShowSignOutModal(false)}
+      />
     </>
   );
 }

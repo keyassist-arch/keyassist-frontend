@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   useDeletePasskeyCredentialMutation,
   useGetMeQuery,
@@ -73,6 +74,9 @@ export default function DashboardSettingsPage() {
   const [savingPasskey, setSavingPasskey] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [deletePasskeyId, setDeletePasskeyId] = useState<string | null>(null);
+  const [confirmDisable2fa, setConfirmDisable2fa] = useState(false);
+  const pendingDisable2faRef = useRef<(() => void) | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName,  setLastName]  = useState("");
@@ -146,15 +150,18 @@ export default function DashboardSettingsPage() {
     try { await cancel2fa().unwrap(); setQr(null); toast.success("2FA setup cancelled."); }
     catch (err) { toast.error(getErrorMessage(err)); }
   };
-  const onDisable2fa = async () => {
+  const onDisable2fa = () => {
     if (!pwDisable) { toast.error("Current password is required."); return; }
     const code = totpDisable.replace(/\s+/g, "");
     if (code.length < 6) { toast.error("Enter your current authenticator code."); return; }
-    try {
-      await disable2fa({ password: pwDisable, code }).unwrap();
-      setPwDisable(""); setTotpDisable("");
-      toast.success("Two-factor authentication is off.");
-    } catch (err) { toast.error(getErrorMessage(err)); }
+    pendingDisable2faRef.current = async () => {
+      try {
+        await disable2fa({ password: pwDisable, code }).unwrap();
+        setPwDisable(""); setTotpDisable("");
+        toast.success("Two-factor authentication is off.");
+      } catch (err) { toast.error(getErrorMessage(err)); }
+    };
+    setConfirmDisable2fa(true);
   };
 
   const onRegisterPasskey = async () => {
@@ -203,11 +210,16 @@ export default function DashboardSettingsPage() {
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
-  const onDeletePasskey = async (id: string) => {
-    if (!confirm("Remove this passkey? You won't be able to use it to sign in.")) return;
+  const onDeletePasskey = (id: string) => {
+    setDeletePasskeyId(id);
+  };
+
+  const confirmDeletePasskey = async () => {
+    const id = deletePasskeyId;
+    setDeletePasskeyId(null);
+    if (!id) return;
     try {
       await deletePasskey(id).unwrap();
-      // Clear the pref flag if this was the last passkey
       const remaining = (passkeys ?? []).filter((pk) => pk.id !== id);
       if (remaining.length === 0) passkeyPref.clear();
       toast.success("Passkey removed.");
@@ -492,6 +504,31 @@ export default function DashboardSettingsPage() {
           </div>
         )}
       </SectionCard>
+
+      <ConfirmModal
+        open={deletePasskeyId !== null}
+        title="Remove passkey"
+        description="You won't be able to use this passkey to sign in anymore. You can always register a new one later."
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        danger
+        onConfirm={() => void confirmDeletePasskey()}
+        onCancel={() => setDeletePasskeyId(null)}
+      />
+
+      <ConfirmModal
+        open={confirmDisable2fa}
+        title="Turn off two-factor authentication"
+        description="This will remove the extra layer of protection from your account. Are you sure?"
+        confirmLabel="Turn off 2FA"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={() => {
+          setConfirmDisable2fa(false);
+          void pendingDisable2faRef.current?.();
+        }}
+        onCancel={() => setConfirmDisable2fa(false)}
+      />
     </div>
   );
 }
