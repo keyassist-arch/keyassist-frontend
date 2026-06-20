@@ -24,7 +24,7 @@ import { productDetailPath } from "@/lib/product-detail-path";
 
 export default function SavesPage() {
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { localSavedIds, toggleLocalSave } = useLocalSaves();
+  const { localSavedIds, toggleLocalSave, removeLocalSave } = useLocalSaves();
   const { addItem, openCartDrawer } = useCart();
   const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
   const [unsaveProduct] = useUnsaveProductMutation();
@@ -51,6 +51,7 @@ export default function SavesPage() {
     if (!isUuid(productId)) return;
     try {
       await unsaveProduct(productId).unwrap();
+      removeLocalSave(productId);
     } catch (err) {
       setApiErr(getErrorMessage(err));
     }

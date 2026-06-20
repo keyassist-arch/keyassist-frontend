@@ -67,7 +67,7 @@ function StarRow({ filled, count }: { filled: number; count: number }) {
 
 export function StoreProductCard({ product }: { product: Product }) {
   const { addItem, openCartDrawer } = useCart();
-  const { toggleLocalSave, isSavedLocal } = useLocalSaves();
+  const { toggleLocalSave, isSavedLocal, removeLocalSave } = useLocalSaves();
   const token = useAppSelector((s) => s.auth.accessToken);
   const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
   const [saveProduct] = useSaveProductMutation();
@@ -94,6 +94,7 @@ export function StoreProductCard({ product }: { product: Product }) {
     try {
       if (isSaved) {
         await unsaveProduct(product.id).unwrap();
+        removeLocalSave(product.id);
       } else {
         await saveProduct(product.id).unwrap();
       }
