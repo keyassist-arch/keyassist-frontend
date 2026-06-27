@@ -62,7 +62,7 @@ export default function CreateTicketPage() {
         <section className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
           <h1 className="text-xl font-bold text-gray-900">Sign in to open a ticket</h1>
           <p className="mt-2 text-sm text-gray-500">You need to be signed in to submit a support request.</p>
-          <Link href="/auth/login" className="mt-5 inline-flex rounded-full bg-[#5C4AE6] px-6 py-2.5 text-sm font-semibold text-white">
+          <Link href="/auth/login" className="mt-5 inline-flex rounded-full bg-[#059669] px-6 py-2.5 text-sm font-semibold text-white">
             Sign in
           </Link>
         </section>
@@ -111,7 +111,7 @@ export default function CreateTicketPage() {
             Issue type
           </label>
           <select
-            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
             value={type}
             onChange={(e) => setType(e.target.value as IssueType)}
           >
@@ -126,7 +126,7 @@ export default function CreateTicketPage() {
             Related order <span className="normal-case font-normal text-gray-400">(optional)</span>
           </label>
           <select
-            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
           >
@@ -147,7 +147,7 @@ export default function CreateTicketPage() {
             Subject
           </label>
           <input
-            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
             placeholder="e.g. Never received my order"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -163,7 +163,7 @@ export default function CreateTicketPage() {
           <textarea
             rows={5}
             placeholder="Tell us what happened in detail…"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10 resize-none"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10 resize-none"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -180,7 +180,7 @@ export default function CreateTicketPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-full bg-[#5C4AE6] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4c3bd6] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-[#059669] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#047857] disabled:opacity-50"
           >
             <Send className="h-4 w-4" aria-hidden />
             {submitting ? "Submitting…" : "Submit ticket"}

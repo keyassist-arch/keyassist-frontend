@@ -6,7 +6,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
-const BRAND_COLOR = "#5C4AE6";
+const BRAND_COLOR = "#059669";
 
 function looksLikeUrl(v: string) {
   return /^https?:\/\//i.test(v.trim());
@@ -109,7 +109,7 @@ export function StickySearchBar() {
               <form onSubmit={onSubmit} className="w-full max-w-xl">
                 <div
                   className={`flex items-center rounded-full border bg-white px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.14)] transition-colors ${
-                    isUrl ? "border-[#5C4AE6]/40" : "border-gray-200"
+                    isUrl ? "border-[#059669]/40" : "border-gray-200"
                   }`}
                 >
                   <label htmlFor={searchId} className="sr-only">
@@ -135,7 +135,7 @@ export function StickySearchBar() {
                   </button>
                 </div>
                 {isUrl && (
-                  <p className="mt-1.5 text-center text-xs text-[#5C4AE6]">
+                  <p className="mt-1.5 text-center text-xs text-[#059669]">
                     Product link detected — press Enter or ↵ to import
                   </p>
                 )}
@@ -215,7 +215,7 @@ export function StickySearchBar() {
                         </button>
                       </div>
                       {isUrl && (
-                        <p className="mt-2 text-center text-xs text-[#5C4AE6]">
+                        <p className="mt-2 text-center text-xs text-[#059669]">
                           Product link detected — tap Enter to import
                         </p>
                       )}

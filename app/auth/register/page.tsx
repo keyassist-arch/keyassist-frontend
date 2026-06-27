@@ -58,7 +58,7 @@ function RegisterPageInner() {
       subAction={
         <>
           Already have one?{" "}
-          <Link href={loginUrl(redirect)} className="font-medium text-[#5C4AE6] hover:underline">
+          <Link href={loginUrl(redirect)} className="font-medium text-[#059669] hover:underline">
             Sign in
           </Link>
         </>

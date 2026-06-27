@@ -106,8 +106,8 @@ function StatusJourney({ status }: { status: OrderStatus | string }) {
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
                     done
                       ? current
-                        ? "bg-[#5C4AE6] text-white ring-4 ring-[#5C4AE6]/20"
-                        : "bg-[#5C4AE6] text-white"
+                        ? "bg-[#059669] text-white ring-4 ring-[#059669]/20"
+                        : "bg-[#059669] text-white"
                       : "bg-gray-100 text-gray-400"
                   }`}
                 >
@@ -127,7 +127,7 @@ function StatusJourney({ status }: { status: OrderStatus | string }) {
               </div>
               {i < JOURNEY.length - 1 && (
                 <div
-                  className={`mx-1 mb-5 h-0.5 w-10 sm:w-14 ${done && currentIndex > i ? "bg-[#5C4AE6]" : "bg-gray-100"}`}
+                  className={`mx-1 mb-5 h-0.5 w-10 sm:w-14 ${done && currentIndex > i ? "bg-[#059669]" : "bg-gray-100"}`}
                 />
               )}
             </div>

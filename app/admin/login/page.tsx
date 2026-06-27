@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
       subAction={
         <>
           Or{" "}
-          <Link href="/auth/login" className="font-medium text-[#5C4AE6] hover:underline">
+          <Link href="/auth/login" className="font-medium text-[#059669] hover:underline">
             sign in as customer
           </Link>
         </>

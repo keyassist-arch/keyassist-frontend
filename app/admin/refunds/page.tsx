@@ -55,7 +55,7 @@ export default function AdminRefundsPage() {
           <label className="block space-y-1 text-xs">
             <span className="font-medium text-gray-500">Order ID</span>
             <input
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
               name="refund_orderId"
               placeholder="Paste the order ID"
               required
@@ -64,7 +64,7 @@ export default function AdminRefundsPage() {
           <label className="block space-y-1 text-xs">
             <span className="font-medium text-gray-500">Amount</span>
             <input
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
               name="refund_amount"
               placeholder="49.99"
               required
@@ -73,7 +73,7 @@ export default function AdminRefundsPage() {
           <label className="block space-y-1 text-xs sm:col-span-2">
             <span className="font-medium text-gray-500">Reason (optional)</span>
             <input
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
               name="refund_reason"
               placeholder="Wrong item shipped"
             />

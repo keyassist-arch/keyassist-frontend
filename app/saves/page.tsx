@@ -90,7 +90,7 @@ export default function SavesPage() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: "rgba(92,74,230,0.1)" }}>
-            <Heart className="h-5 w-5" style={{ color: "#5C4AE6" }} aria-hidden />
+            <Heart className="h-5 w-5" style={{ color: "#059669" }} aria-hidden />
           </span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Saves</h1>
@@ -141,7 +141,7 @@ export default function SavesPage() {
                     </Link>
 
                     <div className="min-w-0 flex-1">
-                      <Link href={href} className="line-clamp-2 text-sm font-semibold text-gray-900 hover:text-[#5C4AE6]">
+                      <Link href={href} className="line-clamp-2 text-sm font-semibold text-gray-900 hover:text-[#059669]">
                         {p.title}
                       </Link>
                       <p className="mt-1 text-sm font-bold tabular-nums text-gray-900">

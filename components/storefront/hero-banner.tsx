@@ -75,7 +75,7 @@ export function HeroBanner() {
 
             <div className="mx-auto mt-7 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="flex items-start gap-3 rounded-2xl border bg-stone-50 px-4 py-3" style={{ borderColor: "var(--shop-border)" }}>
-                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#5C4AE6]/10 text-[#5C4AE6]">
+                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#059669]/10 text-[#059669]">
                   <Sparkles className="h-4 w-4" aria-hidden />
                 </span>
                 <div className="min-w-0">
@@ -84,7 +84,7 @@ export function HeroBanner() {
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-2xl border bg-stone-50 px-4 py-3" style={{ borderColor: "var(--shop-border)" }}>
-                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#5C4AE6]/10 text-[#5C4AE6]">
+                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#059669]/10 text-[#059669]">
                   <ShieldCheck className="h-4 w-4" aria-hidden />
                 </span>
                 <div className="min-w-0">
@@ -93,7 +93,7 @@ export function HeroBanner() {
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-2xl border bg-stone-50 px-4 py-3" style={{ borderColor: "var(--shop-border)" }}>
-                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#5C4AE6]/10 text-[#5C4AE6]">
+                <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#059669]/10 text-[#059669]">
                   <Truck className="h-4 w-4" aria-hidden />
                 </span>
                 <div className="min-w-0">

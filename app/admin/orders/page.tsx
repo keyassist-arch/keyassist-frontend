@@ -27,9 +27,9 @@ const ADMIN_STATUSES: OrderStatus[] = [
 const STATUS_STYLES: Record<string, { bg: string; border: string; label: string; dot: string }> = {
   PENDING:              { bg: "bg-amber-50",  border: "border-amber-200",  label: "text-amber-800",  dot: "bg-amber-500" },
   PAID:                 { bg: "bg-emerald-50",  border: "border-emerald-200",  label: "text-emerald-800",  dot: "bg-emerald-500" },
-  PROCESSING:           { bg: "bg-blue-50",    border: "border-blue-200",    label: "text-blue-800",    dot: "bg-blue-500" },
-  ORDERED_FROM_SUPPLIER:{ bg: "bg-indigo-50",  border: "border-indigo-200",  label: "text-indigo-800",  dot: "bg-indigo-500" },
-  SHIPPED:              { bg: "bg-purple-50",  border: "border-purple-200",  label: "text-purple-800",  dot: "bg-purple-500" },
+  PROCESSING:           { bg: "bg-teal-50",    border: "border-teal-200",    label: "text-teal-800",    dot: "bg-teal-500" },
+  ORDERED_FROM_SUPPLIER:{ bg: "bg-cyan-50",   border: "border-cyan-200",    label: "text-cyan-800",    dot: "bg-cyan-500" },
+  SHIPPED:              { bg: "bg-lime-50",    border: "border-lime-200",    label: "text-lime-800",    dot: "bg-lime-500" },
   DELIVERED:            { bg: "bg-green-50",   border: "border-green-200",   label: "text-green-800",   dot: "bg-green-500" },
   CANCELLED:            { bg: "bg-red-50",     border: "border-red-200",     label: "text-red-800",     dot: "bg-red-500" },
   REFUNDED:             { bg: "bg-orange-50",  border: "border-orange-200",  label: "text-orange-800",  dot: "bg-orange-500" },
@@ -154,7 +154,7 @@ export default function AdminOrdersPage() {
                 <Package className="h-3.5 w-3.5 text-gray-400" aria-hidden />
                 <span className="text-xs text-gray-500">Status</span>
                 <select
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition focus:ring-2 focus:ring-[#5C4AE6]/10 ${s.bg} ${s.border} ${s.label}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition focus:ring-2 focus:ring-[#059669]/10 ${s.bg} ${s.border} ${s.label}`}
                   value={order.status}
                   disabled={patching}
                   onChange={(e) => {
@@ -178,7 +178,7 @@ export default function AdminOrdersPage() {
                   <label className="block space-y-1 text-xs">
                     <span className="font-medium text-gray-500">Tracking number</span>
                     <input
-                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
                       placeholder="e.g. 1Z999…"
                       defaultValue=""
                       id={`track-${order.id}`}
@@ -187,7 +187,7 @@ export default function AdminOrdersPage() {
                   <label className="block space-y-1 text-xs">
                     <span className="font-medium text-gray-500">Carrier</span>
                     <input
-                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
                       placeholder="e.g. DHL"
                       defaultValue=""
                       id={`carrier-${order.id}`}
@@ -196,7 +196,7 @@ export default function AdminOrdersPage() {
                   <label className="block space-y-1 text-xs">
                     <span className="font-medium text-gray-500">Note for customer</span>
                     <input
-                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
                       placeholder="e.g. Arrived at local hub"
                       defaultValue=""
                       id={`trackmsg-${order.id}`}

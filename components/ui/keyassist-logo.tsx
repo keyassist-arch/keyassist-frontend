@@ -9,7 +9,7 @@ export function KeyAssistMark({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center border bg-white font-extrabold  leading-none text-blue-600 ${className ?? ""}`}
+      className={`inline-flex shrink-0 items-center justify-center border bg-white font-extrabold  leading-none text-emerald-600 ${className ?? ""}`}
       style={{
         width: size,
         height: size,

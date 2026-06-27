@@ -146,7 +146,7 @@ export function StoreProductCard({ product }: { product: Product }) {
 
         {/* Extra savings badge */}
         {onSale && (
-          <span className="absolute left-2 top-2 rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: "#5C4AE6" }}>
+          <span className="absolute left-2 top-2 rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: "#059669" }}>
             Extra savings
           </span>
         )}
@@ -167,8 +167,8 @@ export function StoreProductCard({ product }: { product: Product }) {
         >
           <Heart
             className="h-4 w-4 transition"
-            fill={isSaved ? "#5C4AE6" : "none"}
-            stroke={isSaved ? "#5C4AE6" : "#6b7280"}
+            fill={isSaved ? "#059669" : "none"}
+            stroke={isSaved ? "#059669" : "#6b7280"}
             strokeWidth={1.75}
           />
         </button>
@@ -191,7 +191,7 @@ export function StoreProductCard({ product }: { product: Product }) {
 
         <Link
           href={pdpHref}
-          className="line-clamp-2 text-[13px] font-medium leading-snug text-gray-900 hover:text-[#5C4AE6]"
+          className="line-clamp-2 text-[13px] font-medium leading-snug text-gray-900 hover:text-[#059669]"
         >
           {product.title}
         </Link>

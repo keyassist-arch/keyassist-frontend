@@ -78,7 +78,7 @@ export default function AdminProductsPage() {
               <span className="text-gray-500">Product URL</span>
               <input
                 id={previewUrlFieldId}
-                className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10"
+                className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
                 value={previewUrl}
                 onChange={(e) => setPreviewUrl(e.target.value)}
                 placeholder="https://..."
@@ -125,7 +125,7 @@ export default function AdminProductsPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-gray-900 hover:text-[#5C4AE6] transition-colors">{product.title}</p>
+                      <p className="truncate font-medium text-gray-900 hover:text-[#059669] transition-colors">{product.title}</p>
                       <p className="truncate text-xs text-gray-400 font-mono">{product.id}</p>
                     </div>
                   </Link>

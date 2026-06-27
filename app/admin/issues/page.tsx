@@ -58,7 +58,7 @@ export default function AdminIssuesPage() {
                   <label className="flex items-center gap-2 text-xs">
                     <span className="text-gray-500">Status</span>
                     <select
-                      className="rounded-full border border-gray-200 px-3 py-1.5 text-sm outline-none transition focus:border-[#5C4AE6]"
+                      className="rounded-full border border-gray-200 px-3 py-1.5 text-sm outline-none transition focus:border-[#059669]"
                       value={issue.status}
                       disabled={patchingIssue}
                       onChange={async (e) => {

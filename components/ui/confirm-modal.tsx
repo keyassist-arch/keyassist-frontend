@@ -83,7 +83,7 @@ export function ConfirmModal({
                   className={`flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition hover:opacity-90 ${
                     danger ? "bg-red-600 hover:bg-red-700" : ""
                   }`}
-                  style={danger ? undefined : { background: "#5C4AE6" }}
+                  style={danger ? undefined : { background: "#059669" }}
                 >
                   {confirmLabel}
                 </button>

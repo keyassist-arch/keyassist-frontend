@@ -9,7 +9,7 @@ import { ImportFailedModal } from "@/components/ui/import-failed-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { motion } from "framer-motion";
 
-const BRAND_COLOR = "#5C4AE6";
+const BRAND_COLOR = "#059669";
 
 type MarketplaceChip = {
   label: string;
@@ -241,7 +241,7 @@ export function HomeShopHero() {
           >
             <div
               className={`flex items-center rounded-full border bg-white px-5 py-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition-colors ${
-                isUrl ? "border-[#5C4AE6]/40" : "border-gray-200"
+                isUrl ? "border-[#059669]/40" : "border-gray-200"
               }`}
             >
               <label htmlFor={searchId} className="sr-only">
@@ -270,7 +270,7 @@ export function HomeShopHero() {
               </button>
             </div>
             {isUrl && (
-              <p className="mt-2 text-center text-xs text-[#5C4AE6]">
+              <p className="mt-2 text-center text-xs text-[#059669]">
                 Product link detected — press Enter or ↵ to import
               </p>
             )}

@@ -215,11 +215,21 @@ function ConfigurationPricesTable({ rows, currency }: { rows: ApiConfigurationPr
 
 // ─── Description helpers ──────────────────────────────────────────────────────
 
+// Scraper artifact: backend sometimes joins an array of objects with " · " before
+// serialising, producing a paragraph of "[object Object] · [object Object]" tokens.
+const OBJECT_ARTIFACT_RE = /^(\[object Object\](\s*·\s*)?)+$/;
+
 function buildDescriptionBlocks(api: ApiProduct): ProductDetailDescriptionBlock[] {
+  console.log("[product description raw]", api.description);
+  console.log("[product highlights raw]", api.highlights);
+  console.log("[product metadata raw]", api.metadata);
   const { summary, blocks } = splitProductDescription(api.description);
   const out: ProductDetailDescriptionBlock[] = [];
   if (summary) {
-    const paras = summary.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+    const paras = summary
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter((p) => p && !OBJECT_ARTIFACT_RE.test(p));
     out.push({
       content: (
         <div className="space-y-3">
@@ -1153,7 +1163,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     // Back Market warranty badge
     if (backMarketWarranty) {
       parts.push(
-        <span key="bm-warranty" className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+        <span key="bm-warranty" className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
           Warranty: {backMarketWarranty}
         </span>
       );
@@ -1364,7 +1374,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         <>
           <button type="button" disabled={!inStock || adding} onClick={onAdd}
             className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: "#5C4AE6" }}>
+            style={{ background: "#059669" }}>
             {adding ? "Adding…" : "Add to cart"}
           </button>
 

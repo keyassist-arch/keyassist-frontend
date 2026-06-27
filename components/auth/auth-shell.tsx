@@ -56,7 +56,7 @@ export function AuthInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...rest}
-      className={`w-full rounded-full border border-gray-200 px-5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10 disabled:opacity-50 ${className}`}
+      className={`w-full rounded-full border border-gray-200 px-5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10 disabled:opacity-50 ${className}`}
     />
   );
 }
@@ -74,7 +74,7 @@ export function AuthPasswordInput({
         <input
           {...props}
           type={visible ? "text" : "password"}
-          className="w-full rounded-full border border-gray-200 px-5 py-3 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#5C4AE6] focus:ring-2 focus:ring-[#5C4AE6]/10 disabled:opacity-50"
+          className="w-full rounded-full border border-gray-200 px-5 py-3 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10 disabled:opacity-50"
         />
         <button
           type="button"
@@ -97,7 +97,7 @@ export function AuthButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>)
     <button
       {...rest}
       className={`w-full rounded-full py-3.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      style={{ background: "#5C4AE6", ...style }}
+      style={{ background: "#059669", ...style }}
     >
       {children}
     </button>

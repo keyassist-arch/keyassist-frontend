@@ -39,7 +39,7 @@ export default function CartPage() {
             className="flex h-10 w-10 items-center justify-center rounded-2xl"
             style={{ background: "rgba(92,74,230,0.1)" }}
           >
-            <ShoppingBag className="h-5 w-5" style={{ color: "#5C4AE6" }} aria-hidden />
+            <ShoppingBag className="h-5 w-5" style={{ color: "#059669" }} aria-hidden />
           </span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Your bag</h1>

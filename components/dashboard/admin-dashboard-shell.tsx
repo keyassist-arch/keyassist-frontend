@@ -50,7 +50,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
           <Link
             href="/admin/login"
             className="mt-5 inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ background: "#5C4AE6" }}
+            style={{ background: "#059669" }}
           >
             Sign in
           </Link>
@@ -131,7 +131,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
             <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
               <span
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ background: "#5C4AE6" }}
+                style={{ background: "#059669" }}
                 aria-hidden
               >
                 {ini}
@@ -153,13 +153,13 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                     href={href}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                       active
-                        ? "text-[#5C4AE6]"
+                        ? "text-[#059669]"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                     style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${active ? "text-[#5C4AE6]" : "text-gray-400"}`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
                       aria-hidden
                     />
                     {label}
@@ -194,11 +194,11 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                 key={href}
                 href={href}
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
-                  active ? "text-[#5C4AE6]" : "text-gray-500 hover:text-gray-900"
+                  active ? "text-[#059669]" : "text-gray-500 hover:text-gray-900"
                 }`}
                 style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
               >
-                <Icon className={`h-5 w-5 ${active ? "text-[#5C4AE6]" : "text-gray-400"}`} aria-hidden />
+                <Icon className={`h-5 w-5 ${active ? "text-[#059669]" : "text-gray-400"}`} aria-hidden />
                 <span className="truncate">{label}</span>
               </Link>
             );

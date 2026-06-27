@@ -5,7 +5,7 @@ type BadgeVariant = "default" | "success" | "warning" | "danger" | "neutral";
 const variantClasses: Record<BadgeVariant, string> = {
   default: "border-black/10 bg-white text-black dark:border-white/10 dark:bg-neutral-950 dark:text-white",
   neutral: "border-black/10 bg-black/5 text-black/80 dark:border-white/10 dark:bg-white/5 dark:text-white/80",
-  success: "border-indigo-600/20 bg-indigo-50 text-indigo-900",
+  success: "border-emerald-600/20 bg-emerald-50 text-emerald-900",
   warning: "border-amber-600/20 bg-amber-50 text-amber-800 dark:border-amber-400/20 dark:bg-amber-950/30 dark:text-amber-300",
   danger:  "border-rose-600/20 bg-rose-50 text-rose-800 dark:border-rose-400/20 dark:bg-rose-950/30 dark:text-rose-300",
 };

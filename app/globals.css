@@ -17,13 +17,13 @@
   --shop-border: color-mix(in srgb, #111827 10%, transparent);
 
   /* Brand */
-  --shop-primary: #5C4AE6;
-  --shop-primary-hover: #4c3bd6;
-  --shop-accent: #5C4AE6;
-  --shop-accent-hover: #4c3bd6;
+  --shop-primary: #059669;
+  --shop-primary-hover: #047857;
+  --shop-accent: #10b981;
+  --shop-accent-hover: #059669;
   --shop-accent-soft: color-mix(in srgb, var(--shop-accent) 10%, white);
-  --shop-accent-2: #7c6ef0;
-  --shop-primary-gradient: linear-gradient(135deg, #5C4AE6, #7c6ef0);
+  --shop-accent-2: #34d399;
+  --shop-primary-gradient: linear-gradient(135deg, #059669, #34d399);
 
   /* Shape + elevation */
   --shop-radius: 20px;
@@ -33,11 +33,11 @@
   --shop-ring: 0 0 0 4px color-mix(in srgb, var(--shop-accent) 14%, transparent);
 
   /* Footer / top bar */
-  --shop-dark: #0b1220;
-  --shop-dark-soft: #121a2b;
+  --shop-dark: #1c1917;
+  --shop-dark-soft: #292524;
   /* Promo triptych + feature banner */
   --shop-promo-peach: #f7e7dc;     /* keep warm peach */
-  --shop-promo-sage: #5C4AE6;      /* brand purple */
+  --shop-promo-sage: #059669;      /* brand emerald */
   --shop-promo-tan: #e7e5e4;       /* stone-200 */
   --shop-promo-slate: #1c1917;     /* stone-900 */
   /* Product UI */

@@ -40,7 +40,8 @@ function zonesFromParts(parts: {
  * Uses API `highlights` when present; otherwise bullet lines from the description lead.
  */
 export function buildProductDetailZonesFromApi(api: ApiProduct): ProductDetailZones {
-  const explicit = api.highlights?.filter(Boolean) ?? [];
+  // Guard: scraper may return highlights as objects rather than strings
+  const explicit = (api.highlights ?? []).filter((h) => typeof h === "string" && h.trim());
   const { summary } = splitProductDescription(api.description);
   const fromBullets = explicit.length === 0 ? extractBulletLinesFromSummary(summary) : [];
   const highlights = explicit.length ? explicit : fromBullets;

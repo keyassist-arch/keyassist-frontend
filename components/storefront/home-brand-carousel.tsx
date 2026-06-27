@@ -8,7 +8,7 @@ import { useGetCatalogProductsQuery } from "@/store/routes/unified-commerce-api"
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { StoreProductCard } from "@/components/storefront/store-product-card";
 
-const BRAND_COLOR = "#5C4AE6";
+const BRAND_COLOR = "#059669";
 
 function ProductSkeleton() {
   return (

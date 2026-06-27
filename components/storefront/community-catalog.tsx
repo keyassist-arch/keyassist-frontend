@@ -41,7 +41,7 @@ function CheckboxRow({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-gray-300 accent-[#5C4AE6]"
+        className="h-4 w-4 rounded border-gray-300 accent-[#059669]"
       />
       <span className="flex-1 leading-snug">
         {label}
@@ -63,7 +63,7 @@ function FilterGroup({
       <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
       {children}
       {hasMore && (
-        <button type="button" onClick={onToggle} className="mt-2 text-xs font-medium text-[#5C4AE6] hover:underline">
+        <button type="button" onClick={onToggle} className="mt-2 text-xs font-medium text-[#059669] hover:underline">
           {expanded ? "Show less" : "Show more"}
         </button>
       )}
@@ -183,7 +183,7 @@ function FilterModal({
                   Clear all
                 </button>
               )}
-              <button type="button" onClick={onClose} className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white transition hover:opacity-90" style={{ background: "#5C4AE6" }}>
+              <button type="button" onClick={onClose} className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white transition hover:opacity-90" style={{ background: "#059669" }}>
                 Show results
               </button>
             </div>
@@ -278,7 +278,7 @@ function CommunityCatalogInner({
         <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900">{title}</h2>
 
         {qRaw && (
-          <p className="mt-1 text-sm text-[#5C4AE6]">
+          <p className="mt-1 text-sm text-[#059669]">
             Results for <span className="font-medium text-gray-900">&ldquo;{qRaw}&rdquo;</span>
           </p>
         )}
@@ -295,7 +295,7 @@ function CommunityCatalogInner({
               <SlidersHorizontal className="h-4 w-4" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "#5C4AE6" }}>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "#059669" }}>
                   {activeFilterCount}
                 </span>
               )}
@@ -306,7 +306,7 @@ function CommunityCatalogInner({
             </span>
 
             {activeFilterCount > 0 && (
-              <button type="button" onClick={clearFilters} className="text-xs font-medium text-[#5C4AE6] hover:underline">
+              <button type="button" onClick={clearFilters} className="text-xs font-medium text-[#059669] hover:underline">
                 Clear
               </button>
             )}
@@ -330,7 +330,7 @@ function CommunityCatalogInner({
         {filtered.length === 0 ? (
           <p className="mt-16 text-center text-sm text-gray-400">
             No products match these filters.{" "}
-            <button type="button" onClick={clearFilters} className="font-medium text-[#5C4AE6] hover:underline">
+            <button type="button" onClick={clearFilters} className="font-medium text-[#059669] hover:underline">
               Reset
             </button>
           </p>

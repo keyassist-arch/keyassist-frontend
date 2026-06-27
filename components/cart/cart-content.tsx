@@ -143,7 +143,7 @@ function DrawerFooter({
     <div className="shrink-0 border-t border-black/10 bg-white px-4 py-4">
       {signInHint && (
         <p className="mb-3 text-center text-xs text-black/55">
-          <Link href={loginUrl("/cart")} className="font-medium underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
+          <Link href={loginUrl("/cart")} className="font-medium underline" style={{ color: "#059669" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
       )}
@@ -183,7 +183,7 @@ function DrawerFooter({
         <Link
           href="/checkout" aria-disabled={ctaDisabled}
           className={`rounded-full py-3 text-center text-xs font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "cursor-not-allowed opacity-40" : ""}`}
-          style={{ background: "#5C4AE6" }}
+          style={{ background: "#059669" }}
           onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
         >
           Check out
@@ -302,7 +302,7 @@ function PageSummary({
         href="/checkout"
         aria-disabled={ctaDisabled}
         className={`mt-5 block w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "pointer-events-none opacity-40" : ""}`}
-        style={{ background: "#5C4AE6" }}
+        style={{ background: "#059669" }}
         onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
       >
         Proceed to checkout
@@ -310,7 +310,7 @@ function PageSummary({
 
       {signInHint && (
         <p className="mt-4 text-center text-xs text-gray-400">
-          <Link href={loginUrl("/cart")} className="font-medium hover:underline" style={{ color: "#5C4AE6" }}>Sign in</Link>{" "}
+          <Link href={loginUrl("/cart")} className="font-medium hover:underline" style={{ color: "#059669" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
       )}
@@ -509,7 +509,7 @@ function EmptyBag() {
       <Link
         href="/shop"
         className="mt-5 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-        style={{ background: "#5C4AE6" }}
+        style={{ background: "#059669" }}
       >
         Browse shop
       </Link>

@@ -25,8 +25,8 @@ const STATUS_LABEL: Record<IssueStatus, string> = {
 
 const STATUS_COLOR: Record<IssueStatus, string> = {
   OPEN: "bg-amber-50 text-amber-700",
-  IN_PROGRESS: "bg-blue-50 text-blue-700",
-  AWAITING_CUSTOMER: "bg-purple-50 text-[#5C4AE6]",
+  IN_PROGRESS: "bg-teal-50 text-teal-700",
+  AWAITING_CUSTOMER: "bg-lime-50 text-[#059669]",
   RESOLVED: "bg-emerald-50 text-emerald-700",
   CLOSED: "bg-gray-100 text-gray-500",
 };
@@ -100,7 +100,7 @@ export default function DisputesPage() {
         <button
           type="button"
           onClick={() => { setShowForm((v) => !v); setFormSuccess(false); setFormErr(null); }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#5C4AE6] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#4c3bd6]"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#059669] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#047857]"
         >
           {showForm ? <X className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
           {showForm ? "Cancel" : "New dispute"}
@@ -220,7 +220,7 @@ export default function DisputesPage() {
                           <span className="text-gray-300">·</span>
                           <Link
                             href={`/dashboard/orders/${issue.orderId}`}
-                            className="inline-flex items-center gap-0.5 text-xs text-[#5C4AE6] hover:underline"
+                            className="inline-flex items-center gap-0.5 text-xs text-[#059669] hover:underline"
                           >
                             Order {issue.orderId.slice(0, 8)}…
                             <ChevronRight className="h-3 w-3" aria-hidden />

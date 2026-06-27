@@ -69,8 +69,8 @@ export default function DashboardOrdersPage() {
                 onClick={() => setActiveFilter(f.key)}
                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active
-                    ? "bg-[#5C4AE6] text-white shadow-sm"
-                    : "border border-black/10 bg-white text-gray-600 hover:border-[#5C4AE6]/30 hover:text-[#5C4AE6]"
+                    ? "bg-[#059669] text-white shadow-sm"
+                    : "border border-black/10 bg-white text-gray-600 hover:border-[#059669]/30 hover:text-[#059669]"
                 }`}
               >
                 {f.label}
@@ -102,7 +102,7 @@ export default function DashboardOrdersPage() {
           {activeFilter === "all" && (
             <Link
               href="/shop"
-              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#5C4AE6] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#4c3bd6]"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#059669] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#047857]"
             >
               Browse the shop
             </Link>

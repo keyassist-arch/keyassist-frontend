@@ -26,7 +26,7 @@ export function OrderCard({ order, href, compact }: Props) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-4 transition hover:border-[#5C4AE6]/30 hover:shadow-md"
+      className="group flex items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-4 transition hover:border-[#059669]/30 hover:shadow-md"
     >
       {/* Image thumbnail */}
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
@@ -66,7 +66,7 @@ export function OrderCard({ order, href, compact }: Props) {
         <span className="text-sm font-semibold tabular-nums text-gray-900">
           {formatApiMoney(amount, currency)}
         </span>
-        <ArrowRight className="h-4 w-4 text-gray-300 transition group-hover:text-[#5C4AE6]" aria-hidden />
+        <ArrowRight className="h-4 w-4 text-gray-300 transition group-hover:text-[#059669]" aria-hidden />
       </div>
     </Link>
   );

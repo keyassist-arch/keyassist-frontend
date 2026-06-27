@@ -24,7 +24,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4">
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(92,74,230,0.1)" }}>
-        <Icon className="h-4 w-4" style={{ color: "#5C4AE6" }} aria-hidden />
+        <Icon className="h-4 w-4" style={{ color: "#059669" }} aria-hidden />
       </span>
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
@@ -40,7 +40,7 @@ function AddressCard({ address, label, isDefault }: { address: ShippingAddress; 
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-gray-900">{label}</p>
         {isDefault && (
-          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: "#5C4AE6" }}>
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: "#059669" }}>
             Default
           </span>
         )}
@@ -55,7 +55,7 @@ function AddressCard({ address, label, isDefault }: { address: ShippingAddress; 
       </address>
       <Link
         href="/dashboard/settings"
-        className="mt-4 inline-flex text-xs font-medium text-[#5C4AE6] hover:underline"
+        className="mt-4 inline-flex text-xs font-medium text-[#059669] hover:underline"
       >
         Edit address
       </Link>
@@ -67,13 +67,13 @@ function StripeCard({ m }: { m: MockStripeMethod }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(92,74,230,0.1)" }}>
-        <CreditCard className="h-5 w-5" style={{ color: "#5C4AE6" }} aria-hidden />
+        <CreditCard className="h-5 w-5" style={{ color: "#059669" }} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-gray-900">{m.brand} ···· {m.last4}</p>
         <p className="text-xs text-gray-400">Expires {String(m.expMonth).padStart(2, "0")}/{m.expYear}</p>
         {m.isDefault && (
-          <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#5C4AE6" }}>Default</span>
+          <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#059669" }}>Default</span>
         )}
       </div>
       <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">Stripe</span>
@@ -91,7 +91,7 @@ function PayPalRow({ m }: { m: MockPayPalMethod }) {
         <p className="truncate text-sm font-semibold text-gray-900">{m.payerEmail}</p>
         <p className="text-xs text-gray-400">{m.status === "linked" ? "Account linked" : "Action required"}</p>
         {m.isDefault && (
-          <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#5C4AE6" }}>Default</span>
+          <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#059669" }}>Default</span>
         )}
       </div>
       <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">PayPal</span>
@@ -117,7 +117,7 @@ export function ProfileTabList({ active, onTabChange }: { active: TabId; onTabCh
                 ? "text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-800"
             }`}
-            style={isActive ? { background: "#5C4AE6" } : undefined}
+            style={isActive ? { background: "#059669" } : undefined}
             onClick={() => onTabChange(t.id)}
           >
             {t.label}
@@ -156,7 +156,7 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
         <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-5">
           <span
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-bold text-white"
-            style={{ background: "#5C4AE6" }}
+            style={{ background: "#059669" }}
           >
             {initials.toUpperCase()}
           </span>
@@ -192,7 +192,7 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
         <Link
           href="/dashboard/settings"
           className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ background: "#5C4AE6" }}
+          style={{ background: "#059669" }}
         >
           Edit profile
         </Link>

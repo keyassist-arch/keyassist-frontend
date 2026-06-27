@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
       subAction={
         <>
           Remember it?{" "}
-          <Link href="/auth/login" className="font-medium text-[#5C4AE6] hover:underline">
+          <Link href="/auth/login" className="font-medium text-[#059669] hover:underline">
             Sign in
           </Link>
         </>

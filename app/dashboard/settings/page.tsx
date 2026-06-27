@@ -289,7 +289,7 @@ export default function DashboardSettingsPage() {
           type="submit"
           disabled={saving}
           className="rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-          style={{ background: "#5C4AE6" }}
+          style={{ background: "#059669" }}
         >
           {saving ? "Saving…" : "Save changes"}
         </button>
@@ -305,8 +305,8 @@ export default function DashboardSettingsPage() {
             <ul className="divide-y divide-gray-100">
               {passkeys.map((pk) => (
                 <li key={pk.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#5C4AE6]/08">
-                    <Fingerprint className="h-4 w-4 text-[#5C4AE6]" aria-hidden />
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#059669]/08">
+                    <Fingerprint className="h-4 w-4 text-[#059669]" aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
                     {renamingId === pk.id ? (
@@ -324,7 +324,7 @@ export default function DashboardSettingsPage() {
                         <button
                           type="button"
                           onClick={() => void onRenamePasskey(pk.id)}
-                          className="rounded-full bg-[#5C4AE6] px-3 py-1 text-xs font-semibold text-white"
+                          className="rounded-full bg-[#059669] px-3 py-1 text-xs font-semibold text-white"
                         >
                           Save
                         </button>
@@ -370,7 +370,7 @@ export default function DashboardSettingsPage() {
           {pendingPasskey && (
             <form
               onSubmit={(e) => { e.preventDefault(); void savePasskey(pendingPasskeyName); }}
-              className="rounded-2xl border border-[#5C4AE6]/20 bg-[#5C4AE6]/04 p-4"
+              className="rounded-2xl border border-[#059669]/20 bg-[#059669]/04 p-4"
             >
               <p className="mb-3 text-sm font-medium text-gray-800">
                 Passkey created — give it a name so you can recognise it later.
@@ -386,7 +386,7 @@ export default function DashboardSettingsPage() {
                 <button
                   type="submit"
                   disabled={savingPasskey}
-                  className="rounded-xl bg-[#5C4AE6] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-[#059669] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   {savingPasskey ? "Saving…" : "Save"}
                 </button>
@@ -407,9 +407,9 @@ export default function DashboardSettingsPage() {
               type="button"
               disabled={passkeyRegistering}
               onClick={onRegisterPasskey}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-[#5C4AE6]/40 hover:text-[#5C4AE6] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-[#059669]/40 hover:text-[#059669] disabled:opacity-50"
             >
-              <Fingerprint className={`h-4 w-4 ${passkeyRegistering ? "animate-pulse text-[#5C4AE6]" : ""}`} aria-hidden />
+              <Fingerprint className={`h-4 w-4 ${passkeyRegistering ? "animate-pulse text-[#059669]" : ""}`} aria-hidden />
               {passkeyRegistering ? "Waiting for device…" : "Register a passkey"}
             </button>
           )}
@@ -454,7 +454,7 @@ export default function DashboardSettingsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button type="button" disabled={setupLoading} onClick={onStart2fa}
                     className="rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                    style={{ background: "#5C4AE6" }}>
+                    style={{ background: "#059669" }}>
                     {setupLoading ? "Preparing…" : "Continue setup"}
                   </button>
                   <button type="button" disabled={cancelLoading} onClick={onCancel2fa}
@@ -481,7 +481,7 @@ export default function DashboardSettingsPage() {
                     <div className="flex flex-wrap gap-2">
                       <button type="button" disabled={enableLoading} onClick={onEnable2fa}
                         className="rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                        style={{ background: "#5C4AE6" }}>
+                        style={{ background: "#059669" }}>
                         {enableLoading ? "Verifying…" : "Enable 2FA"}
                       </button>
                       <button type="button" disabled={cancelLoading} onClick={onCancel2fa}
@@ -497,7 +497,7 @@ export default function DashboardSettingsPage() {
             {!tf?.enabled && !qr && !tf?.setupPending && (
               <button type="button" disabled={setupLoading} onClick={onStart2fa}
                 className="rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                style={{ background: "#5C4AE6" }}>
+                style={{ background: "#059669" }}>
                 {setupLoading ? "Preparing…" : "Set up two-factor authentication"}
               </button>
             )}

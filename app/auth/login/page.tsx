@@ -218,7 +218,7 @@ function LoginPageInner() {
         subAction={
           <>
             Or{" "}
-            <Link href={registerUrl(redirect)} className="font-medium text-[#5C4AE6] hover:underline">
+            <Link href={registerUrl(redirect)} className="font-medium text-[#059669] hover:underline">
               create an account
             </Link>
           </>
@@ -255,7 +255,7 @@ function LoginPageInner() {
               disabled={passkeyLoading}
               className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
             >
-              <Fingerprint className={`h-5 w-5 ${passkeyLoading ? "animate-pulse text-[#5C4AE6]" : "text-gray-500"}`} aria-hidden />
+              <Fingerprint className={`h-5 w-5 ${passkeyLoading ? "animate-pulse text-[#059669]" : "text-gray-500"}`} aria-hidden />
               {passkeyLoading ? "Waiting for passkey…" : "Sign in with a passkey"}
             </button>
           </>
@@ -275,7 +275,7 @@ function LoginPageInner() {
             <button
               type="button"
               onClick={() => { setStep("email"); setFormError(""); }}
-              className="ml-2 shrink-0 text-[#5C4AE6] transition hover:opacity-75"
+              className="ml-2 shrink-0 text-[#059669] transition hover:opacity-75"
               aria-label="Change email"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -305,7 +305,7 @@ function LoginPageInner() {
                 ) : (
                   <button
                     type="button"
-                    className="font-medium text-[#5C4AE6] hover:underline disabled:opacity-50"
+                    className="font-medium text-[#059669] hover:underline disabled:opacity-50"
                     onClick={onResend}
                     disabled={resendLoading}
                   >

@@ -17,7 +17,7 @@ const METRICS = (m: { totalOrders: number; active: number; delivered: number; sp
     sub: "Lifetime orders placed",
     Icon: Package,
     bg: "rgba(92,74,230,0.08)",
-    color: "#5C4AE6",
+    color: "#059669",
   },
   {
     label: "In progress",
@@ -98,7 +98,7 @@ export default function DashboardHomePage() {
         </div>
         <Link
           href="/shop"
-          className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-[#5C4AE6]/40 hover:text-[#5C4AE6]"
+          className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-[#059669]/40 hover:text-[#059669]"
         >
           <ShoppingBag className="h-4 w-4" aria-hidden />
           Browse shop
@@ -133,7 +133,7 @@ export default function DashboardHomePage() {
           </div>
           <Link
             href="/dashboard/orders"
-            className="inline-flex items-center gap-1 text-sm font-medium text-[#5C4AE6] transition hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-[#059669] transition hover:underline"
           >
             View all <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
@@ -147,7 +147,7 @@ export default function DashboardHomePage() {
               <p className="mt-1 text-xs text-gray-400">Your orders will show up here once you place one.</p>
               <Link
                 href="/shop"
-                className="mt-4 inline-flex items-center gap-1 rounded-full bg-[#5C4AE6] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#4c3bd6]"
+                className="mt-4 inline-flex items-center gap-1 rounded-full bg-[#059669] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#047857]"
               >
                 Start shopping <ArrowRight className="h-3.5 w-3.5" />
               </Link>

@@ -44,7 +44,7 @@ export function LeftRail() {
       <Link href="/cart" aria-label="Cart" className={railBtn}>
         <ShoppingCart className="h-5 w-5" aria-hidden />
         {cartCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#5C4AE6" }}>
+          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#059669" }}>
             {cartCount > 9 ? "9+" : cartCount}
           </span>
         )}
@@ -52,7 +52,7 @@ export function LeftRail() {
       <Link href="/saves" aria-label="Saved" className={railBtn}>
         <Heart className="h-5 w-5" aria-hidden />
         {savedCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#5C4AE6" }}>
+          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#059669" }}>
             {savedCount > 9 ? "9+" : savedCount}
           </span>
         )}
@@ -81,7 +81,7 @@ export function LeftRail() {
           className={railBtn}
           title={token ? "Your account" : "Sign in / Sign up"}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#059669" : "#9CA3AF" }}>
             {token ? (
               <span className="text-[11px] font-bold text-white">Me</span>
             ) : (
@@ -103,7 +103,7 @@ export function LeftRail() {
             className={railBtn}
             title={token ? "Your account" : "Sign in / Sign up"}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#5C4AE6" : "#9CA3AF" }}>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: token ? "#059669" : "#9CA3AF" }}>
               {token ? (
                 <span className="text-[11px] font-bold text-white">Me</span>
               ) : (
