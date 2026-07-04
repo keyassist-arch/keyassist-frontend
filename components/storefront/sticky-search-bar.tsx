@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Search, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
+import { ImportFailedModal } from "@/components/ui/import-failed-modal";
+import { getErrorMessage } from "@/lib/rtk-error";
 
 const BRAND_COLOR = "#059669";
 
@@ -22,13 +24,32 @@ export function StickySearchBar() {
 
   const {
     triggerImport,
+    reset,
+    lastAttemptedUrl,
     hasApiBase,
     isImportBlocking,
+    importErr,
+    importError,
     effective,
+    failed,
     waitCopy,
   } = useProductImportFromUrl();
 
   const isUrl = looksLikeUrl(q);
+  const importFailed = Boolean(importErr || failed);
+  const failedMessage = failed
+    ? (effective?.message ?? effective?.errorMessage)
+    : importErr
+      ? getErrorMessage(importError)
+      : null;
+
+  const handleRetry = () => {
+    if (lastAttemptedUrl) triggerImport(lastAttemptedUrl);
+  };
+
+  const handleManualImport = () => {
+    router.push(`/products/add-manual?url=${encodeURIComponent(lastAttemptedUrl)}`);
+  };
 
   useEffect(() => {
     const hero = document.getElementById("hero-search");
@@ -75,6 +96,14 @@ export function StickySearchBar() {
 
   return (
     <>
+      <ImportFailedModal
+        open={importFailed}
+        onClose={reset}
+        onRetry={handleRetry}
+        onManualImport={handleManualImport}
+        errorMessage={failedMessage}
+      />
+
       {/* Import overlay */}
       {isImportBlocking && (
         <div

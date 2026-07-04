@@ -5,9 +5,10 @@ import { Check, Heart, Share2, Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useCart } from "@/context/cart-context";
-import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 import { useAppSelector } from "@/store/hooks";
-import { useAddCartItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useAddCartItemMutation, useAddWannaBuyItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { loginUrl } from "@/lib/auth-redirect";
+import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { getVariantDimensions } from "@/lib/api-product-variants";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
@@ -262,6 +263,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const { addItem } = useCart();
   const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
   const [addCartItem, { isLoading: adding }] = useAddCartItemMutation();
+  const [addWannaBuyItem, { isLoading: buyingNow }] = useAddWannaBuyItemMutation();
   const [quantity, setQuantity] = useState(1);
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [formErr, setFormErr] = useState("");
@@ -363,7 +365,8 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   // ─── Pricing ────────────────────────────────────────────────────────────────
 
   const currency    = api?.currency ?? "USD";
-  const images      = api?.images?.length ? api.images : ["/product-placeholder.svg"];
+  const normalizedImages = normalizeImageUrls(api?.images);
+  const images      = normalizedImages.length ? normalizedImages : ["/product-placeholder.svg"];
   const stockRaw    = api?.stockQuantity;
   const stockNum    = stockRaw == null ? null : coerceNumber(stockRaw, 0);
   const retailer    = retailerLabelFromSource(api?.source);
@@ -1313,25 +1316,44 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   const onAdd = async () => {
     setFormErr("");
-    if (!api) return;
+    if (!api) return false;
     const qty = Math.max(1, quantity);
     if (token) {
       try {
         await addCartItem({ productId: api.id, quantity: qty, ...(Object.keys(variantSelection).length ? { variantSelection } : {}) }).unwrap();
-      } catch (e) { setFormErr(getErrorMessage(e)); }
-      return;
+      } catch (e) { setFormErr(getErrorMessage(e)); return false; }
+      return true;
     }
     const marketplace = marketplaceFromApiSource(api.source, api.brand);
     const variantsForProduct: ProductVariant[] = Object.entries(variantSelection).map(([name, value], i) => ({ id: `v-${i}`, name, value }));
     const lineItemProduct: Product = {
       id: api.id, slug: api.slug ?? undefined, title: api.title, description: api.description ?? "",
       price: unitPrice, currency, marketplace, category: api.brand?.trim() ?? retailer ?? "Catalog",
-      collection: "Store", images: api.images?.length ? api.images : ["/product-placeholder.svg"],
+      collection: "Store", images,
       variants: variantsForProduct, stock: stockNum ?? UNLIMITED_LOCAL_STOCK,
       deliveryEstimate: "Set at checkout", seller: api.brand?.trim() ?? retailer,
     };
     const selKey = Object.entries(variantSelection).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}:${v}`).join("|");
     addItem(lineItemProduct, qty, { id: selKey || "default", name: "Selection", value: Object.entries(variantSelection).map(([k, v]) => `${k}: ${v}`).join(", ") });
+    return true;
+  };
+
+  const onBuyNow = async () => {
+    setFormErr("");
+    if (!api) return;
+    if (!token) {
+      router.push(loginUrl(`/products/${idOrSlug}`));
+      return;
+    }
+    try {
+      await addWannaBuyItem({
+        productUrl: listingUrl ?? `${window.location.origin}/products/${idOrSlug}`,
+        ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
+      }).unwrap();
+      router.push("/dashboard/wanna-buy");
+    } catch (e) {
+      setFormErr(getErrorMessage(e));
+    }
   };
 
   // ─── Loading / error states ──────────────────────────────────────────────────
@@ -1385,9 +1407,10 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               Buy on Apple
             </a>
           ) : (
-            <OpenCartTrigger className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800">
-              Buy now
-            </OpenCartTrigger>
+            <button type="button" disabled={!inStock || buyingNow} onClick={onBuyNow}
+              className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+              {buyingNow ? "Submitting…" : "Buy now"}
+            </button>
           )}
 
           <div className="flex gap-3">

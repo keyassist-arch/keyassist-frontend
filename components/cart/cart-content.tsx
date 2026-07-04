@@ -17,6 +17,7 @@ import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { formatApiMoney } from "@/lib/format-price";
 import { loginUrl } from "@/lib/auth-redirect";
+import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 /* ── helpers ── */
@@ -40,8 +41,8 @@ function lineCurrency(item: CartItemResponse): string {
 function lineImage(item: CartItemResponse): string {
   const p = item.product;
   if (p && "images" in p) {
-    const imgs = (p as ApiProduct).images;
-    if (imgs?.length) return imgs[0]!;
+    const imgs = normalizeImageUrls((p as ApiProduct).images);
+    if (imgs.length) return imgs[0];
   }
   return "/product-placeholder.svg";
 }

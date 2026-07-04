@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Package, LogOut, AlertCircle, Banknote, Bug } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, AlertCircle, Banknote, Bug, Layers } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
@@ -11,11 +11,12 @@ import { loggedOut } from "@/store/slices/authSlice";
 import { LoadingState } from "@/components/feedback/query-state";
 
 const NAV = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
-  { href: "/admin/orders", label: "Orders", icon: Package, end: false },
-  { href: "/admin/products", label: "Products", icon: Bug, end: false },
-  { href: "/admin/refunds", label: "Refunds", icon: Banknote, end: false },
-  { href: "/admin/issues", label: "Issues", icon: AlertCircle, end: false },
+  { href: "/admin",           label: "Overview",   icon: LayoutDashboard, end: true  },
+  { href: "/admin/orders",    label: "Orders",     icon: Package,         end: false },
+  { href: "/admin/batches",   label: "Batches",    icon: Layers,          end: false },
+  { href: "/admin/products",  label: "Products",   icon: Bug,             end: false },
+  { href: "/admin/refunds",   label: "Refunds",    icon: Banknote,        end: false },
+  { href: "/admin/issues",    label: "Issues",     icon: AlertCircle,     end: false },
 ] as const;
 
 function navActive(pathname: string, href: string, end: boolean) {

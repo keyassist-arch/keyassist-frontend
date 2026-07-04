@@ -28,6 +28,10 @@ import type {
   Me2faDisableRequest,
   Me2faEnableRequest,
   MeResponse,
+  SendPhoneOtpRequest,
+  SendPhoneOtpResponse,
+  VerifyPhoneOtpRequest,
+  VerifyPhoneOtpResponse,
   OrderResponse,
   OrderStatus,
   PasskeyCredential,
@@ -75,6 +79,12 @@ import type {
   VerifyEmailResponse,
   TokenResponse,
 } from "@/types/api";
+import type {
+  WannaBuyItem,
+  Batch,
+  AddWannaBuyItemRequest,
+  AdminQuoteRequest,
+} from "@/types/index";
 
 async function postAuthJson<TBody>(
   url: string,
@@ -92,7 +102,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "WannaBuy", "Batches"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -260,6 +270,16 @@ export const unifiedCommerceApi = createApi({
 
     postMe2faDisable: builder.mutation<MeResponse, Me2faDisableRequest>({
       query: (body) => ({ url: "/me/2fa/disable", method: "POST", body }),
+      invalidatesTags: ["Me"],
+    }),
+
+    sendPhoneOtp: builder.mutation<SendPhoneOtpResponse, SendPhoneOtpRequest | void>({
+      query: (body) => ({ url: "/me/phone/send-otp", method: "POST", body: body ?? {} }),
+      invalidatesTags: ["Me"],
+    }),
+
+    verifyPhoneOtp: builder.mutation<VerifyPhoneOtpResponse, VerifyPhoneOtpRequest>({
+      query: (body) => ({ url: "/me/phone/verify-otp", method: "POST", body }),
       invalidatesTags: ["Me"],
     }),
 
@@ -672,6 +692,42 @@ export const unifiedCommerceApi = createApi({
       query: (id) => ({ url: `/payments/saved-methods/${id}`, method: "DELETE" }),
       invalidatesTags: ["PaymentMethods"],
     }),
+
+    // ── Wanna Buy List (user) ─────────────────────────────────────────────────
+    addWannaBuyItem: builder.mutation<WannaBuyItem, AddWannaBuyItemRequest>({
+      query: (body) => ({ url: "/wanna-buy", method: "POST", body }),
+      invalidatesTags: ["WannaBuy"],
+    }),
+    getWannaBuyItems: builder.query<WannaBuyItem[], void>({
+      query: () => "/wanna-buy",
+      providesTags: ["WannaBuy"],
+    }),
+    payWannaBuyItem: builder.mutation<OrderResponse, string>({
+      query: (id) => ({ url: `/wanna-buy/${id}/pay`, method: "POST" }),
+      invalidatesTags: ["WannaBuy", "Orders"],
+    }),
+
+    // ── Wanna Buy List (admin) ────────────────────────────────────────────────
+    getAdminBatches: builder.query<Batch[], void>({
+      query: () => "/admin/batches",
+      providesTags: ["Batches"],
+    }),
+    createAdminBatch: builder.mutation<Batch, { label?: string }>({
+      query: (body) => ({ url: "/admin/batches", method: "POST", body }),
+      invalidatesTags: ["Batches"],
+    }),
+    patchAdminBatchStatus: builder.mutation<Batch, { id: string; status: string }>({
+      query: ({ id, status }) => ({ url: `/admin/batches/${id}/status`, method: "PATCH", body: { status } }),
+      invalidatesTags: ["Batches"],
+    }),
+    getAdminBatchItems: builder.query<WannaBuyItem[], string>({
+      query: (batchId) => `/admin/batches/${batchId}/items`,
+      providesTags: (_r, _e, batchId) => [{ type: "Batches", id: batchId }],
+    }),
+    patchAdminWannaBuyQuote: builder.mutation<WannaBuyItem, { id: string; body: AdminQuoteRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/wanna-buy/${id}/quote`, method: "PATCH", body }),
+      invalidatesTags: ["Batches", "WannaBuy"],
+    }),
   }),
 });
 
@@ -696,6 +752,8 @@ export const {
   usePostMe2faEnableMutation,
   usePostMe2faSetupCancelMutation,
   usePostMe2faDisableMutation,
+  useSendPhoneOtpMutation,
+  useVerifyPhoneOtpMutation,
   useImportProductMutation,
   useCreateManualProductMutation,
   useGetImportStatusQuery,
@@ -764,4 +822,13 @@ export const {
   useConfirmPaypalVaultSetupMutation,
   useSetDefaultPaymentMethodMutation,
   useDeletePaymentMethodMutation,
+  // Wanna Buy List
+  useAddWannaBuyItemMutation,
+  useGetWannaBuyItemsQuery,
+  usePayWannaBuyItemMutation,
+  useGetAdminBatchesQuery,
+  useCreateAdminBatchMutation,
+  usePatchAdminBatchStatusMutation,
+  useGetAdminBatchItemsQuery,
+  usePatchAdminWannaBuyQuoteMutation,
 } = unifiedCommerceApi;

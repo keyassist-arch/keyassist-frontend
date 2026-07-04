@@ -75,7 +75,7 @@ export function StoreProductCard({ product }: { product: Product }) {
   const { data: saveStatus } = useGetSaveStatusQuery(product.id, { skip: !token || !isUuid(product.id) });
   const [apiErr, setApiErr] = useState<string | null>(null);
 
-  const img = product.images[0] ?? "/product-placeholder.svg";
+  const img = product.images[0] || "/product-placeholder.svg";
   const activity = getStorefrontActivitySignals(product.id);
   const onSale = product.discountPercent != null && product.discountPercent > 0 && product.compareAtPrice != null;
 

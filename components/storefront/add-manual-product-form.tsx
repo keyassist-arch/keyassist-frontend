@@ -11,7 +11,7 @@ const COMMON_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
 export function AddManualProductForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sourceUrl = searchParams.get("url") ?? "";
+  const prefilledUrl = searchParams.get("url") ?? "";
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -19,6 +19,8 @@ export function AddManualProductForm() {
   const [brand, setBrand] = useState("");
   const [description, setDescription] = useState("");
   const [imageInput, setImageInput] = useState("");
+  const [manualUrl, setManualUrl] = useState("");
+  const [formError, setFormError] = useState("");
 
   const [createManualProduct, { isLoading, isError, error }] = useCreateManualProductMutation();
 
@@ -28,11 +30,26 @@ export function AddManualProductForm() {
   const brandId = useId();
   const descriptionId = useId();
   const imageId = useId();
+  const urlId = useId();
+
+  const sourceUrl = prefilledUrl || manualUrl.trim();
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setFormError("");
     const parsedPrice = parseFloat(price);
-    if (!title.trim() || isNaN(parsedPrice) || parsedPrice <= 0 || !sourceUrl) return;
+    if (!title.trim()) {
+      setFormError("Enter the product name.");
+      return;
+    }
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      setFormError("Enter a valid price.");
+      return;
+    }
+    if (!sourceUrl) {
+      setFormError("Enter the product's URL.");
+      return;
+    }
 
     const imageUrls = imageInput
       .split("\n")
@@ -58,10 +75,25 @@ export function AddManualProductForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      {sourceUrl && (
+      {prefilledUrl ? (
         <div className="rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm text-black/60 break-all">
           <span className="font-medium text-black/80">URL: </span>
-          {sourceUrl}
+          {prefilledUrl}
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <label htmlFor={urlId} className="block text-sm font-medium text-shop-ink">
+            Product URL <span className="text-red-500">*</span>
+          </label>
+          <input
+            id={urlId}
+            type="url"
+            className="input w-full"
+            value={manualUrl}
+            onChange={(e) => setManualUrl(e.target.value)}
+            placeholder="https://www.example.com/product/..."
+            required
+          />
         </div>
       )}
 
@@ -159,6 +191,12 @@ export function AddManualProductForm() {
           rows={3}
         />
       </div>
+
+      {formError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {formError}
+        </div>
+      )}
 
       {isError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

@@ -17,13 +17,15 @@ import {
   usePostMe2faEnableMutation,
   usePostMe2faSetupCancelMutation,
   usePostMe2faSetupMutation,
+  useSendPhoneOtpMutation,
+  useVerifyPhoneOtpMutation,
 } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import type { PatchMeRequest, ShippingAddress } from "@/types/api";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { passkeyPref } from "@/lib/passkey-pref";
-import { Fingerprint, Pencil, Shield, Trash2 } from "lucide-react";
+import { Fingerprint, MessageCircle, Pencil, Shield, Trash2 } from "lucide-react";
 
 function emptyAddress(): ShippingAddress {
   return { fullName: "", line1: "", line2: "", city: "", state: "", country: "", postalCode: "", phone: "" };
@@ -62,6 +64,8 @@ export default function DashboardSettingsPage() {
   const [enable2fa,  { isLoading: enableLoading }]= usePostMe2faEnableMutation();
   const [cancel2fa,  { isLoading: cancelLoading }]= usePostMe2faSetupCancelMutation();
   const [disable2fa, { isLoading: disableLoading }] = usePostMe2faDisableMutation();
+  const [sendPhoneOtp, { isLoading: sendingOtp }] = useSendPhoneOtpMutation();
+  const [verifyPhoneOtp, { isLoading: verifyingOtp }] = useVerifyPhoneOtpMutation();
   const [passkeyRegisterStart] = usePasskeyRegisterStartMutation();
   const [passkeyRegisterFinish] = usePasskeyRegisterFinishMutation();
   const [patchPasskey] = usePatchPasskeyCredentialMutation();
@@ -82,6 +86,8 @@ export default function DashboardSettingsPage() {
   const [lastName,  setLastName]  = useState("");
   const [phone,     setPhone]     = useState("");
   const [addr,      setAddr]      = useState<ShippingAddress>(emptyAddress());
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [totpEnroll,  setTotpEnroll]  = useState("");
   const [totpDisable, setTotpDisable] = useState("");
   const [pwDisable,   setPwDisable]   = useState("");
@@ -123,6 +129,39 @@ export default function DashboardSettingsPage() {
     try {
       await patchMe(body).unwrap();
       toast.success("Settings saved.");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const phoneVerified = me.phoneVerified && phone.trim() === (me.phone ?? "").trim();
+
+  const onSendPhoneOtp = async () => {
+    if (!phone.trim()) {
+      toast.error("Enter a phone number first.");
+      return;
+    }
+    try {
+      const res = await sendPhoneOtp({ phone: phone.trim() }).unwrap();
+      setOtpRequested(true);
+      setOtpCode("");
+      toast.success(`Verification code sent to ${res.sentTo} via WhatsApp.`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const onVerifyPhoneOtp = async () => {
+    const code = otpCode.trim();
+    if (code.length !== 6) {
+      toast.error("Enter the 6-digit code.");
+      return;
+    }
+    try {
+      await verifyPhoneOtp({ code }).unwrap();
+      setOtpRequested(false);
+      setOtpCode("");
+      toast.success("Phone verified.");
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -246,8 +285,64 @@ export default function DashboardSettingsPage() {
               </Field>
             </div>
             <Field label="Phone">
-              <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" type="tel" />
+              <input className={inputCls} value={phone} onChange={(e) => { setPhone(e.target.value); setOtpRequested(false); }} autoComplete="tel" type="tel" />
             </Field>
+
+            {phoneVerified ? (
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+                  <MessageCircle className="h-4 w-4 text-emerald-600" aria-hidden />
+                </span>
+                <p className="text-sm font-medium text-emerald-800">Verified via WhatsApp</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 space-y-3">
+                <p className="text-sm text-amber-800">
+                  Verify this number via WhatsApp before you can check out.
+                </p>
+                {!otpRequested ? (
+                  <button
+                    type="button"
+                    disabled={sendingOtp || !phone.trim()}
+                    onClick={() => void onSendPhoneOtp()}
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                    style={{ background: "#059669" }}
+                  >
+                    <MessageCircle className="h-4 w-4" aria-hidden />
+                    {sendingOtp ? "Sending…" : "Send code via WhatsApp"}
+                  </button>
+                ) : (
+                  <div className="flex flex-wrap items-end gap-2">
+                    <Field label="6-digit code">
+                      <input
+                        className={`${inputCls} max-w-40 font-mono`}
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                      />
+                    </Field>
+                    <button
+                      type="button"
+                      disabled={verifyingOtp}
+                      onClick={() => void onVerifyPhoneOtp()}
+                      className="rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                      style={{ background: "#059669" }}
+                    >
+                      {verifyingOtp ? "Verifying…" : "Confirm"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sendingOtp}
+                      onClick={() => void onSendPhoneOtp()}
+                      className="rounded-full border border-amber-200 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      Resend
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </SectionCard>
 

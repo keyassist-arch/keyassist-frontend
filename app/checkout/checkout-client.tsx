@@ -99,6 +99,8 @@ export function CheckoutClient() {
   const [initPayment, { isLoading: paying, isError: payErr, error: payError, reset: resetPayError }] =
     useInitializePaymentMutation();
 
+  const phoneVerificationBlocked = Boolean(me?.phoneVerificationRequired && !me?.phoneVerified);
+
   const [mounted, setMounted] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
@@ -308,6 +310,10 @@ export function CheckoutClient() {
 
   const onPlaceOrder = async () => {
     if (!pendingFormData) return;
+    if (phoneVerificationBlocked) {
+      setFormError("Verify your phone number via WhatsApp in Settings before checking out.");
+      return;
+    }
     if (availableProviders.length > 0 && !availableProviders.includes(provider) && !methodsError) {
       setFormError("That payment method is not available right now. Choose another option.");
       return;
@@ -783,6 +789,15 @@ export function CheckoutClient() {
               ) : quoteError ? (
                 <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{quoteError}</p>
               ) : null}
+              {phoneVerificationBlocked && (
+                <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  Verify your phone number via WhatsApp in{" "}
+                  <Link href="/dashboard/settings" className="font-semibold underline">
+                    Settings
+                  </Link>{" "}
+                  before checking out.
+                </p>
+              )}
               <div className="flex gap-3">
                 <button
                   className="btn-secondary"
@@ -794,7 +809,7 @@ export function CheckoutClient() {
                 <button
                   className="btn-primary flex-1"
                   type="button"
-                  disabled={creating || placeOrderBusy}
+                  disabled={creating || placeOrderBusy || phoneVerificationBlocked}
                   onClick={onPlaceOrder}
                 >
                   {creating || placeOrderBusy ? "Placing order…" : "Place order"}

@@ -10,6 +10,7 @@ import {
   LogOut,
   AlertCircle,
   CreditCard,
+  Heart,
 } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -22,6 +23,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 const NAV = [
   { href: "/dashboard",                    label: "Overview",        icon: LayoutDashboard, end: true  },
   { href: "/dashboard/orders",             label: "Orders",          icon: Package,         end: false },
+  { href: "/dashboard/wanna-buy",          label: "Wanna Buy",       icon: Heart,           end: false },
   { href: "/dashboard/disputes",           label: "Disputes",        icon: AlertCircle,     end: false },
   { href: "/dashboard/profile",            label: "Profile",         icon: User,            end: false },
   { href: "/dashboard/payment-methods",    label: "Payment Methods", icon: CreditCard,      end: false },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ProductPageClient } from "./product-page-client";
 import { retailerLabelFromSource } from "@/lib/product-source";
 import { coerceNumber } from "@/lib/coerce-number";
+import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import type { ApiProduct } from "@/types/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -40,7 +41,7 @@ function buildProductJsonLd(product: ApiProduct, siteUrl: string) {
     "@type": "Product",
     name: product.title,
     ...(product.description ? { description: product.description.slice(0, 500) } : {}),
-    image: (product.images ?? []).slice(0, 5),
+    image: normalizeImageUrls(product.images).slice(0, 5),
     ...(product.brand?.trim()
       ? { brand: { "@type": "Brand", name: product.brand.trim() } }
       : {}),
@@ -72,7 +73,8 @@ export async function generateMetadata({
   const brand = product.brand?.trim() || retailer;
   const title = brand ? `${product.title} — ${brand}` : product.title;
   const description = buildMetaDescription(product, retailer);
-  const images = (product.images ?? []).slice(0, 1).map((url) => ({
+  const normalizedImages = normalizeImageUrls(product.images);
+  const images = normalizedImages.slice(0, 1).map((url) => ({
     url,
     width: 800,
     height: 800,
@@ -92,7 +94,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: (product.images ?? []).slice(0, 1),
+      images: normalizedImages.slice(0, 1),
     },
   };
 }

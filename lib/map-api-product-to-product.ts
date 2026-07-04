@@ -4,6 +4,7 @@ import { coerceNumber } from "@/lib/coerce-number";
 import { defaultVariantSelection, getVariantDimensions } from "@/lib/api-product-variants";
 import { pricesAreEqual } from "@/lib/format-price";
 import { marketplaceFromApiSource, retailerLabelFromSource } from "@/lib/product-source";
+import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 
 const UNLIMITED_STOCK = 999_999;
 
@@ -17,6 +18,7 @@ export function apiProductToProduct(api: ApiProduct): Product {
     value,
   }));
 
+  const images = normalizeImageUrls(api.images);
   const price = coerceNumber(api.salePrice ?? api.originalPrice ?? 0, 0);
   const original = coerceNumber(api.originalPrice, 0);
   const stock = api.stockQuantity == null ? UNLIMITED_STOCK : coerceNumber(api.stockQuantity, 0);
@@ -53,7 +55,7 @@ export function apiProductToProduct(api: ApiProduct): Product {
     description: api.description ?? "",
     price,
     currency: api.currency || "USD",
-    images: api.images?.length ? api.images : ["/product-placeholder.svg"],
+    images: images.length ? images : ["/product-placeholder.svg"],
     variants,
     category: api.brand?.trim() ?? (api.source ? retailerLabelFromSource(api.source) : "Catalog"),
     collection: "Store",

@@ -132,7 +132,7 @@ export default function SavesPage() {
           <ul className="divide-y divide-gray-100">
             {savedProducts.map((p) => {
               const href = productDetailPath(p);
-              const img = p.images[0] ?? "/product-placeholder.svg";
+              const img = p.images[0] || "/product-placeholder.svg";
               return (
                 <li key={p.id} className="px-5 py-4">
                   <div className="flex gap-4">

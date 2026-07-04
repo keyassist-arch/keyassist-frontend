@@ -1,6 +1,7 @@
 /** NestJS unified-commerce API shapes (see integration guide). */
 
 import type { ProductAttribute } from "./product-detail";
+import type { WannaBuyItemStatus } from "./index";
 
 export type JwtRole = "USER" | "ADMIN_SUPER" | "ADMIN_STAFF";
 
@@ -137,6 +138,10 @@ export interface MeResponse {
   role: JwtRole;
   /** Present after login / verify-email; use for settings UI. */
   emailVerified?: boolean;
+  /** True once the phone on file has been confirmed via WhatsApp OTP. */
+  phoneVerified?: boolean;
+  /** Whether checkout currently requires phoneVerified === true. */
+  phoneVerificationRequired?: boolean;
   twoFactor?: {
     enabled: boolean;
     setupPending: boolean;
@@ -149,6 +154,24 @@ export interface PatchMeRequest {
   lastName?: string;
   phone?: string;
   defaultShippingAddress?: ShippingAddress;
+}
+
+/** `POST /me/phone/send-otp` */
+export interface SendPhoneOtpRequest {
+  phone?: string;
+}
+
+export interface SendPhoneOtpResponse {
+  sentTo: string;
+}
+
+/** `POST /me/phone/verify-otp` */
+export interface VerifyPhoneOtpRequest {
+  code: string;
+}
+
+export interface VerifyPhoneOtpResponse {
+  phoneVerified: true;
 }
 
 /** `GET /me/2fa` */
@@ -463,6 +486,12 @@ export interface PendingPaymentResponse {
 export interface OrderUpdatedEvent {
   orderId: string;
   status: OrderStatus | string;
+}
+
+/** Socket.IO `wannaBuyItem.updated` event payload. */
+export interface WannaBuyItemUpdatedEvent {
+  itemId: string;
+  status: WannaBuyItemStatus | string;
 }
 
 export interface LandedCostInput {
