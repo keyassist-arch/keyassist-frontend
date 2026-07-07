@@ -113,7 +113,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                         ? "text-[#059669]"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }`}
-                    style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
                       className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
@@ -156,7 +156,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
                   active ? "text-[#059669]" : "text-gray-500 hover:text-gray-900"
                 }`}
-                style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+                style={active ? { background: "var(--shop-accent-soft)" } : undefined}
               >
                 <Icon className={`h-5 w-5 ${active ? "text-[#059669]" : "text-gray-400"}`} aria-hidden />
                 <span className="truncate">{label}</span>

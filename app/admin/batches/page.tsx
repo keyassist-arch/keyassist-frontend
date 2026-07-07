@@ -10,7 +10,8 @@ import {
   useCreateAdminBatchMutation,
   usePatchAdminBatchStatusMutation,
 } from "@/store/routes/unified-commerce-api";
-import { LoadingState, ErrorState } from "@/components/feedback/query-state";
+import { ErrorState } from "@/components/feedback/query-state";
+import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
 import type { Batch, BatchStatus } from "@/types/index";
 
 const BATCH_STATUS_ORDER: BatchStatus[] = [
@@ -140,7 +141,7 @@ export default function AdminBatchesPage() {
     }
   };
 
-  if (isLoading) return <LoadingState label="Loading batches…" />;
+  if (isLoading) return <AdminListSkeleton />;
   if (isError) return <ErrorState error={error} title="Could not load batches" />;
 
   const active = batches?.filter((b) => !["delivered", "cancelled"].includes(b.status)) ?? [];

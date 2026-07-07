@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
 
-type BadgeVariant = "default" | "success" | "warning" | "danger" | "neutral";
+type BadgeVariant = "default" | "success" | "warning" | "danger" | "info" | "neutral";
 
+/**
+ * Light-mode-only palette on purpose: badges render inside white cards regardless of the
+ * viewer's OS color-scheme preference, so `dark:` variants here would apply against a light
+ * background and wash out to near-invisible text. Keep every variant self-contained.
+ */
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "border-black/10 bg-white text-black dark:border-white/10 dark:bg-neutral-950 dark:text-white",
-  neutral: "border-black/10 bg-black/5 text-black/80 dark:border-white/10 dark:bg-white/5 dark:text-white/80",
-  success: "border-emerald-600/20 bg-emerald-50 text-emerald-900",
-  warning: "border-amber-600/20 bg-amber-50 text-amber-800 dark:border-amber-400/20 dark:bg-amber-950/30 dark:text-amber-300",
-  danger:  "border-rose-600/20 bg-rose-50 text-rose-800 dark:border-rose-400/20 dark:bg-rose-950/30 dark:text-rose-300",
+  default: "border-black/10 bg-white text-black",
+  neutral: "border-gray-200 bg-gray-100 text-gray-700",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  warning: "border-amber-200 bg-amber-50 text-amber-800",
+  info:    "border-blue-200 bg-blue-50 text-blue-800",
+  danger:  "border-rose-200 bg-rose-50 text-rose-800",
 };
 
 export function Badge({

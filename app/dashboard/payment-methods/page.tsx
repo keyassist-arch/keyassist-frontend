@@ -11,7 +11,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { CreditCard, Trash2, Star, Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { PaymentMethodsSkeleton } from "@/components/dashboard/payment-methods-skeleton";
+import { ErrorState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { useAppSelector } from "@/store/hooks";
 import {
@@ -299,8 +300,8 @@ export default function PaymentMethodsPage() {
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-8">
-            <LoadingState label="Loading payment methods…" />
+          <div className="px-6 py-6">
+            <PaymentMethodsSkeleton />
           </div>
         ) : isError ? (
           <div className="px-6 py-8">

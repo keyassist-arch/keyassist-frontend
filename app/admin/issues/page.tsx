@@ -9,7 +9,8 @@ import {
   useResolveWithRefundMutation,
 } from "@/store/routes/unified-commerce-api";
 import type { IssueStatus } from "@/types/api";
-import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
+import { ErrorState, SuccessState } from "@/components/feedback/query-state";
+import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
 import { getErrorMessage } from "@/lib/rtk-error";
 
 export default function AdminIssuesPage() {
@@ -19,7 +20,7 @@ export default function AdminIssuesPage() {
   const [resolveWithRefund, { isLoading: resolvingIssue }] = useResolveWithRefundMutation();
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  if (isLoading) return <LoadingState label="Loading issues…" />;
+  if (isLoading) return <AdminListSkeleton />;
   if (isError) return <ErrorState error={error} title="Could not load issues" />;
 
   return (

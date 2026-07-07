@@ -5,7 +5,12 @@
       "Bash(node --input-type=module)",
       "Bash(npx acorn *)",
       "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Read(//Users/aniebietabasi/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python3 scripts/search.py \"ecommerce admin dashboard emerald stone SaaS\" --design-system -f markdown)",
+      "Bash(python3 scripts/search.py \"dashboard cards metrics stat tiles\" --domain ux -n 15)",
+      "Bash(python3 scripts/search.py \"kpi stat card dashboard\" --domain style -n 5)",
+      "Bash(python3 scripts/search.py \"dashboard card table\" --stack shadcn -n 10)"
     ]
   }
 }

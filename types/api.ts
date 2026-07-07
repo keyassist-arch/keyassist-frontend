@@ -5,6 +5,15 @@ import type { WannaBuyItemStatus } from "./index";
 
 export type JwtRole = "USER" | "ADMIN_SUPER" | "ADMIN_STAFF";
 
+/** Screens an ADMIN_STAFF user may access. Ignored for ADMIN_SUPER (implicit all-access). */
+export type AdminPermission =
+  | "ORDERS"
+  | "BATCHES"
+  | "PRODUCTS"
+  | "REFUNDS"
+  | "ISSUES"
+  | "SHIPPING_RATES";
+
 export interface Category {
   id: string;
   name: string;
@@ -136,6 +145,8 @@ export interface MeResponse {
   lastName?: string | null;
   phone?: string | null;
   role: JwtRole;
+  /** Only meaningful for ADMIN_STAFF — ADMIN_SUPER implicitly has every permission. */
+  permissions?: AdminPermission[];
   /** Present after login / verify-email; use for settings UI. */
   emailVerified?: boolean;
   /** True once the phone on file has been confirmed via WhatsApp OTP. */
@@ -147,6 +158,32 @@ export interface MeResponse {
     setupPending: boolean;
   };
   defaultShippingAddress?: ShippingAddress | null;
+}
+
+/** `GET /admin/users` row — ADMIN_SUPER only. */
+export interface AdminUserResponse {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: JwtRole;
+  permissions: AdminPermission[];
+  disabled: boolean;
+  createdAt: string;
+}
+
+/** `POST /admin/users` — always creates an ADMIN_STAFF account. */
+export interface CreateAdminUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  permissions: AdminPermission[];
+}
+
+/** `PATCH /admin/users/:id` */
+export interface PatchAdminUserRequest {
+  permissions?: AdminPermission[];
+  disabled?: boolean;
 }
 
 export interface PatchMeRequest {

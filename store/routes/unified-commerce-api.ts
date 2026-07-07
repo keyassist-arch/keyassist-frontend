@@ -6,9 +6,12 @@ import { credentialsReceived, profileSynced, tokensRefreshed } from "@/store/sli
 import { isTokenLoginResult } from "@/lib/auth-login-guards";
 import type {
   AddCartItemRequest,
+  AdminUserResponse,
   ApiProduct,
   CartResponse,
   Category,
+  CreateAdminUserRequest,
+  PatchAdminUserRequest,
   PaginatedApiProducts,
   CreateOrderRequest,
   CreateIssueRequest,
@@ -102,7 +105,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "WannaBuy", "Batches"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "WannaBuy", "Batches", "AdminUsers"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -424,6 +427,12 @@ export const unifiedCommerceApi = createApi({
       providesTags: (_r, _e, id) => [{ type: "Order", id }],
     }),
 
+    /** Only valid while the order is still PENDING (unpaid). */
+    cancelOrder: builder.mutation<OrderResponse, string>({
+      query: (id) => ({ url: `/orders/${id}/cancel`, method: "POST" }),
+      invalidatesTags: (_r, _e, id) => [{ type: "Order", id }, "Orders"],
+    }),
+
     /* ---------- Payments ---------- */
     getPaymentMethods: builder.query<PaymentMethodsResponse, void>({
       query: () => ({ url: "/payments/methods", method: "GET" }),
@@ -462,6 +471,22 @@ export const unifiedCommerceApi = createApi({
     deleteAdminProduct: builder.mutation<void, string>({
       query: (id) => ({ url: `/admin/products/${id}`, method: "DELETE" }),
       invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    /* ---------- Admin team (ADMIN_SUPER only) ---------- */
+    getAdminUsers: builder.query<AdminUserResponse[], void>({
+      query: () => ({ url: "/admin/users", method: "GET" }),
+      providesTags: ["AdminUsers"],
+    }),
+
+    createAdminUser: builder.mutation<AdminUserResponse, CreateAdminUserRequest>({
+      query: (body) => ({ url: "/admin/users", method: "POST", body }),
+      invalidatesTags: ["AdminUsers"],
+    }),
+
+    patchAdminUser: builder.mutation<AdminUserResponse, { id: string; body: PatchAdminUserRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/users/${id}`, method: "PATCH", body }),
+      invalidatesTags: ["AdminUsers"],
     }),
 
     /* ---------- Reconciliation — refunds (admin) ---------- */
@@ -773,6 +798,7 @@ export const {
   useGetPendingPaymentQuery,
   useGetOrderQuery,
   useLazyGetOrderQuery,
+  useCancelOrderMutation,
   useGetPaymentMethodsQuery,
   useInitializePaymentMutation,
   useCapturePaypalMutation,
@@ -781,6 +807,9 @@ export const {
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,
   useDeleteAdminProductMutation,
+  useGetAdminUsersQuery,
+  useCreateAdminUserMutation,
+  usePatchAdminUserMutation,
   useCreateRefundMutation,
   useGetRefundsQuery,
   useGetRefundQuery,

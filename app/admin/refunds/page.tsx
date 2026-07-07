@@ -7,7 +7,8 @@ import {
   useCreateRefundMutation,
   useGetRefundsQuery,
 } from "@/store/routes/unified-commerce-api";
-import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
+import { ErrorState, SuccessState } from "@/components/feedback/query-state";
+import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
 import { getErrorMessage } from "@/lib/rtk-error";
 
 export default function AdminRefundsPage() {
@@ -16,7 +17,7 @@ export default function AdminRefundsPage() {
   const [createRefund, { isLoading: refundLoading }] = useCreateRefundMutation();
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  if (isLoading) return <LoadingState label="Loading refunds…" />;
+  if (isLoading) return <AdminListSkeleton />;
   if (isError) return <ErrorState error={error} title="Could not load refunds" />;
 
   return (

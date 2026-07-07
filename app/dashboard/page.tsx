@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { ArrowRight, CheckCircle2, Package, ShoppingBag, Truck, Wallet } from "lucide-react";
 import { OrderCard } from "@/components/dashboard/order-card";
-import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { DashboardHomeSkeleton } from "@/components/dashboard/dashboard-home-skeleton";
+import { ErrorState } from "@/components/feedback/query-state";
 import { formatApiMoney } from "@/lib/format-price";
 import { isActiveOrderStatus, orderTotal, sortOrdersNewestFirst } from "@/lib/dashboard-orders";
 import { useGetMeQuery, useGetOrdersQuery } from "@/store/routes/unified-commerce-api";
@@ -16,31 +17,31 @@ const METRICS = (m: { totalOrders: number; active: number; delivered: number; sp
     value: String(m.totalOrders),
     sub: "Lifetime orders placed",
     Icon: Package,
-    bg: "rgba(92,74,230,0.08)",
-    color: "#059669",
+    bg: "rgba(28,25,23,0.06)",
+    color: "#44403c",
   },
   {
     label: "In progress",
     value: String(m.active),
     sub: "Active or shipping",
     Icon: Truck,
-    bg: "rgba(16,185,129,0.08)",
-    color: "#059669",
+    bg: "rgba(245,158,11,0.1)",
+    color: "#d97706",
   },
   {
     label: "Delivered",
     value: String(m.delivered),
     sub: "Completed deliveries",
     Icon: CheckCircle2,
-    bg: "rgba(245,158,11,0.08)",
-    color: "#d97706",
+    bg: "rgba(16,185,129,0.1)",
+    color: "#059669",
   },
   {
     label: "Order value",
     value: formatApiMoney(m.spent, m.currency),
     sub: "Sum of order totals",
     Icon: Wallet,
-    bg: "rgba(59,130,246,0.08)",
+    bg: "rgba(37,99,235,0.08)",
     color: "#2563eb",
   },
 ];
@@ -67,7 +68,7 @@ export default function DashboardHomePage() {
 
   const recent = useMemo(() => sorted.slice(0, 5), [sorted]);
 
-  if (meLoading || ordLoading) return <LoadingState label="Loading your dashboard…" />;
+  if (meLoading || ordLoading) return <DashboardHomeSkeleton />;
 
   if (meErr || ordErr) {
     return (

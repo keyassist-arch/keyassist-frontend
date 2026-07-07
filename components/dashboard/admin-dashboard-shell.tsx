@@ -3,21 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Package, LogOut, AlertCircle, Banknote, Bug, Layers } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { loggedOut } from "@/store/slices/authSlice";
 import { LoadingState } from "@/components/feedback/query-state";
-
-const NAV = [
-  { href: "/admin",           label: "Overview",   icon: LayoutDashboard, end: true  },
-  { href: "/admin/orders",    label: "Orders",     icon: Package,         end: false },
-  { href: "/admin/batches",   label: "Batches",    icon: Layers,          end: false },
-  { href: "/admin/products",  label: "Products",   icon: Bug,             end: false },
-  { href: "/admin/refunds",   label: "Refunds",    icon: Banknote,        end: false },
-  { href: "/admin/issues",    label: "Issues",     icon: AlertCircle,     end: false },
-] as const;
+import { ADMIN_NAV, canSeeAdminSection } from "@/lib/admin-nav";
 
 function navActive(pathname: string, href: string, end: boolean) {
   if (end) return pathname === href;
@@ -89,6 +81,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
 
   const displayName = [me?.firstName, me?.lastName].filter(Boolean).join(" ") || me?.email || "Admin";
   const ini = initials(me?.firstName, me?.lastName, me?.email);
+  const visibleNav = ADMIN_NAV.filter((item) => canSeeAdminSection(me, item.permission));
 
   const onSignOut = () => {
     dispatch(loggedOut());
@@ -146,7 +139,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
             </div>
 
             <nav className="flex flex-wrap gap-1 lg:flex-col" aria-label="Admin navigation">
-              {NAV.map(({ href, label, icon: Icon, end }) => {
+              {visibleNav.map(({ href, label, icon: Icon, end }) => {
                 const active = navActive(pathname, href, end);
                 return (
                   <Link
@@ -157,7 +150,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                         ? "text-[#059669]"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }`}
-                    style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
                       className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
@@ -188,7 +181,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
         aria-label="Admin navigation"
       >
         <div className="mx-auto flex w-full max-w-(--shop-layout-max) flex-1 items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
-          {NAV.map(({ href, label, icon: Icon, end }) => {
+          {visibleNav.map(({ href, label, icon: Icon, end }) => {
             const active = navActive(pathname, href, end);
             return (
               <Link
@@ -197,7 +190,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
                   active ? "text-[#059669]" : "text-gray-500 hover:text-gray-900"
                 }`}
-                style={active ? { background: "rgba(92,74,230,0.08)" } : undefined}
+                style={active ? { background: "var(--shop-accent-soft)" } : undefined}
               >
                 <Icon className={`h-5 w-5 ${active ? "text-[#059669]" : "text-gray-400"}`} aria-hidden />
                 <span className="truncate">{label}</span>

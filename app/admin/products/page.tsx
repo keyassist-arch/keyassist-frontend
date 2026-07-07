@@ -10,7 +10,8 @@ import {
   usePostAdminScrapePreviewMutation,
   useDeleteAdminProductMutation,
 } from "@/store/routes/unified-commerce-api";
-import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
+import { ErrorState, SuccessState } from "@/components/feedback/query-state";
+import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
 import { getErrorMessage } from "@/lib/rtk-error";
 
 export default function AdminProductsPage() {
@@ -52,7 +53,7 @@ export default function AdminProductsPage() {
     setConfirmDelete(null);
   };
 
-  if (isLoading) return <LoadingState label="Loading products…" />;
+  if (isLoading) return <AdminListSkeleton />;
   if (isError) return <ErrorState error={error} title="Could not load products" />;
 
   return (

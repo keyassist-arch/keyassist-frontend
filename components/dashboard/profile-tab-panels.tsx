@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, CreditCard, Mail, MapPin, Phone, Shield, Truck, User } from "lucide-react";
+import { BadgeCheck, CreditCard, Mail, Phone, Shield, Truck, User } from "lucide-react";
 import {
-  MOCK_PAYMENT_METHODS,
   MOCK_PERSONAL,
   MOCK_SHIPPING_ALT,
   MOCK_SHIPPING_DEFAULT,
-  type MockPayPalMethod,
-  type MockStripeMethod,
 } from "@/lib/mock-profile";
-import type { MeResponse, ShippingAddress } from "@/types/api";
+import { PaymentMethodsSkeleton } from "@/components/dashboard/payment-methods-skeleton";
+import { ErrorState } from "@/components/feedback/query-state";
+import { useGetSavedPaymentMethodsQuery } from "@/store/routes/unified-commerce-api";
+import { useAppSelector } from "@/store/hooks";
+import type { MeResponse, SavedPaymentMethod, ShippingAddress } from "@/types/api";
 
 type TabId = "personal" | "shipping" | "payments";
 
@@ -23,7 +24,7 @@ const TABS: { id: TabId; label: string }[] = [
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(92,74,230,0.1)" }}>
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--shop-accent-soft)" }}>
         <Icon className="h-4 w-4" style={{ color: "#059669" }} aria-hidden />
       </span>
       <div className="min-w-0">
@@ -63,38 +64,40 @@ function AddressCard({ address, label, isDefault }: { address: ShippingAddress; 
   );
 }
 
-function StripeCard({ m }: { m: MockStripeMethod }) {
+function SavedMethodRow({ m }: { m: SavedPaymentMethod }) {
+  if (m.provider === "paypal") {
+    return (
+      <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#003087] text-[10px] font-bold leading-tight text-white">
+          Pay<br />Pal
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-900">{m.email ?? "PayPal account"}</p>
+          {m.isDefault && (
+            <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#059669" }}>Default</span>
+          )}
+        </div>
+        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">PayPal</span>
+      </div>
+    );
+  }
+
+  const brand = m.brand ? m.brand.charAt(0).toUpperCase() + m.brand.slice(1) : "Card";
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(92,74,230,0.1)" }}>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--shop-accent-soft)" }}>
         <CreditCard className="h-5 w-5" style={{ color: "#059669" }} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-900">{m.brand} ···· {m.last4}</p>
-        <p className="text-xs text-gray-400">Expires {String(m.expMonth).padStart(2, "0")}/{m.expYear}</p>
+        <p className="text-sm font-semibold text-gray-900">{brand} ···· {m.last4 ?? "····"}</p>
+        {m.expMonth && m.expYear && (
+          <p className="text-xs text-gray-400">Expires {String(m.expMonth).padStart(2, "0")}/{m.expYear}</p>
+        )}
         {m.isDefault && (
           <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#059669" }}>Default</span>
         )}
       </div>
       <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">Stripe</span>
-    </div>
-  );
-}
-
-function PayPalRow({ m }: { m: MockPayPalMethod }) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#003087] text-[10px] font-bold leading-tight text-white">
-        Pay<br />Pal
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-gray-900">{m.payerEmail}</p>
-        <p className="text-xs text-gray-400">{m.status === "linked" ? "Account linked" : "Action required"}</p>
-        {m.isDefault && (
-          <span className="mt-1.5 inline-block text-[11px] font-medium" style={{ color: "#059669" }}>Default</span>
-        )}
-      </div>
-      <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">PayPal</span>
     </div>
   );
 }
@@ -129,6 +132,11 @@ export function ProfileTabList({ active, onTabChange }: { active: TabId; onTabCh
 }
 
 export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; active: TabId }) {
+  const token = useAppSelector((s) => s.auth.accessToken);
+  const { data: methods, isLoading: methodsLoading, isError: methodsError } = useGetSavedPaymentMethodsQuery(undefined, {
+    skip: !token,
+  });
+
   const personal = {
     firstName:     me?.firstName     ?? MOCK_PERSONAL.firstName,
     lastName:      me?.lastName      ?? MOCK_PERSONAL.lastName,
@@ -230,25 +238,35 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
           <h2 className="text-sm font-semibold text-gray-900">Payment methods</h2>
         </div>
         <p className="text-xs text-gray-400">
-          Checkout uses <strong className="text-gray-600">Stripe</strong> and <strong className="text-gray-600">PayPal</strong>. Methods shown below are illustrative.
+          Cards and PayPal accounts saved for faster checkout.
         </p>
-        <ul className="space-y-3">
-          {MOCK_PAYMENT_METHODS.map((m) => (
-            <li key={m.id}>
-              {m.provider === "stripe" ? <StripeCard m={m} /> : <PayPalRow m={m} />}
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <button type="button" disabled title="Coming soon"
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-400">
-            + Add card
-          </button>
-          <button type="button" disabled title="Coming soon"
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-400">
-            + Link PayPal
-          </button>
-        </div>
+
+        {methodsLoading ? (
+          <PaymentMethodsSkeleton rows={2} />
+        ) : methodsError ? (
+          <ErrorState error="Could not load payment methods." />
+        ) : !methods || methods.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 py-10 text-center">
+            <CreditCard className="mx-auto h-8 w-8 text-gray-300" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-gray-500">No payment methods saved</p>
+            <p className="mt-1 text-xs text-gray-400">Add a card or PayPal account for faster checkout.</p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {methods.map((m) => (
+              <li key={m.id}>
+                <SavedMethodRow m={m} />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Link
+          href="/dashboard/payment-methods"
+          className="inline-flex items-center rounded-full border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          Manage payment methods
+        </Link>
       </section>
     </>
   );
