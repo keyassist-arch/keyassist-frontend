@@ -128,6 +128,7 @@ export interface WannaBuyItem {
   totalUsd: string | null;
   totalNgn: string | null;
   notifiedAt: string | null;
+  reminderSentAt: string | null;
   confirmedAt: string | null;
   paidAt: string | null;
   createdAt: string;
@@ -138,6 +139,8 @@ export interface Batch {
   id: string;
   status: BatchStatus;
   label: string | null;
+  /** When this batch stops accepting new items. `null` = no cutoff (legacy batches). */
+  collectingEndsAt: string | null;
   processingStartedAt: string | null;
   placingOrdersAt: string | null;
   inTransitAt: string | null;
@@ -152,6 +155,43 @@ export interface Batch {
 export interface AddWannaBuyItemRequest {
   productUrl: string;
   variantSelection?: Record<string, string>;
+  /** Pass when the item was picked from an existing catalog product — skips the backend scrape. */
+  productTitle?: string;
+  imageUrl?: string;
+}
+
+/** Carried on the `POST /wanna-buy` response when the item landed in a new batch because the previous one closed. */
+export interface BatchRolloverInfo {
+  previousBatchLabel: string;
+  newBatchLabel: string;
+  collectingEndsAt: string | null;
+}
+
+export interface AddWannaBuyItemResponse extends WannaBuyItem {
+  batchRollover: BatchRolloverInfo | null;
+}
+
+export interface PayWannaBuyItemsRequest {
+  itemIds: string[];
+}
+
+/** Only meaningful on Processing → Placing Orders — confirms moving unpaid items to the next batch. */
+export interface AdminBatchStatusRequest {
+  status: BatchStatus;
+  resolveUnpaid?: "reassign";
+}
+
+export interface UnpaidWannaBuyItemSummary {
+  id: string;
+  productTitle: string;
+  userId: string;
+}
+
+/** Shape of the 409 response body when Processing → Placing Orders is blocked by unpaid items. */
+export interface UnpaidItemsConflict {
+  message: string;
+  unpaidCount: number;
+  unpaidItems: UnpaidWannaBuyItemSummary[];
 }
 
 export interface AdminQuoteRequest {
@@ -160,4 +200,7 @@ export interface AdminQuoteRequest {
   taxAmountUsd?: number;
   kingzShippingUsd?: number;
   notifyUser?: boolean;
+  /** Items added by URL no longer arrive with a scraped title/image — admin fills these in while quoting. */
+  productTitle?: string;
+  imageUrl?: string;
 }

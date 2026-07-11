@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LayoutGrid, ShoppingCart, Package, Home, User } from "lucide-react";
+import { Heart, LayoutGrid, ShoppingBag, Package, Home, User } from "lucide-react";
 import { loginUrl } from "@/lib/auth-redirect";
 import { useAppSelector } from "@/store/hooks";
-import { useCart } from "@/context/cart-context";
 import { useLocalSaves } from "@/context/saves-context";
-import { useGetSavesQuery } from "@/store/routes/unified-commerce-api";
+import { useGetSavesQuery, useGetWannaBuyItemsQuery } from "@/store/routes/unified-commerce-api";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 
 const railBtn =
@@ -24,10 +23,12 @@ export function LeftRail() {
   const token = useAppSelector((s) => s.auth.accessToken);
   const pathname = usePathname();
   const profileHref = token ? "/dashboard" : loginUrl(pathname);
-  const { items } = useCart();
   const { localSavedIds } = useLocalSaves();
   const { data: serverSaves } = useGetSavesQuery(undefined, { skip: !token });
-  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const { data: wannaBuyItems } = useGetWannaBuyItemsQuery(undefined, { skip: !token });
+  const wannaBuyCount = token
+    ? (wannaBuyItems?.filter((i) => !["cancelled", "expired"].includes(i.status)).length ?? 0)
+    : 0;
   const savedCount = token ? (serverSaves?.length ?? 0) : localSavedIds.size;
 
   const NavContent = () => (
@@ -41,11 +42,11 @@ export function LeftRail() {
       <Link href="/dashboard/orders" aria-label="Orders" className={railBtn}>
         <Package className="h-5 w-5" aria-hidden />
       </Link>
-      <Link href="/cart" aria-label="Cart" className={railBtn}>
-        <ShoppingCart className="h-5 w-5" aria-hidden />
-        {cartCount > 0 && (
+      <Link href="/dashboard/wanna-buy" aria-label="Wanna Buy list" className={railBtn}>
+        <ShoppingBag className="h-5 w-5" aria-hidden />
+        {wannaBuyCount > 0 && (
           <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#059669" }}>
-            {cartCount > 9 ? "9+" : cartCount}
+            {wannaBuyCount > 9 ? "9+" : wannaBuyCount}
           </span>
         )}
       </Link>

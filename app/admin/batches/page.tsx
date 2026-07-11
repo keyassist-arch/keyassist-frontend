@@ -9,15 +9,23 @@ import {
   useGetAdminBatchesQuery,
   useCreateAdminBatchMutation,
   usePatchAdminBatchStatusMutation,
+  useNudgeUnpaidBatchItemsMutation,
 } from "@/store/routes/unified-commerce-api";
 import { ErrorState } from "@/components/feedback/query-state";
 import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
-import type { Batch, BatchStatus } from "@/types/index";
+import { UnpaidItemsModal } from "@/components/admin/unpaid-items-modal";
+import { getErrorMessage, getUnpaidItemsConflict } from "@/lib/rtk-error";
+import type { Batch, BatchStatus, UnpaidItemsConflict } from "@/types/index";
 
-const BATCH_STATUS_ORDER: BatchStatus[] = [
-  "collecting", "processing", "placing_orders",
-  "in_transit", "at_warehouse", "shipped", "delivered", "cancelled",
-];
+/** Mirrors the backend's strictly-sequential, forward-only transition map (`BATCH_STATUS_TRANSITIONS`). */
+const NEXT_STATUS: Partial<Record<BatchStatus, BatchStatus>> = {
+  collecting: "processing",
+  processing: "placing_orders",
+  placing_orders: "in_transit",
+  in_transit: "at_warehouse",
+  at_warehouse: "shipped",
+  shipped: "delivered",
+};
 
 const STATUS_LABEL: Record<BatchStatus, string> = {
   collecting:     "Collecting",
@@ -53,19 +61,31 @@ function StatusBadge({ status }: { status: BatchStatus }) {
   );
 }
 
-function BatchStatusSelect({ batch }: { batch: Batch }) {
+function BatchStatusSelect({
+  batch,
+  onUnpaidConflict,
+}: {
+  batch: Batch;
+  onUnpaidConflict: (batch: Batch, conflict: UnpaidItemsConflict) => void;
+}) {
   const [patch, { isLoading }] = usePatchAdminBatchStatusMutation();
   const [open, setOpen] = useState(false);
 
-  const next = BATCH_STATUS_ORDER.filter((s) => s !== batch.status && s !== "cancelled");
+  const nextStatus = NEXT_STATUS[batch.status];
+  const next = nextStatus ? [nextStatus] : [];
 
   const handleChange = async (status: BatchStatus) => {
     setOpen(false);
     try {
       await patch({ id: batch.id, status }).unwrap();
       toast.success(`Batch moved to "${STATUS_LABEL[status]}"`);
-    } catch {
-      toast.error("Failed to update batch status");
+    } catch (err) {
+      const conflict = getUnpaidItemsConflict(err);
+      if (conflict) {
+        onUnpaidConflict(batch, conflict);
+        return;
+      }
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -128,6 +148,10 @@ export default function AdminBatchesPage() {
   const [createBatch, { isLoading: creating }] = useCreateAdminBatchMutation();
   const [labelInput, setLabelInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [conflictBatch, setConflictBatch] = useState<Batch | null>(null);
+  const [conflict, setConflict] = useState<UnpaidItemsConflict | null>(null);
+  const [nudgeUnpaid, { isLoading: nudging }] = useNudgeUnpaidBatchItemsMutation();
+  const [patchStatus, { isLoading: advancing }] = usePatchAdminBatchStatusMutation();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +162,38 @@ export default function AdminBatchesPage() {
       setLabelInput("");
     } catch {
       toast.error("Failed to create batch");
+    }
+  };
+
+  const handleUnpaidConflict = (batch: Batch, c: UnpaidItemsConflict) => {
+    setConflictBatch(batch);
+    setConflict(c);
+  };
+
+  const closeConflictModal = () => {
+    setConflictBatch(null);
+    setConflict(null);
+  };
+
+  const handleNudge = async () => {
+    if (!conflictBatch) return;
+    try {
+      const result = await nudgeUnpaid(conflictBatch.id).unwrap();
+      toast.success(`Reminder sent to ${result.nudged} item(s)`);
+      closeConflictModal();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleContinueAnyway = async () => {
+    if (!conflictBatch) return;
+    try {
+      await patchStatus({ id: conflictBatch.id, status: "placing_orders", resolveUnpaid: "reassign" }).unwrap();
+      toast.success("Batch advanced — unpaid items moved to the next batch");
+      closeConflictModal();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -209,7 +265,7 @@ export default function AdminBatchesPage() {
           {active.length > 0 && (
             <div className="space-y-2">
               {active.map((batch) => (
-                <BatchRow key={batch.id} batch={batch} />
+                <BatchRow key={batch.id} batch={batch} onUnpaidConflict={handleUnpaidConflict} />
               ))}
             </div>
           )}
@@ -218,17 +274,33 @@ export default function AdminBatchesPage() {
             <div className="space-y-2">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">Past batches</h2>
               {past.map((batch) => (
-                <BatchRow key={batch.id} batch={batch} />
+                <BatchRow key={batch.id} batch={batch} onUnpaidConflict={handleUnpaidConflict} />
               ))}
             </div>
           )}
         </>
       )}
+
+      <UnpaidItemsModal
+        conflict={conflict}
+        batchLabel={conflictBatch ? (conflictBatch.label ?? `Batch ${conflictBatch.id.slice(0, 8)}`) : undefined}
+        nudging={nudging}
+        advancing={advancing}
+        onNudge={() => { void handleNudge(); }}
+        onContinue={() => { void handleContinueAnyway(); }}
+        onClose={closeConflictModal}
+      />
     </div>
   );
 }
 
-function BatchRow({ batch }: { batch: Batch }) {
+function BatchRow({
+  batch,
+  onUnpaidConflict,
+}: {
+  batch: Batch;
+  onUnpaidConflict: (batch: Batch, conflict: UnpaidItemsConflict) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-black/[0.06] bg-white px-5 py-4 shadow-sm">
       <div className="min-w-0">
@@ -237,10 +309,13 @@ function BatchRow({ batch }: { batch: Batch }) {
         </p>
         <p className="mt-0.5 text-[11px] text-gray-400">
           Created {new Date(batch.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          {batch.status === "collecting" && batch.collectingEndsAt && (
+            <> · Closes for new items {new Date(batch.collectingEndsAt).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
+          )}
         </p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <BatchStatusSelect batch={batch} />
+        <BatchStatusSelect batch={batch} onUnpaidConflict={onUnpaidConflict} />
         <Link
           href={`/admin/batches/${batch.id}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-[#059669] hover:underline"

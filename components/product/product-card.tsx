@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
-import { useCart } from "@/context/cart-context";
+import toast from "react-hot-toast";
+import { useAppSelector } from "@/store/hooks";
+import { useAddWannaBuyItemMutation } from "@/store/routes/unified-commerce-api";
+import { loginUrl } from "@/lib/auth-redirect";
+import { getErrorMessage } from "@/lib/rtk-error";
 import type { Product } from "@/types";
 import { productDetailPath } from "@/lib/product-detail-path";
 
@@ -13,7 +18,29 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [activeImage, setActiveImage] = useState(0);
-  const { addItem } = useCart();
+  const router = useRouter();
+  const pathname = usePathname();
+  const token = useAppSelector((s) => s.auth.accessToken);
+  const [addWannaBuyItem, { isLoading: adding }] = useAddWannaBuyItemMutation();
+
+  const onAdd = async () => {
+    if (!token) {
+      router.push(loginUrl(pathname));
+      return;
+    }
+    const variantSelection = Object.fromEntries(product.variants.map((v) => [v.name, v.value]));
+    try {
+      await addWannaBuyItem({
+        productUrl: `${window.location.origin}${productDetailPath(product)}`,
+        productTitle: product.title,
+        imageUrl: product.images[0],
+        ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
+      }).unwrap();
+      toast.success("Added to your Wanna Buy list!");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
 
   return (
     <article className="card group transition hover:-translate-y-0.5">
@@ -59,9 +86,10 @@ export function ProductCard({ product }: ProductCardProps) {
         <button
           type="button"
           className="btn-primary"
-          onClick={() => addItem(product, 1, product.variants[0])}
+          disabled={adding}
+          onClick={() => { void onAdd(); }}
         >
-          Paste URL to Checkout
+          {adding ? "Adding…" : "Add to Wanna Buy List"}
         </button>
         <Link href={productDetailPath(product)} className="btn-secondary text-center">
           View Details

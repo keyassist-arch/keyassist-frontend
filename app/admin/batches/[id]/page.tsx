@@ -45,6 +45,8 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
   const [priceNote, setPriceNote] = useState(item.priceEditNote ?? "");
   const [tax, setTax] = useState(item.taxAmountUsd ?? "");
   const [shipping, setShipping] = useState(item.kingzShippingUsd ?? "");
+  const [title, setTitle] = useState(item.productTitle ?? "");
+  const [image, setImage] = useState(item.imageUrl ?? "");
   const [notify, setNotify] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +56,8 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
     if (priceNote) body.priceEditNote = priceNote;
     if (tax) body.taxAmountUsd = parseFloat(tax);
     if (shipping) body.kingzShippingUsd = parseFloat(shipping);
+    if (title.trim() && title.trim() !== item.productTitle) body.productTitle = title.trim();
+    if (image.trim() && image.trim() !== item.imageUrl) body.imageUrl = image.trim();
     body.notifyUser = notify;
 
     try {
@@ -69,6 +73,30 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
 
   return (
     <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 mt-3">
+      {(!item.productTitle || !item.imageUrl) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Product title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Open the product URL and paste the title"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Image URL</label>
+            <input
+              type="url"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="https://…"
+              className={inputCls}
+            />
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-xs font-semibold text-gray-700 mb-1.5">

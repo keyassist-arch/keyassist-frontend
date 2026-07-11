@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 import type { CartItem, Product, ProductVariant } from "@/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -38,6 +39,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (product: Product, quantity: number, variant?: ProductVariant) => {
     dispatch(cartAddItem({ product, quantity, variant }));
+    toast.success(`${product.title} added to cart`);
   };
 
   const removeItem = (itemId: string) => dispatch(cartRemoveItem(itemId));

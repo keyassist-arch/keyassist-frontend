@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Check, Heart, Share2, Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useCart } from "@/context/cart-context";
+import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
-import { useAddCartItemMutation, useAddWannaBuyItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useAddWannaBuyItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
 import { loginUrl } from "@/lib/auth-redirect";
 import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { getVariantDimensions } from "@/lib/api-product-variants";
@@ -16,17 +16,15 @@ import { coerceNumber } from "@/lib/coerce-number";
 import { splitProductDescription } from "@/lib/product-description-sections";
 import { buildProductDetailZonesFromApi } from "@/lib/build-product-detail-zones";
 import { ProductDetailLayout } from "@/components/product/product-detail-layout";
-import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { RelatedProducts } from "@/components/product/related-products";
 import { ProductDetailSkeleton } from "@/components/product/product-detail-skeleton";
+import { BatchRolloverModal } from "@/components/wanna-buy/batch-rollover-modal";
 import { formatApiMoney, pricesAreEqual } from "@/lib/format-price";
-import { marketplaceFromApiSource, retailerLabelFromSource } from "@/lib/product-source";
-import type { Product, ProductVariant } from "@/types";
+import { retailerLabelFromSource } from "@/lib/product-source";
+import type { BatchRolloverInfo } from "@/types/index";
 import type { ApiConfigurationPrice, ApiProduct } from "@/types/api";
 import type { ProductDetailCrumb, ProductDetailDescriptionBlock, ProductDetailVariantSlot } from "@/types/product-detail";
-
-const UNLIMITED_LOCAL_STOCK = 999_999;
 
 export function ProductPageClient() {
   const params = useParams<{ slug: string }>();
@@ -260,22 +258,19 @@ function formatFreshLine(api: ApiProduct): string | null {
 function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const router = useRouter();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { addItem } = useCart();
   const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
-  const [addCartItem, { isLoading: adding }] = useAddCartItemMutation();
-  const [addWannaBuyItem, { isLoading: buyingNow }] = useAddWannaBuyItemMutation();
-  const [quantity, setQuantity] = useState(1);
+  const [addWannaBuyItem, { isLoading: submitting }] = useAddWannaBuyItemMutation();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [formErr, setFormErr] = useState("");
   const [stockxFetchingPrice, setStockxFetchingPrice] = useState(false);
   const [stockxLivePrice, setStockxLivePrice] = useState<string | null>(null);
+  const [rollover, setRollover] = useState<BatchRolloverInfo | null>(null);
 
   const dimensions = useMemo(() => (api ? getVariantDimensions(api) : []), [api]);
 
   useEffect(() => {
     if (!api) return;
     setSelection({});
-    setQuantity(1);
     setStockxLivePrice(null);
   }, [api]);
 
@@ -408,24 +403,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     }
     return basePrice;
   }, [applePriceRow, allAxesSelected, variantPriceData, activeConfigPrice, adapterBackMarket, api, currency, dimensions, selection]);
-
-  // Unit price for cart (follows displayed price)
-  const unitPrice = useMemo(() => {
-    if (variantPriceData) return coerceNumber(variantPriceData.price, 0);
-    if (applePriceRow?.salePrice != null) return coerceNumber(applePriceRow.salePrice, 0);
-    if (allAxesSelected && activeConfigPrice?.salePrice != null) {
-      return coerceNumber(activeConfigPrice.salePrice, 0);
-    }
-    if (adapterBackMarket) {
-      for (const dim of dimensions) {
-        const selected = selection[dim.name];
-        if (!selected) continue;
-        const parsed = parsePriceFromLabel(selected);
-        if (parsed) return coerceNumber(parsed, 0);
-      }
-    }
-    return coerceNumber(api?.salePrice ?? api?.originalPrice ?? 0, 0);
-  }, [variantPriceData, applePriceRow, allAxesSelected, activeConfigPrice, adapterBackMarket, api, dimensions, selection]);
 
   // Discount badge — prefer raw text from adapter
   const discountLabel = api?.discount?.trim() || null;
@@ -1312,33 +1289,9 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     });
   }
 
-  // ─── Add to cart handler ─────────────────────────────────────────────────────
+  // ─── Add to Wanna Buy List handler ───────────────────────────────────────────
 
   const onAdd = async () => {
-    setFormErr("");
-    if (!api) return false;
-    const qty = Math.max(1, quantity);
-    if (token) {
-      try {
-        await addCartItem({ productId: api.id, quantity: qty, ...(Object.keys(variantSelection).length ? { variantSelection } : {}) }).unwrap();
-      } catch (e) { setFormErr(getErrorMessage(e)); return false; }
-      return true;
-    }
-    const marketplace = marketplaceFromApiSource(api.source, api.brand);
-    const variantsForProduct: ProductVariant[] = Object.entries(variantSelection).map(([name, value], i) => ({ id: `v-${i}`, name, value }));
-    const lineItemProduct: Product = {
-      id: api.id, slug: api.slug ?? undefined, title: api.title, description: api.description ?? "",
-      price: unitPrice, currency, marketplace, category: api.brand?.trim() ?? retailer ?? "Catalog",
-      collection: "Store", images,
-      variants: variantsForProduct, stock: stockNum ?? UNLIMITED_LOCAL_STOCK,
-      deliveryEstimate: "Set at checkout", seller: api.brand?.trim() ?? retailer,
-    };
-    const selKey = Object.entries(variantSelection).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}:${v}`).join("|");
-    addItem(lineItemProduct, qty, { id: selKey || "default", name: "Selection", value: Object.entries(variantSelection).map(([k, v]) => `${k}: ${v}`).join(", ") });
-    return true;
-  };
-
-  const onBuyNow = async () => {
     setFormErr("");
     if (!api) return;
     if (!token) {
@@ -1346,11 +1299,17 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       return;
     }
     try {
-      await addWannaBuyItem({
+      const result = await addWannaBuyItem({
         productUrl: listingUrl ?? `${window.location.origin}/products/${idOrSlug}`,
+        productTitle: api.title,
+        imageUrl: images[0],
         ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
       }).unwrap();
-      router.push("/dashboard/wanna-buy");
+      if (result.batchRollover) {
+        setRollover(result.batchRollover);
+      } else {
+        toast.success("Added to your Wanna Buy list!");
+      }
     } catch (e) {
       setFormErr(getErrorMessage(e));
     }
@@ -1394,10 +1353,10 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         </div>
       ) : (
         <>
-          <button type="button" disabled={!inStock || adding} onClick={onAdd}
+          <button type="button" disabled={!inStock || submitting} onClick={onAdd}
             className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             style={{ background: "#059669" }}>
-            {adding ? "Adding…" : "Add to cart"}
+            {submitting ? "Adding…" : "Add to Wanna Buy List"}
           </button>
 
           {/* Apple: deep-link to carrier checkout when carrier + storage + colour are selected */}
@@ -1406,12 +1365,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800">
               Buy on Apple
             </a>
-          ) : (
-            <button type="button" disabled={!inStock || buyingNow} onClick={onBuyNow}
-              className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-              {buyingNow ? "Submitting…" : "Buy now"}
-            </button>
-          )}
+          ) : null}
 
           <div className="flex gap-3">
             <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
@@ -1429,7 +1383,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               </button>
             )}
           </div>
-          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to sync this item with your account cart.</p> : null}
+          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to add this item to your Wanna Buy list.</p> : null}
         </>
       )}
     </>
@@ -1456,10 +1410,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
           availabilitySlot={availabilitySlot}
           variantSlots={variantSlots}
           configurationPricesSlot={configurationPricesSlot}
-          quantitySlot={
-            <ProductQuantityStepper value={quantity} onChange={(n) => setQuantity(n)} min={1}
-              max={stockNum != null ? Math.max(1, stockNum) : undefined} disabled={!inStock} />
-          }
           actionsSlot={actionsSlot}
           metaLines={metaLines}
           detailZones={detailZones}
@@ -1477,6 +1427,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         />
       </InnerShell>
       <RelatedProducts idOrSlug={idOrSlug} />
+      <BatchRolloverModal info={rollover} onClose={() => setRollover(null)} />
     </>
   );
 }

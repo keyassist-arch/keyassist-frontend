@@ -86,7 +86,10 @@ import type {
   WannaBuyItem,
   Batch,
   AddWannaBuyItemRequest,
+  AddWannaBuyItemResponse,
   AdminQuoteRequest,
+  PayWannaBuyItemsRequest,
+  AdminBatchStatusRequest,
 } from "@/types/index";
 
 async function postAuthJson<TBody>(
@@ -719,7 +722,7 @@ export const unifiedCommerceApi = createApi({
     }),
 
     // ── Wanna Buy List (user) ─────────────────────────────────────────────────
-    addWannaBuyItem: builder.mutation<WannaBuyItem, AddWannaBuyItemRequest>({
+    addWannaBuyItem: builder.mutation<AddWannaBuyItemResponse, AddWannaBuyItemRequest>({
       query: (body) => ({ url: "/wanna-buy", method: "POST", body }),
       invalidatesTags: ["WannaBuy"],
     }),
@@ -727,8 +730,12 @@ export const unifiedCommerceApi = createApi({
       query: () => "/wanna-buy",
       providesTags: ["WannaBuy"],
     }),
-    payWannaBuyItem: builder.mutation<OrderResponse, string>({
-      query: (id) => ({ url: `/wanna-buy/${id}/pay`, method: "POST" }),
+    getCurrentWannaBuyBatch: builder.query<Batch | null, void>({
+      query: () => "/wanna-buy/current-batch",
+      providesTags: ["Batches"],
+    }),
+    payWannaBuyItems: builder.mutation<OrderResponse, PayWannaBuyItemsRequest>({
+      query: (body) => ({ url: "/wanna-buy/pay", method: "POST", body }),
       invalidatesTags: ["WannaBuy", "Orders"],
     }),
 
@@ -741,9 +748,16 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/admin/batches", method: "POST", body }),
       invalidatesTags: ["Batches"],
     }),
-    patchAdminBatchStatus: builder.mutation<Batch, { id: string; status: string }>({
-      query: ({ id, status }) => ({ url: `/admin/batches/${id}/status`, method: "PATCH", body: { status } }),
+    patchAdminBatchStatus: builder.mutation<Batch, AdminBatchStatusRequest & { id: string }>({
+      query: ({ id, status, resolveUnpaid }) => ({
+        url: `/admin/batches/${id}/status`,
+        method: "PATCH",
+        body: { status, ...(resolveUnpaid ? { resolveUnpaid } : {}) },
+      }),
       invalidatesTags: ["Batches"],
+    }),
+    nudgeUnpaidBatchItems: builder.mutation<{ nudged: number }, string>({
+      query: (batchId) => ({ url: `/admin/batches/${batchId}/nudge-unpaid`, method: "POST" }),
     }),
     getAdminBatchItems: builder.query<WannaBuyItem[], string>({
       query: (batchId) => `/admin/batches/${batchId}/items`,
@@ -854,10 +868,12 @@ export const {
   // Wanna Buy List
   useAddWannaBuyItemMutation,
   useGetWannaBuyItemsQuery,
-  usePayWannaBuyItemMutation,
+  useGetCurrentWannaBuyBatchQuery,
+  usePayWannaBuyItemsMutation,
   useGetAdminBatchesQuery,
   useCreateAdminBatchMutation,
   usePatchAdminBatchStatusMutation,
+  useNudgeUnpaidBatchItemsMutation,
   useGetAdminBatchItemsQuery,
   usePatchAdminWannaBuyQuoteMutation,
 } = unifiedCommerceApi;
