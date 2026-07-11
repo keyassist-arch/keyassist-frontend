@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Heart, Plus, ExternalLink, Clock, CheckCircle2, ShoppingBag, XCircle, AlertCircle, Search } from "lucide-react";
+import { Heart, Plus, ExternalLink, Clock, CheckCircle2, ShoppingBag, XCircle, AlertCircle, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
 import {
   useGetWannaBuyItemsQuery,
   useAddWannaBuyItemMutation,
   usePayWannaBuyItemsMutation,
+  useCancelWannaBuyItemMutation,
   useGetMeQuery,
   useGetCatalogProductsQuery,
   useGetCurrentWannaBuyBatchQuery,
@@ -21,7 +22,9 @@ import { formatApiMoney } from "@/lib/format-price";
 import { getVariantDimensions } from "@/lib/api-product-variants";
 import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { retailerLabelFromSource } from "@/lib/product-source";
+import { getErrorMessage } from "@/lib/rtk-error";
 import { BatchRolloverModal } from "@/components/wanna-buy/batch-rollover-modal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import type { WannaBuyItem, WannaBuyItemStatus, BatchRolloverInfo } from "@/types/index";
 import type { ApiProduct } from "@/types/api";
 
@@ -72,13 +75,16 @@ function WannaBuyCard({
   item,
   selected,
   onToggleSelect,
+  onRemove,
   phoneVerificationBlocked,
 }: {
   item: WannaBuyItem;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
+  onRemove?: (item: WannaBuyItem) => void;
   phoneVerificationBlocked?: boolean;
 }) {
+  const removable = (item.status === "pending" || item.status === "quoted") && Boolean(onRemove);
   const effectivePrice = item.adminPriceUsd ?? item.scrapedPriceUsd;
   const selectable = item.status === "quoted" && Boolean(onToggleSelect);
 
@@ -166,14 +172,25 @@ function WannaBuyCard({
           <p className="text-[11px] text-gray-400">
             Added {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
-          <a
-            href={item.productUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#059669] hover:underline"
-          >
-            View product <ExternalLink className="h-3 w-3" aria-hidden />
-          </a>
+          <div className="flex items-center gap-3">
+            {removable && (
+              <button
+                type="button"
+                onClick={() => onRemove?.(item)}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-red-600"
+              >
+                <Trash2 className="h-3 w-3" aria-hidden /> Remove
+              </button>
+            )}
+            <a
+              href={item.productUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#059669] hover:underline"
+            >
+              View product <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          </div>
         </div>
 
         {/* Quoted — select to pay */}
@@ -532,7 +549,9 @@ export default function WannaBuyPage() {
   const [showModal, setShowModal] = useState(false);
   const [rollover, setRollover] = useState<BatchRolloverInfo | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [itemPendingRemoval, setItemPendingRemoval] = useState<WannaBuyItem | null>(null);
   const [payItems, { isLoading: paying }] = usePayWannaBuyItemsMutation();
+  const [cancelItem, { isLoading: removing }] = useCancelWannaBuyItemMutation();
   const router = useRouter();
 
   useWannaBuyRealtime(token, () => {
@@ -565,6 +584,24 @@ export default function WannaBuyPage() {
       router.push(`/checkout?resume=${order.id}`);
     } catch {
       toast.error("Could not initiate payment. Please try again.");
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!itemPendingRemoval) return;
+    try {
+      await cancelItem(itemPendingRemoval.id).unwrap();
+      setSelectedIds((prev) => {
+        if (!prev.has(itemPendingRemoval.id)) return prev;
+        const next = new Set(prev);
+        next.delete(itemPendingRemoval.id);
+        return next;
+      });
+      toast.success("Removed from your Wanna Buy list");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setItemPendingRemoval(null);
     }
   };
 
@@ -646,6 +683,7 @@ export default function WannaBuyPage() {
                 item={item}
                 selected={selectedIds.has(item.id)}
                 onToggleSelect={toggleSelect}
+                onRemove={setItemPendingRemoval}
                 phoneVerificationBlocked={phoneVerificationBlocked}
               />
             ))}
@@ -694,6 +732,15 @@ export default function WannaBuyPage() {
 
       {showModal && <AddItemModal onClose={() => setShowModal(false)} onAdded={setRollover} />}
       <BatchRolloverModal info={rollover} onClose={() => setRollover(null)} />
+      <ConfirmModal
+        open={itemPendingRemoval != null}
+        title="Remove this item?"
+        description={`"${itemPendingRemoval?.productTitle ?? "This item"}" will be removed from your Wanna Buy list. This can't be undone.`}
+        confirmLabel={removing ? "Removing…" : "Remove"}
+        danger
+        onConfirm={() => { void handleConfirmRemove(); }}
+        onCancel={() => setItemPendingRemoval(null)}
+      />
     </>
   );
 }

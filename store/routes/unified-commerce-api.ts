@@ -738,6 +738,10 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/wanna-buy/pay", method: "POST", body }),
       invalidatesTags: ["WannaBuy", "Orders"],
     }),
+    cancelWannaBuyItem: builder.mutation<WannaBuyItem, string>({
+      query: (id) => ({ url: `/wanna-buy/${id}`, method: "DELETE" }),
+      invalidatesTags: ["WannaBuy"],
+    }),
 
     // ── Wanna Buy List (admin) ────────────────────────────────────────────────
     getAdminBatches: builder.query<Batch[], void>({
@@ -870,6 +874,7 @@ export const {
   useGetWannaBuyItemsQuery,
   useGetCurrentWannaBuyBatchQuery,
   usePayWannaBuyItemsMutation,
+  useCancelWannaBuyItemMutation,
   useGetAdminBatchesQuery,
   useCreateAdminBatchMutation,
   usePatchAdminBatchStatusMutation,
