@@ -332,7 +332,50 @@ export interface ApiProduct {
   attributes?: ProductAttribute[];
   compliance?: string[];
   whatsInTheBox?: string[];
+  /** FK to a category, null = uncategorized. */
+  categoryId?: string | null;
 }
+
+/** Signed params for a direct-to-Cloudinary upload from `POST /admin/uploads/signature`. */
+export interface CloudinaryUploadSignature {
+  timestamp: number;
+  signature: string;
+  apiKey: string;
+  cloudName: string;
+  folder: string;
+}
+
+export interface AdminProductVariantRequest {
+  name: string;
+  options: string[];
+}
+
+export interface AdminProductConfigurationPriceRequest {
+  label: string;
+  originalPrice: string;
+  sku?: string;
+  variantSelections?: Record<string, string>;
+  available?: boolean;
+  stockQuantity?: number;
+}
+
+/** Body for `POST /admin/products` — hand-entered product, no scrape. */
+export interface AdminCreateProductRequest {
+  title: string;
+  description?: string;
+  brand?: string;
+  originalPrice: number;
+  images: string[];
+  variants?: AdminProductVariantRequest[];
+  configurationPrices?: AdminProductConfigurationPriceRequest[];
+  stockQuantity?: number;
+  categoryId?: string;
+  availability?: string;
+  compareAtPrice?: number;
+}
+
+/** Body for `PATCH /admin/products/:id` — same shape, all optional. */
+export type AdminUpdateProductRequest = Partial<AdminCreateProductRequest>;
 
 export type ImportJobStatus = "queued" | "processing" | "completed" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
 

@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { FormEvent } from "react";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import {
   useGetAdminProductsQuery,
@@ -59,11 +59,21 @@ export default function AdminProductsPage() {
   return (
     <>
       <div className="space-y-6">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-gray-900">Products</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {adminProducts?.length ?? 0} catalog items. Preview a product from any URL to see how it imports.
-          </p>
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Products</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {adminProducts?.length ?? 0} catalog items. Preview a product from any URL to see how it imports.
+            </p>
+          </div>
+          <Link
+            href="/admin/products/new"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+            style={{ background: "#059669" }}
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Add product
+          </Link>
         </section>
 
         {notice?.ok && <SuccessState message={notice.text} />}
@@ -135,6 +145,13 @@ export default function AdminProductsPage() {
                       {product.currency} {product.salePrice}
                     </span>
                   )}
+                  <Link
+                    href={`/admin/products/${product.id}`}
+                    className="shrink-0 rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    aria-label={`Edit ${product.title}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Link>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete({ id: product.id, title: product.title })}

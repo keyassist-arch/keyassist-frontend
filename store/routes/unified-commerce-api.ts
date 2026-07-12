@@ -7,9 +7,12 @@ import { isTokenLoginResult } from "@/lib/auth-login-guards";
 import type {
   AddCartItemRequest,
   AdminUserResponse,
+  AdminCreateProductRequest,
+  AdminUpdateProductRequest,
   ApiProduct,
   CartResponse,
   Category,
+  CloudinaryUploadSignature,
   CreateAdminUserRequest,
   PatchAdminUserRequest,
   PaginatedApiProducts,
@@ -476,6 +479,20 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["AdminProducts", "CatalogProducts"],
     }),
 
+    createAdminProduct: builder.mutation<ApiProduct, AdminCreateProductRequest>({
+      query: (body) => ({ url: "/admin/products", method: "POST", body }),
+      invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    updateAdminProduct: builder.mutation<ApiProduct, { id: string; body: AdminUpdateProductRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/products/${id}`, method: "PATCH", body }),
+      invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    getUploadSignature: builder.mutation<CloudinaryUploadSignature, void>({
+      query: () => ({ url: "/admin/uploads/signature", method: "POST" }),
+    }),
+
     /* ---------- Admin team (ADMIN_SUPER only) ---------- */
     getAdminUsers: builder.query<AdminUserResponse[], void>({
       query: () => ({ url: "/admin/users", method: "GET" }),
@@ -825,6 +842,9 @@ export const {
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,
   useDeleteAdminProductMutation,
+  useCreateAdminProductMutation,
+  useUpdateAdminProductMutation,
+  useGetUploadSignatureMutation,
   useGetAdminUsersQuery,
   useCreateAdminUserMutation,
   usePatchAdminUserMutation,
