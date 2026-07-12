@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Heart, LayoutGrid, ShoppingBag, Package, Home, User, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { loginUrl } from "@/lib/auth-redirect";
+import { loginUrl, registerUrl } from "@/lib/auth-redirect";
 import { useAppSelector } from "@/store/hooks";
 import { useLocalSaves } from "@/context/saves-context";
 import { useGetSavesQuery, useGetWannaBuyItemsQuery } from "@/store/routes/unified-commerce-api";
@@ -156,15 +156,25 @@ export function LeftRail() {
               <span style={{ color: "#059669" }}>Key</span>Assist
             </span>
           </Link>
-          <button
-            type="button"
-            onClick={() => setNavOpen(true)}
-            className={railBtn}
-            aria-label="Open menu"
-            aria-expanded={navOpen}
-          >
-            <Menu className="h-5 w-5" aria-hidden />
-          </button>
+          <div className="flex items-center gap-2">
+            {!token && (
+              <Link
+                href={registerUrl(pathname)}
+                className="btn-primary px-3.5 py-1.5 text-xs"
+              >
+                Get started
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setNavOpen(true)}
+              className={railBtn}
+              aria-label="Open menu"
+              aria-expanded={navOpen}
+            >
+              <Menu className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
         </div>
       </header>
 

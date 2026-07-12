@@ -188,14 +188,6 @@ export function StoreMainHeader() {
                 </Link>
               </div>
             )}
-            {!token && (
-              <Link
-                href={registerUrl(pathname)}
-                className="btn-primary shrink-0 px-3.5 py-1.5 text-xs sm:hidden"
-              >
-                Get started
-              </Link>
-            )}
             <WannaBuyUserIcons wannaBuyLabel={wannaBuyLabel} wannaBuyCount={wannaBuyCount} />
             <button
               type="button"

@@ -3,7 +3,7 @@
 import { ClipboardEvent, FormEvent, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Store, Link2, PackageCheck } from "lucide-react";
-import { KeyAssistMark } from "@/components/ui/keyassist-logo";
+// import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 import { ImportFailedModal } from "@/components/ui/import-failed-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
@@ -135,7 +135,7 @@ export function HomeShopHero() {
         errorMessage={failedMessage}
       />
 
-      {/* ── Announcement bar ── */}
+      {/* ── Announcement bar ──
       <motion.div
         className="flex w-full items-center justify-center gap-2 bg-black px-4 py-2.5 text-[13px] font-medium text-white"
         variants={{
@@ -147,6 +147,7 @@ export function HomeShopHero() {
         Download Key Assist app.&nbsp;Available on iOS &amp; Android
         <span className="ml-0.5 text-white/60" aria-hidden>→</span>
       </motion.div>
+      */}
 
       {/* ── Hero body ── */}
       <div className="bg-white px-4 pb-10 pt-8 sm:px-8">
@@ -199,7 +200,7 @@ export function HomeShopHero() {
               <PackageCheck size={18} className="text-emerald-500" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Delivered to Nigeria</p>
+              <p className="text-sm font-semibold text-gray-900">Deliver to Nigeria</p>
               <p className="text-[12px] text-gray-400">Lagos &amp; nationwide</p>
             </div>
           </div>
