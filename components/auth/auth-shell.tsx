@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 
@@ -14,8 +15,19 @@ export function AuthShell({
   subAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
+      <button
+        type="button"
+        onClick={() => router.back()}
+        aria-label="Go back"
+        className="fixed left-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+      </button>
+
       <div className="flex min-h-full flex-col items-center justify-center px-4 py-12">
         <Link href="/" aria-label="Key Assist home">
           <KeyAssistMark size={40} />
