@@ -57,7 +57,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Header />
             <LeftRail />
-            <main className="w-full flex-1 pb-[68px] lg:pl-[84px]">{children}</main>
+            <main className="w-full flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0 lg:pl-[84px]">{children}</main>
             <Footer />
             <StickySearchBar />
           </div>

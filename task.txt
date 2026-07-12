@@ -1,3 +1,0 @@
-add to cart still uses the payment route insead of wannabuy
-bulk action to confirm and pay
-nudge users to confirm products

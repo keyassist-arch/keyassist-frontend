@@ -48,6 +48,10 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
   const [title, setTitle] = useState(item.productTitle ?? "");
   const [image, setImage] = useState(item.imageUrl ?? "");
   const [notify, setNotify] = useState(false);
+  const [isEstimate, setIsEstimate] = useState(item.isEstimateQuote);
+
+  const wasEstimatePaid = item.isEstimateQuote && item.chargedTotalUsd != null;
+  const finalizing = wasEstimatePaid && !isEstimate;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +63,17 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
     if (title.trim() && title.trim() !== item.productTitle) body.productTitle = title.trim();
     if (image.trim() && image.trim() !== item.imageUrl) body.imageUrl = image.trim();
     body.notifyUser = notify;
+    body.isEstimateQuote = isEstimate;
 
     try {
       await patch({ id: item.id, body }).unwrap();
-      toast.success(notify ? "Quote saved and notification sent!" : "Quote saved");
+      toast.success(
+        finalizing
+          ? "Quote finalized — any overcharge will be refunded automatically"
+          : notify
+            ? "Quote saved and notification sent!"
+            : "Quote saved",
+      );
       onClose();
     } catch {
       toast.error("Failed to save quote");
@@ -153,6 +164,25 @@ function QuoteForm({ item, onClose }: { item: WannaBuyItem; onClose: () => void 
         </div>
       </div>
 
+      <div className="rounded-xl border border-amber-100 bg-amber-50 p-3">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <div
+            onClick={() => setIsEstimate((v) => !v)}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded transition ${isEstimate ? "bg-amber-500" : "border border-gray-300 bg-white"}`}
+          >
+            {isEstimate && <Check className="h-3 w-3 text-white" aria-hidden />}
+          </div>
+          <span className="text-sm text-gray-700">Quick estimate (price only) — let the customer pay now</span>
+        </label>
+        <p className="mt-1.5 pl-7 text-[11px] text-amber-700">
+          {isEstimate
+            ? "Skip precise tax/shipping for now. Once you finalize this quote later, any overcharge is refunded to the customer automatically."
+            : wasEstimatePaid
+              ? "This item was paid against an earlier estimate. Saving now finalizes it — the customer is auto-refunded if this total is lower than what they paid."
+              : "The customer sees this as the full, final total."}
+        </p>
+      </div>
+
       <label className="flex items-center gap-2.5 cursor-pointer">
         <div
           onClick={() => setNotify((v) => !v)}
@@ -195,6 +225,13 @@ function BatchItemRow({ item }: { item: WannaBuyItem }) {
   const [editing, setEditing] = useState(false);
   const effectivePrice = item.adminPriceUsd ?? item.scrapedPriceUsd;
 
+  const chargedTotalUsd = item.chargedTotalUsd ? parseFloat(item.chargedTotalUsd) : null;
+  const totalUsd = item.totalUsd ? parseFloat(item.totalUsd) : null;
+  const reconciliationDelta =
+    item.quoteFinalizedAt && chargedTotalUsd != null && totalUsd != null
+      ? Math.round((chargedTotalUsd - totalUsd) * 100) / 100
+      : null;
+
   return (
     <article className="rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm">
       <div className="flex gap-4">
@@ -221,6 +258,11 @@ function BatchItemRow({ item }: { item: WannaBuyItem }) {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {item.isEstimateQuote && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                  Estimate
+                </span>
+              )}
               <StatusBadge status={item.status} />
               <a
                 href={item.productUrl}
@@ -272,6 +314,22 @@ function BatchItemRow({ item }: { item: WannaBuyItem }) {
               </span>
             )}
           </div>
+
+          {item.isEstimateQuote && item.chargedTotalUsd != null && (
+            <p className="mt-1.5 text-[11px] font-medium text-amber-700">
+              Paid ${parseFloat(item.chargedTotalUsd).toFixed(2)} against an estimate — needs finalizing
+            </p>
+          )}
+          {reconciliationDelta != null && reconciliationDelta > 0 && (
+            <p className="mt-1.5 text-[11px] font-medium text-emerald-700">
+              Refunded ${reconciliationDelta.toFixed(2)} — final total came in lower than the estimate
+            </p>
+          )}
+          {reconciliationDelta != null && reconciliationDelta < 0 && (
+            <p className="mt-1.5 text-[11px] font-medium text-red-600">
+              Final total is ${Math.abs(reconciliationDelta).toFixed(2)} above what was charged — manual follow-up needed
+            </p>
+          )}
 
           {item.notifiedAt && (
             <p className="mt-1 text-[11px] text-gray-400">

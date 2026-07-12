@@ -84,9 +84,17 @@ function WannaBuyCard({
   onRemove?: (item: WannaBuyItem) => void;
   phoneVerificationBlocked?: boolean;
 }) {
+  console.log(item)
   const removable = (item.status === "pending" || item.status === "quoted") && Boolean(onRemove);
   const effectivePrice = item.adminPriceUsd ?? item.scrapedPriceUsd;
   const selectable = item.status === "quoted" && Boolean(onToggleSelect);
+
+  const chargedTotalUsd = item.chargedTotalUsd ? parseFloat(item.chargedTotalUsd) : null;
+  const totalUsd = item.totalUsd ? parseFloat(item.totalUsd) : null;
+  const refundedAmount =
+    item.quoteFinalizedAt && chargedTotalUsd != null && totalUsd != null && chargedTotalUsd > totalUsd
+      ? Math.round((chargedTotalUsd - totalUsd) * 100) / 100
+      : null;
 
   return (
     <article
@@ -133,7 +141,14 @@ function WannaBuyCard({
               <p className="mt-0.5 text-[11px] text-gray-400 capitalize">{item.marketplace.toLowerCase()}</p>
             )}
           </div>
-          <StatusBadge status={item.status} />
+          <div className="flex items-center gap-1.5">
+            {item.isEstimateQuote && (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                Estimate
+              </span>
+            )}
+            <StatusBadge status={item.status} />
+          </div>
         </div>
 
         {/* Variant tags */}
@@ -195,9 +210,15 @@ function WannaBuyCard({
 
         {/* Quoted — select to pay */}
         {item.status === "quoted" && (
-          <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 p-3">
-            <p className="text-xs text-blue-700">
-              Your quote is ready. Select this item above and confirm &amp; pay to be included in this week&apos;s batch.
+          <div
+            className={`mt-3 rounded-xl border p-3 ${
+              item.isEstimateQuote ? "border-amber-100 bg-amber-50" : "border-blue-100 bg-blue-50"
+            }`}
+          >
+            <p className={`text-xs ${item.isEstimateQuote ? "text-amber-700" : "text-blue-700"}`}>
+              {item.isEstimateQuote
+                ? "This is an early price estimate — pay now to secure your order. Once we finalize tax & shipping, we'll automatically refund you if the total comes in lower."
+                : "Your quote is ready. Select this item above and confirm & pay to be included in this week's batch."}
             </p>
             {phoneVerificationBlocked && (
               <p className="mt-2 text-xs text-amber-700">
@@ -208,6 +229,16 @@ function WannaBuyCard({
                 before you can pay.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Estimate finalized lower than what was charged — refund already issued */}
+        {refundedAmount != null && (
+          <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+            <p className="text-xs text-emerald-700">
+              We finalized your quote and refunded <strong>{fmt(refundedAmount.toFixed(2))}</strong> to your original
+              payment method.
+            </p>
           </div>
         )}
       </div>
@@ -702,7 +733,7 @@ export default function WannaBuyPage() {
       </div>
 
       {selectedIds.size > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/[0.06] bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+        <div className="fixed inset-x-0 bottom-16 z-[10000] border-t border-black/[0.06] bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur-sm lg:bottom-0">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-gray-700">
               <strong>{selectedIds.size}</strong> selected · Total{" "}

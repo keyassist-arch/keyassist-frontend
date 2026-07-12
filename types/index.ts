@@ -131,6 +131,12 @@ export interface WannaBuyItem {
   reminderSentAt: string | null;
   confirmedAt: string | null;
   paidAt: string | null;
+  /** True while the current quote is a fast, price-only estimate rather than the admin's final tax+shipping quote. */
+  isEstimateQuote: boolean;
+  /** Snapshot of `totalUsd` at the moment this was paid — the baseline a finalized quote is refunded against. */
+  chargedTotalUsd: string | null;
+  /** When a previously-estimated quote was reconciled to its final total. */
+  quoteFinalizedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -203,4 +209,10 @@ export interface AdminQuoteRequest {
   /** Items added by URL no longer arrive with a scraped title/image — admin fills these in while quoting. */
   productTitle?: string;
   imageUrl?: string;
+  /**
+   * True for a fast, price-only quote so the customer can pay upfront; false/omitted for the
+   * final tax+shipping-inclusive quote. Finalizing a previously-estimated, already-paid item
+   * auto-refunds the difference if the final total comes in lower.
+   */
+  isEstimateQuote?: boolean;
 }
