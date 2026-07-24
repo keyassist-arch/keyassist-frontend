@@ -1,17 +1,27 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useId, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCreateManualProductMutation } from "@/store/routes/unified-commerce-api";
 import { productDetailPathFromApi } from "@/lib/product-detail-path";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { useAppSelector } from "@/store/hooks";
+import { loginUrl } from "@/lib/auth-redirect";
 
 const COMMON_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
 
 export function AddManualProductForm() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const prefilledUrl = searchParams.get("url") ?? "";
+
+  const token = useAppSelector((s) => s.auth.accessToken);
+  const [mounted, setMounted] = useState(false);
+  // Avoids a hydration-mismatch flash of the sign-in gate for already-logged-in users
+  // while the persisted auth token rehydrates client-side (same pattern as checkout-client.tsx).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMounted(true); }, []);
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -72,6 +82,22 @@ export function AddManualProductForm() {
       /* surfaced via isError */
     }
   };
+
+  if (mounted && !token) {
+    const qs = searchParams.toString();
+    const redirectTarget = qs ? `${pathname}?${qs}` : pathname;
+    return (
+      <div className="card max-w-lg space-y-4">
+        <h2 className="text-lg font-semibold text-shop-ink">Sign in to add this product</h2>
+        <p className="text-sm text-shop-muted">
+          Sign in so we can submit this on your behalf and let you track it in your orders.
+        </p>
+        <a href={loginUrl(redirectTarget)} className="btn-primary inline-block text-center">
+          Sign in
+        </a>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">

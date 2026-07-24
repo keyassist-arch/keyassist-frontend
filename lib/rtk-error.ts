@@ -1,6 +1,5 @@
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import type { SerializedError } from "@reduxjs/toolkit";
-import type { UnpaidItemsConflict } from "@/types/index";
 
 /** `POST /auth/login` when password is correct but email is not verified (`403`). */
 export function getEmailNotVerifiedPayload(error: unknown): {
@@ -19,25 +18,12 @@ export function getEmailNotVerifiedPayload(error: unknown): {
   };
 }
 
-/** `POST /orders` or `POST /wanna-buy/:id/pay` when phone verification is required but missing (`403`). */
+/** `POST /orders` when phone verification is required but missing (`403`). */
 export function isPhoneVerificationRequiredError(error: unknown): boolean {
   const e = error as FetchBaseQueryError;
   if (e?.status !== 403 || !e.data || typeof e.data !== "object") return false;
   const d = e.data as { code?: string };
   return d.code === "PHONE_VERIFICATION_REQUIRED";
-}
-
-/** `PATCH /admin/batches/:id/status` → Processing to Placing Orders when the batch still has unpaid items (`409`). */
-export function getUnpaidItemsConflict(error: unknown): UnpaidItemsConflict | null {
-  const e = error as FetchBaseQueryError;
-  if (e?.status !== 409 || !e.data || typeof e.data !== "object") return null;
-  const d = e.data as Partial<UnpaidItemsConflict>;
-  if (!Array.isArray(d.unpaidItems)) return null;
-  return {
-    message: d.message ?? "Some items are still unpaid.",
-    unpaidCount: d.unpaidCount ?? d.unpaidItems.length,
-    unpaidItems: d.unpaidItems,
-  };
 }
 
 export function getErrorMessage(error: unknown): string {

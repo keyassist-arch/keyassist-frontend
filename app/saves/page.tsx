@@ -9,9 +9,9 @@ import { Heart } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
 import { useLocalSaves } from "@/context/saves-context";
-import type { BatchRolloverInfo } from "@/types/index";
+import { useCart } from "@/context/cart-context";
 import {
-  useAddWannaBuyItemMutation,
+  useAddCartItemMutation,
   useGetCatalogProductsQuery,
   useGetSavesQuery,
   useUnsaveProductMutation,
@@ -22,19 +22,18 @@ import { formatApiMoney } from "@/lib/format-price";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { isUuid } from "@/lib/uuid";
 import { productDetailPath } from "@/lib/product-detail-path";
-import { BatchRolloverModal } from "@/components/wanna-buy/batch-rollover-modal";
 
 export default function SavesPage() {
   const router = useRouter();
   const pathname = usePathname();
   const token = useAppSelector((s) => s.auth.accessToken);
   const { localSavedIds, toggleLocalSave, removeLocalSave } = useLocalSaves();
-  const [addWannaBuyItem, { isLoading: addingWannaBuy }] = useAddWannaBuyItemMutation();
+  const { openCartDrawer } = useCart();
+  const [addCartItem, { isLoading: addingToCart }] = useAddCartItemMutation();
   const [unsaveProduct] = useUnsaveProductMutation();
   const { data: serverSaves, isLoading: savesLoading } = useGetSavesQuery(undefined, { skip: !token });
   const { data: catalog, isLoading: catalogLoading } = useGetCatalogProductsQuery();
   const [apiErr, setApiErr] = useState<string | null>(null);
-  const [rollover, setRollover] = useState<BatchRolloverInfo | null>(null);
 
   const savedIds = useMemo(() => {
     if (token) return new Set((serverSaves ?? []).map((s) => s.productId).filter((x): x is string => typeof x === "string"));
@@ -61,7 +60,7 @@ export default function SavesPage() {
     }
   };
 
-  const onAddToWannaBuy = async (product: (typeof savedProducts)[number], e: MouseEvent<HTMLButtonElement>) => {
+  const onAddToCart = async (product: (typeof savedProducts)[number], e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setApiErr(null);
@@ -69,19 +68,16 @@ export default function SavesPage() {
       router.push(loginUrl(pathname));
       return;
     }
+    if (!isUuid(product.id)) return;
     const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
     try {
-      const result = await addWannaBuyItem({
-        productUrl: `${window.location.origin}${productDetailPath(product)}`,
-        productTitle: product.title,
-        imageUrl: product.images[0],
+      await addCartItem({
+        productId: product.id,
+        quantity: 1,
         ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
       }).unwrap();
-      if (result.batchRollover) {
-        setRollover(result.batchRollover);
-      } else {
-        toast.success("Added to your Wanna Buy list!");
-      }
+      toast.success("Added to cart");
+      openCartDrawer();
     } catch (err) {
       setApiErr(getErrorMessage(err));
     }
@@ -89,7 +85,6 @@ export default function SavesPage() {
 
   return (
     <>
-    <BatchRolloverModal info={rollover} onClose={() => setRollover(null)} />
     <div className="mx-auto max-w-(--shop-layout-max) px-4 py-8 sm:px-8">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -159,11 +154,11 @@ export default function SavesPage() {
                     <div className="flex shrink-0 flex-col gap-2">
                       <button
                         type="button"
-                        onClick={(e) => onAddToWannaBuy(p, e)}
-                        disabled={addingWannaBuy}
+                        onClick={(e) => onAddToCart(p, e)}
+                        disabled={addingToCart}
                         className="inline-flex items-center justify-center rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
                       >
-                        Add to Wanna Buy List
+                        Add to Cart
                       </button>
                       <button
                         type="button"

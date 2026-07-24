@@ -10,7 +10,6 @@ import {
   LogOut,
   AlertCircle,
   CreditCard,
-  Heart,
   Menu,
   X,
 } from "lucide-react";
@@ -27,7 +26,6 @@ const NAV_DRAWER_MS = 300;
 const NAV = [
   { href: "/dashboard",                    label: "Overview",        icon: LayoutDashboard, end: true  },
   { href: "/dashboard/orders",             label: "Orders",          icon: Package,         end: false },
-  { href: "/dashboard/wanna-buy",          label: "Wanna Buy",       icon: Heart,           end: false },
   { href: "/dashboard/disputes",           label: "Disputes",        icon: AlertCircle,     end: false },
   { href: "/dashboard/profile",            label: "Profile",         icon: User,            end: false },
   { href: "/dashboard/payment-methods",    label: "Payment Methods", icon: CreditCard,      end: false },

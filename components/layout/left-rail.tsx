@@ -7,7 +7,9 @@ import { useEffect, useState } from "react";
 import { loginUrl, registerUrl } from "@/lib/auth-redirect";
 import { useAppSelector } from "@/store/hooks";
 import { useLocalSaves } from "@/context/saves-context";
-import { useGetSavesQuery, useGetWannaBuyItemsQuery } from "@/store/routes/unified-commerce-api";
+import { useCart } from "@/context/cart-context";
+import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
+import { useGetCartQuery, useGetSavesQuery } from "@/store/routes/unified-commerce-api";
 import { KeyAssistMark } from "@/components/ui/keyassist-logo";
 
 const NAV_DRAWER_MS = 300;
@@ -28,10 +30,11 @@ export function LeftRail() {
   const profileHref = token ? "/dashboard" : loginUrl(pathname);
   const { localSavedIds } = useLocalSaves();
   const { data: serverSaves } = useGetSavesQuery(undefined, { skip: !token });
-  const { data: wannaBuyItems } = useGetWannaBuyItemsQuery(undefined, { skip: !token });
-  const wannaBuyCount = token
-    ? (wannaBuyItems?.filter((i) => !["cancelled", "expired"].includes(i.status)).length ?? 0)
-    : 0;
+  const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
+  const { items: localCartItems } = useCart();
+  const cartCount = token
+    ? (apiCart?.items ?? []).reduce((sum, i) => sum + i.quantity, 0)
+    : localCartItems.reduce((sum, i) => sum + i.quantity, 0);
   const savedCount = token ? (serverSaves?.length ?? 0) : localSavedIds.size;
 
   const [navOpen, setNavOpen] = useState(false);
@@ -77,7 +80,7 @@ export function LeftRail() {
     { href: "/",                   label: "Home",     icon: Home,        count: 0 },
     { href: "/shop",                label: "Browse",   icon: LayoutGrid,  count: 0 },
     { href: "/dashboard/orders",    label: "Orders",   icon: Package,     count: 0 },
-    { href: "/dashboard/wanna-buy", label: "Wanna Buy",icon: ShoppingBag, count: wannaBuyCount },
+    { href: "/cart",                label: "Cart",     icon: ShoppingBag, count: cartCount },
     { href: "/saves",               label: "Saved",    icon: Heart,       count: savedCount },
   ];
 
@@ -92,14 +95,14 @@ export function LeftRail() {
       <Link href="/dashboard/orders" aria-label="Orders" className={railBtn}>
         <Package className="h-5 w-5" aria-hidden />
       </Link>
-      <Link href="/dashboard/wanna-buy" aria-label="Wanna Buy list" className={railBtn}>
+      <OpenCartTrigger aria-label="Cart" className={railBtn}>
         <ShoppingBag className="h-5 w-5" aria-hidden />
-        {wannaBuyCount > 0 && (
+        {cartCount > 0 && (
           <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#059669" }}>
-            {wannaBuyCount > 9 ? "9+" : wannaBuyCount}
+            {cartCount > 9 ? "9+" : cartCount}
           </span>
         )}
-      </Link>
+      </OpenCartTrigger>
       <Link href="/saves" aria-label="Saved" className={railBtn}>
         <Heart className="h-5 w-5" aria-hidden />
         {savedCount > 0 && (

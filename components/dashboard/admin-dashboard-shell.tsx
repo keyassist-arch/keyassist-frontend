@@ -9,6 +9,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { loggedOut } from "@/store/slices/authSlice";
 import { LoadingState } from "@/components/feedback/query-state";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ADMIN_NAV, canSeeAdminSection } from "@/lib/admin-nav";
 
 function navActive(pathname: string, href: string, end: boolean) {
@@ -88,29 +89,16 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
     router.push("/");
   };
 
-  const signOutModal = showSignOutModal && (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">Sign out</h3>
-        <p className="mt-2 text-sm text-gray-500">Are you sure you want to sign out of the admin panel?</p>
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setShowSignOutModal(false)}
-            className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => { setShowSignOutModal(false); onSignOut(); }}
-            className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    </div>
+  const signOutModal = (
+    <ConfirmModal
+      open={showSignOutModal}
+      title="Sign out"
+      description="Are you sure you want to sign out of the admin panel?"
+      confirmLabel="Sign out"
+      danger
+      onConfirm={() => { setShowSignOutModal(false); onSignOut(); }}
+      onCancel={() => setShowSignOutModal(false)}
+    />
   );
 
   if (isLoginPage) {

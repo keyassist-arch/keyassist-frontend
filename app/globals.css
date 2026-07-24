@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Key Assist design tokens (Shop-app-inspired) */
 :root {

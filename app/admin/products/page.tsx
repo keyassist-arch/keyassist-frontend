@@ -12,6 +12,7 @@ import {
 } from "@/store/routes/unified-commerce-api";
 import { ErrorState, SuccessState } from "@/components/feedback/query-state";
 import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
 
 export default function AdminProductsPage() {
@@ -168,33 +169,16 @@ export default function AdminProductsPage() {
         )}
       </div>
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Delete product</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              Are you sure you want to delete <span className="font-medium text-gray-700">&ldquo;{confirmDelete.title}&rdquo;</span>? This cannot be undone.
-            </p>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={deleting}
-                className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? "Deleting…" : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmDelete != null}
+        title="Delete product"
+        description={`Are you sure you want to delete "${confirmDelete?.title ?? ""}"? This cannot be undone.`}
+        confirmLabel={deleting ? "Deleting…" : "Delete"}
+        confirmDisabled={deleting}
+        danger
+        onConfirm={onDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </>
   );
 }

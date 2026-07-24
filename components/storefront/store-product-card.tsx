@@ -7,11 +7,11 @@ import { useState, type MouseEvent } from "react";
 import toast from "react-hot-toast";
 import { Heart, Star, ShoppingBag } from "lucide-react";
 import { useLocalSaves } from "@/context/saves-context";
+import { useCart } from "@/context/cart-context";
 import type { Product } from "@/types";
-import type { BatchRolloverInfo } from "@/types/index";
 import { useAppSelector } from "@/store/hooks";
 import {
-  useAddWannaBuyItemMutation,
+  useAddCartItemMutation,
   useGetSaveStatusQuery,
   useSaveProductMutation,
   useUnsaveProductMutation,
@@ -22,7 +22,6 @@ import { isUuid } from "@/lib/uuid";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { formatApiMoney } from "@/lib/format-price";
 import { getStorefrontActivitySignals } from "@/lib/storefront-activity";
-import { BatchRolloverModal } from "@/components/wanna-buy/batch-rollover-modal";
 
 export function StoreProductCardSkeleton() {
   return (
@@ -74,12 +73,12 @@ export function StoreProductCard({ product }: { product: Product }) {
   const pathname = usePathname();
   const { toggleLocalSave, isSavedLocal, removeLocalSave } = useLocalSaves();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const [addWannaBuyItem, { isLoading: adding }] = useAddWannaBuyItemMutation();
+  const { openCartDrawer } = useCart();
+  const [addCartItem, { isLoading: adding }] = useAddCartItemMutation();
   const [saveProduct] = useSaveProductMutation();
   const [unsaveProduct] = useUnsaveProductMutation();
   const { data: saveStatus } = useGetSaveStatusQuery(product.id, { skip: !token || !isUuid(product.id) });
   const [apiErr, setApiErr] = useState<string | null>(null);
-  const [rollover, setRollover] = useState<BatchRolloverInfo | null>(null);
 
   const img = product.images[0] || "/product-placeholder.svg";
   const activity = getStorefrontActivitySignals(product.id);
@@ -117,19 +116,16 @@ export function StoreProductCard({ product }: { product: Product }) {
       router.push(loginUrl(pathname));
       return;
     }
+    if (!isUuid(product.id)) return;
     const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
     try {
-      const result = await addWannaBuyItem({
-        productUrl: `${window.location.origin}${pdpHref}`,
-        productTitle: product.title,
-        imageUrl: product.images[0],
+      await addCartItem({
+        productId: product.id,
+        quantity: 1,
         ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
       }).unwrap();
-      if (result.batchRollover) {
-        setRollover(result.batchRollover);
-      } else {
-        toast.success("Added to your Wanna Buy list!");
-      }
+      toast.success("Added to cart");
+      openCartDrawer();
     } catch (err) {
       setApiErr(getErrorMessage(err));
     }
@@ -178,12 +174,12 @@ export function StoreProductCard({ product }: { product: Product }) {
           />
         </button>
 
-        {/* Floating add-to-Wanna-Buy button */}
+        {/* Floating add-to-cart button */}
         <button
           type="button"
           onClick={onAdd}
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
-          aria-label="Add to Wanna Buy list"
+          aria-label="Add to cart"
           disabled={adding}
         >
           <ShoppingBag className="h-4 w-4 text-gray-700" aria-hidden />
@@ -217,7 +213,6 @@ export function StoreProductCard({ product }: { product: Product }) {
         {apiErr ? <p className="text-[11px] text-red-500">{apiErr}</p> : null}
       </div>
     </article>
-    <BatchRolloverModal info={rollover} onClose={() => setRollover(null)} />
     </>
   );
 }

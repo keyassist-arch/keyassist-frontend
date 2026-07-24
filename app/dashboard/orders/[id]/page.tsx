@@ -15,6 +15,7 @@ import { isUuid } from "@/lib/uuid";
 import { useGetOrderQuery, useCancelOrderMutation } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
 import type { OrderStatus, OrderDisplaySummary } from "@/types/api";
 
@@ -403,39 +404,23 @@ export default function DashboardOrderDetailPage() {
       </div>
     </div>
 
-    {showCancelModal && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-          <h3 className="text-lg font-semibold text-gray-900">Cancel order</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Are you sure you want to cancel this order? This cannot be undone.
-          </p>
-          {cancelError && (
-            <div className="mt-3">
-              <ErrorState error={cancelError} title="Could not cancel order" />
-            </div>
-          )}
-          <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowCancelModal(false)}
-              disabled={cancelling}
-              className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              Keep order
-            </button>
-            <button
-              type="button"
-              onClick={onCancelOrder}
-              disabled={cancelling}
-              className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-            >
-              {cancelling ? "Cancelling…" : "Cancel order"}
-            </button>
-          </div>
+    <ConfirmModal
+      open={showCancelModal}
+      title="Cancel order"
+      description="Are you sure you want to cancel this order? This cannot be undone."
+      confirmLabel={cancelling ? "Cancelling…" : "Cancel order"}
+      confirmDisabled={cancelling}
+      cancelLabel="Keep order"
+      danger
+      onConfirm={onCancelOrder}
+      onCancel={() => setShowCancelModal(false)}
+    >
+      {cancelError && (
+        <div className="mt-3">
+          <ErrorState error={cancelError} title="Could not cancel order" />
         </div>
-      </div>
-    )}
+      )}
+    </ConfirmModal>
     </>
   );
 }

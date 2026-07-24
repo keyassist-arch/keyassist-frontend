@@ -6,7 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
-import { useAddWannaBuyItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useAddCartItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useCart } from "@/context/cart-context";
 import { loginUrl } from "@/lib/auth-redirect";
 import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { getVariantDimensions } from "@/lib/api-product-variants";
@@ -19,10 +20,8 @@ import { ProductDetailLayout } from "@/components/product/product-detail-layout"
 import { InnerShell } from "@/components/layout/inner-shell";
 import { RelatedProducts } from "@/components/product/related-products";
 import { ProductDetailSkeleton } from "@/components/product/product-detail-skeleton";
-import { BatchRolloverModal } from "@/components/wanna-buy/batch-rollover-modal";
 import { formatApiMoney, pricesAreEqual } from "@/lib/format-price";
 import { retailerLabelFromSource } from "@/lib/product-source";
-import type { BatchRolloverInfo } from "@/types/index";
 import type { ApiConfigurationPrice, ApiProduct } from "@/types/api";
 import type { ProductDetailCrumb, ProductDetailDescriptionBlock, ProductDetailVariantSlot } from "@/types/product-detail";
 
@@ -259,12 +258,12 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const router = useRouter();
   const token = useAppSelector((s) => s.auth.accessToken);
   const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
-  const [addWannaBuyItem, { isLoading: submitting }] = useAddWannaBuyItemMutation();
+  const [addCartItem, { isLoading: submitting }] = useAddCartItemMutation();
+  const { openCartDrawer } = useCart();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [formErr, setFormErr] = useState("");
   const [stockxFetchingPrice, setStockxFetchingPrice] = useState(false);
   const [stockxLivePrice, setStockxLivePrice] = useState<string | null>(null);
-  const [rollover, setRollover] = useState<BatchRolloverInfo | null>(null);
 
   const dimensions = useMemo(() => (api ? getVariantDimensions(api) : []), [api]);
 
@@ -1289,7 +1288,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     });
   }
 
-  // ─── Add to Wanna Buy List handler ───────────────────────────────────────────
+  // ─── Add to Cart handler ──────────────────────────────────────────────────────
 
   const onAdd = async () => {
     setFormErr("");
@@ -1298,18 +1297,18 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       router.push(loginUrl(`/products/${idOrSlug}`));
       return;
     }
+    if (dimensions.length > 0 && !allAxesSelected) {
+      setFormErr("Select all options above before adding to cart.");
+      return;
+    }
     try {
-      const result = await addWannaBuyItem({
-        productUrl: listingUrl ?? `${window.location.origin}/products/${idOrSlug}`,
-        productTitle: api.title,
-        imageUrl: images[0],
+      await addCartItem({
+        productId: api.id,
+        quantity: 1,
         ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
       }).unwrap();
-      if (result.batchRollover) {
-        setRollover(result.batchRollover);
-      } else {
-        toast.success("Added to your Wanna Buy list!");
-      }
+      toast.success("Added to cart");
+      openCartDrawer();
     } catch (e) {
       setFormErr(getErrorMessage(e));
     }
@@ -1353,10 +1352,10 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         </div>
       ) : (
         <>
-          <button type="button" disabled={!inStock || submitting} onClick={onAdd}
+          <button type="button" disabled={!inStock || submitting || (dimensions.length > 0 && !allAxesSelected)} onClick={onAdd}
             className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             style={{ background: "#059669" }}>
-            {submitting ? "Adding…" : "Add to Wanna Buy List"}
+            {submitting ? "Adding…" : "Add to Cart"}
           </button>
 
           {/* Apple: deep-link to carrier checkout when carrier + storage + colour are selected */}
@@ -1383,7 +1382,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               </button>
             )}
           </div>
-          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to add this item to your Wanna Buy list.</p> : null}
+          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to add this item to your cart.</p> : null}
         </>
       )}
     </>
@@ -1427,7 +1426,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         />
       </InnerShell>
       <RelatedProducts idOrSlug={idOrSlug} />
-      <BatchRolloverModal info={rollover} onClose={() => setRollover(null)} />
     </>
   );
 }

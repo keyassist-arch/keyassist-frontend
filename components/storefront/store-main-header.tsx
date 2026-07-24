@@ -9,7 +9,9 @@ import { siteContext } from "@/lib/site-context";
 import { STORE_NAV_LINKS } from "@/lib/store-nav-links";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loggedOut } from "@/store/slices/authSlice";
-import { useGetWannaBuyItemsQuery } from "@/store/routes/unified-commerce-api";
+import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
+import { useCart } from "@/context/cart-context";
+import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 import { IconUser } from "@/components/storefront/header-icons";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
@@ -28,20 +30,20 @@ const MARKET_CHIPS = [
 const iconBtn =
   "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent";
 
-function WannaBuyUserIcons({ wannaBuyLabel, wannaBuyCount }: { wannaBuyLabel: string; wannaBuyCount: number }) {
+function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount: number }) {
   return (
     <>
       <Link href="/dashboard" className={iconBtn} aria-label="Account" title="Account">
         <IconUser className="h-[18px] w-[18px]" />
       </Link>
-      <Link href="/dashboard/wanna-buy" className={iconBtn} aria-label={wannaBuyLabel} title="Wanna Buy list">
+      <OpenCartTrigger className={iconBtn} aria-label={cartLabel} title="Cart">
         <ShoppingBag className="h-[18px] w-[18px]" />
-        {wannaBuyCount > 0 && (
+        {cartCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop-primary px-0.5 text-[9px] font-bold leading-none text-white">
-            {wannaBuyCount > 99 ? "99+" : wannaBuyCount}
+            {cartCount > 99 ? "99+" : cartCount}
           </span>
         )}
-      </Link>
+      </OpenCartTrigger>
     </>
   );
 }
@@ -49,7 +51,8 @@ function WannaBuyUserIcons({ wannaBuyLabel, wannaBuyCount }: { wannaBuyLabel: st
 export function StoreMainHeader() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { data: wannaBuyItems } = useGetWannaBuyItemsQuery(undefined, { skip: !token });
+  const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
+  const { items: localCartItems } = useCart();
   const router = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState("");
@@ -70,17 +73,17 @@ export function StoreMainHeader() {
     return () => window.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  const wannaBuyCount = useMemo(() => {
-    if (!token || !wannaBuyItems) return 0;
-    return wannaBuyItems.filter((i) => !["cancelled", "expired"].includes(i.status)).length;
-  }, [token, wannaBuyItems]);
+  const cartCount = useMemo(() => {
+    const items = token ? (apiCart?.items ?? []) : localCartItems;
+    return items.reduce((sum, i) => sum + i.quantity, 0);
+  }, [token, apiCart, localCartItems]);
 
-  const wannaBuyLabel =
-    wannaBuyCount === 0
-      ? "Wanna Buy list, empty"
-      : wannaBuyCount === 1
-        ? "Wanna Buy list, 1 item"
-        : `Wanna Buy list, ${wannaBuyCount} items`;
+  const cartLabel =
+    cartCount === 0
+      ? "Cart, empty"
+      : cartCount === 1
+        ? "Cart, 1 item"
+        : `Cart, ${cartCount} items`;
 
   const {
     triggerImport,
@@ -161,7 +164,7 @@ export function StoreMainHeader() {
 
           <div className="flex-1 lg:hidden" />
 
-          {/* Auth + Wanna Buy */}
+          {/* Auth + Cart */}
           <div className="flex shrink-0 items-center gap-1">
             {token ? (
               <button
@@ -188,7 +191,7 @@ export function StoreMainHeader() {
                 </Link>
               </div>
             )}
-            <WannaBuyUserIcons wannaBuyLabel={wannaBuyLabel} wannaBuyCount={wannaBuyCount} />
+            <CartUserIcons cartLabel={cartLabel} cartCount={cartCount} />
             <button
               type="button"
               className={`${iconBtn} lg:hidden`}

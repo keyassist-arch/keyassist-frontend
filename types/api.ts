@@ -1,14 +1,12 @@
 /** NestJS unified-commerce API shapes (see integration guide). */
 
 import type { ProductAttribute } from "./product-detail";
-import type { WannaBuyItemStatus } from "./index";
 
 export type JwtRole = "USER" | "ADMIN_SUPER" | "ADMIN_STAFF";
 
 /** Screens an ADMIN_STAFF user may access. Ignored for ADMIN_SUPER (implicit all-access). */
 export type AdminPermission =
   | "ORDERS"
-  | "BATCHES"
   | "PRODUCTS"
   | "REFUNDS"
   | "ISSUES"
@@ -568,12 +566,6 @@ export interface OrderUpdatedEvent {
   status: OrderStatus | string;
 }
 
-/** Socket.IO `wannaBuyItem.updated` event payload. */
-export interface WannaBuyItemUpdatedEvent {
-  itemId: string;
-  status: WannaBuyItemStatus | string;
-}
-
 export interface LandedCostInput {
   destination: LandedCostDestination;
   shippingService: LandedCostService;
@@ -660,6 +652,42 @@ export interface PatchAdminOrderRequest {
   trackingStatus?: string;
   /** Human-readable note shown to the customer on the tracking event (max 512 chars). */
   trackingMessage?: string;
+}
+
+export type ManualImportFulfillmentStatus = "pending" | "ordered" | "dismissed";
+
+/** A customer's manually-submitted product (auto-scrape failed) awaiting admin order placement. */
+export interface ManualImportRequestSummary {
+  id: string;
+  sourceUrl: string;
+  fulfillmentStatus: ManualImportFulfillmentStatus;
+  createdAt: string;
+  product: {
+    id: string;
+    slug: string | null;
+    title: string;
+    images: string[];
+    salePrice?: string;
+    currency?: string;
+  } | null;
+  requestedByUser: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  orderId: string | null;
+  dismissedAt: string | null;
+  dismissReason: string | null;
+}
+
+export interface AdminPlaceManualImportOrderRequest {
+  shippingAddress?: ShippingAddress;
+  landedCost: LandedCostInput;
+}
+
+export interface AdminDismissManualImportRequest {
+  reason?: string;
 }
 
 /** Append-only tracking event from `GET /orders/:id` → `tracking[]`. */
