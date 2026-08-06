@@ -14,7 +14,7 @@ import {
   useGetMeQuery,
   useGetOrderQuery,
   useGetPaymentMethodsQuery,
-  useGetLandedCostQuoteMutation,
+  useGetLandedCostCartQuoteMutation,
   useInitializePaymentMutation,
 } from "@/store/routes/unified-commerce-api";
 import type {
@@ -95,7 +95,7 @@ export function CheckoutClient() {
   const { data: cart, isLoading: cartLoading, refetch: refetchCart } = useGetCartQuery(undefined, { skip: !token });
   const { data: paymentMethods, isLoading: methodsLoading, isError: methodsError } = useGetPaymentMethodsQuery();
   const [createOrder, { isLoading: creating, isError: createErr, error: createError }] = useCreateOrderMutation();
-  const [getLandedCostQuote, { isLoading: quoting }] = useGetLandedCostQuoteMutation();
+  const [getLandedCostQuote, { isLoading: quoting }] = useGetLandedCostCartQuoteMutation();
   const [initPayment, { isLoading: paying, isError: payErr, error: payError, reset: resetPayError }] =
     useInitializePaymentMutation();
 
@@ -292,15 +292,12 @@ export function CheckoutClient() {
       phone: String(fd.get("phone") ?? "").trim() || undefined,
     });
     try {
-      const firstItem = cart?.items?.[0];
-      const productId = firstItem && typeof firstItem.product === "object" && "id" in firstItem.product
-        ? firstItem.product.id
-        : undefined;
-      const quoteResult = await getLandedCostQuote(
-        productId
-          ? { productId, quantity: firstItem?.quantity ?? 1, destination, shippingService, category, displayCurrency: "NGN" }
-          : { productPriceUsd: apiSubtotal || 1, marketplace: "generic", quantity: 1, destination, shippingService, category, displayCurrency: "NGN" }
-      ).unwrap();
+      const quoteResult = await getLandedCostQuote({
+        destination,
+        shippingService,
+        category,
+        displayCurrency: "NGN",
+      }).unwrap();
       setLandedCostQuote(quoteResult);
     } catch {
       setQuoteError("Could not fetch landed cost estimate. You can still place the order.");
@@ -890,36 +887,50 @@ export function CheckoutClient() {
                   </p>
                 ) : null}
                 <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>Subtotal</span>
-                    <span className="font-medium tabular-nums">
-                      {apiCurrency} {apiSubtotal.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Service charge</span>
-                    <span className="font-medium tabular-nums">
-                      {apiCurrency} {apiServiceCharge.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Discount</span>
-                    <span className="font-medium tabular-nums">
-                      -{apiCurrency} {apiDiscount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Fees</span>
-                    <span className="font-medium tabular-nums">
-                      {apiCurrency} {apiFees.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-                    <span>Total</span>
-                    <span className="tabular-nums">
-                      {apiCurrency} {apiTotal.toFixed(2)}
-                    </span>
-                  </div>
+                  {showQuoteConfirm && landedCostQuote ? (
+                    <>
+                      <ul className="space-y-1 text-xs text-black/70 font-mono">
+                        {landedCostQuote.breakdown.map((line, i) => (
+                          <li key={i} className="whitespace-pre-wrap">{line}</li>
+                        ))}
+                      </ul>
+                      {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
+                        <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
+                          <span>Total</span>
+                          <span className="tabular-nums">
+                            {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span>Subtotal</span>
+                        <span className="font-medium tabular-nums">
+                          {apiCurrency} {apiSubtotal.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Service charge</span>
+                        <span className="font-medium tabular-nums">
+                          {apiCurrency} {apiServiceCharge.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Discount</span>
+                        <span className="font-medium tabular-nums">
+                          -{apiCurrency} {apiDiscount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
+                        <span>Total</span>
+                        <span className="tabular-nums">
+                          {apiCurrency} {apiTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   {localItems.length > 0 ? (
                     <div className="flex items-center justify-between border-t border-black/10 pt-2 text-xs text-black/50">
                       <span>On-device only</span>

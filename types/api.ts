@@ -901,6 +901,14 @@ export type LandedCostQuoteRequest =
       displayCurrency?: string;
     };
 
+/** `POST /landed-cost/quote-cart` — quotes the current user's entire cart, not one line. */
+export interface LandedCostCartQuoteRequest {
+  destination: LandedCostDestination;
+  shippingService: LandedCostService;
+  category?: LandedCostCategory;
+  displayCurrency?: string;
+}
+
 export interface LandedCostQuoteResponse {
   marketplace?: string;
   category?: string;
