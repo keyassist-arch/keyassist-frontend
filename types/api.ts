@@ -246,7 +246,8 @@ export type ProductSource =
   | "etsy"
   | "reebelo"
   | "walmart"
-  | "backmarket";
+  | "backmarket"
+  | "keyassist";
 
 /** One variant dimension; `variantSelection` keys must match `name`. */
 export interface ApiProductVariantDimension {

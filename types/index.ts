@@ -16,7 +16,8 @@ export type Marketplace =
   | "Etsy"
   | "Reebelo"
   | "Walmart"
-  | "Back Market";
+  | "Back Market"
+  | "Key Assist";
 
 export interface ProductVariant {
   id: string;

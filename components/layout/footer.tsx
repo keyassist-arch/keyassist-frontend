@@ -30,6 +30,7 @@ const LINK_COLS: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Information",
     links: [
+      { label: "How it works", href: "/#how" },
       { label: "Help center", href: "/faq" },
       { label: "Contact",     href: "/contact" },
     ],

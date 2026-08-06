@@ -15,6 +15,7 @@ const SOURCE_LABELS: Record<ProductSource, string> = {
   reebelo: "Reebelo",
   walmart: "Walmart",
   backmarket: "Back Market",
+  keyassist: "Key Assist",
 };
 
 /** Display name for “View on {retailer}”. */
@@ -54,6 +55,8 @@ export function marketplaceFromApiSource(source: string | undefined, brand?: str
       return "Walmart";
     case "backmarket":
       return "Back Market";
+    case "keyassist":
+      return "Key Assist";
     default: {
       const b = brand?.trim();
       if (b && ["Amazon", "Apple", "Nike", "Shopify Partner"].includes(b)) return b as Marketplace;
