@@ -529,10 +529,12 @@ export interface OrderResponse {
   marketplaceTax?: string | number;
   /** Estimated marketplace → warehouse shipping. */
   marketplaceShipping?: string | number;
-  /** Warehouse receiving and processing fee. */
+  /** Box / warehouse packaging & handling fee. */
   domesticHandling?: string | number;
   /** Nigeria import duty + VAT + customs clearing fee combined. */
   customsTotal?: string | number;
+  /** Optional Kingz cargo insurance (3% of item cost). "0.00" unless the customer opted in. */
+  insurance?: string | number;
   /** 2.5% exchange-rate buffer. */
   fxBuffer?: string | number;
   /** 6% operational risk buffer. */
@@ -571,6 +573,8 @@ export interface LandedCostInput {
   destination: LandedCostDestination;
   shippingService: LandedCostService;
   category?: LandedCostCategory;
+  /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+  insurance?: boolean;
 }
 
 export interface CreateOrderRequest {
@@ -888,6 +892,8 @@ export type LandedCostQuoteRequest =
       weightLbs?: number;
       dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
       displayCurrency?: string;
+      /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+      insurance?: boolean;
     }
   | {
       productPriceUsd: number;
@@ -899,6 +905,8 @@ export type LandedCostQuoteRequest =
       weightLbs?: number;
       dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
       displayCurrency?: string;
+      /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+      insurance?: boolean;
     };
 
 /** `POST /landed-cost/quote-cart` — quotes the current user's entire cart, not one line. */
@@ -907,6 +915,8 @@ export interface LandedCostCartQuoteRequest {
   shippingService: LandedCostService;
   category?: LandedCostCategory;
   displayCurrency?: string;
+  /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+  insurance?: boolean;
 }
 
 export interface LandedCostQuoteResponse {
@@ -919,8 +929,11 @@ export interface LandedCostQuoteResponse {
   productSubtotalUsd: number;
   marketplaceTaxUsd: number;
   marketplaceShippingUsd: number;
+  /** Box / warehouse packaging & handling fee. */
   domesticHandlingUsd: number;
   internationalShippingUsd: number;
+  /** Optional cargo insurance (3% of item cost, Lagos only). 0 unless opted in. */
+  insuranceUsd?: number;
   customsDutyUsd: number;
   customsVatUsd: number;
   customsClearingFeeUsd: number;

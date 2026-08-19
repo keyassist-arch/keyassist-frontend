@@ -31,6 +31,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
   const [destination, setDestination] = useState<LandedCostDestination>("lagos");
   const [shippingService, setShippingService] = useState<LandedCostService>("air");
   const [category, setCategory] = useState<LandedCostCategory>("generic");
+  const [insurance, setInsurance] = useState(false);
   const [quote, setQuote] = useState<LandedCostQuoteResponse | null>(null);
   const [quoteError, setQuoteError] = useState("");
   const [overrideAddress, setOverrideAddress] = useState(false);
@@ -46,6 +47,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
     setPlaceError("");
     setOverrideAddress(false);
     setAddress(EMPTY_ADDRESS);
+    setInsurance(false);
   };
 
   const close = () => {
@@ -64,6 +66,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
         shippingService,
         category,
         displayCurrency: "USD",
+        insurance,
       }).unwrap();
       setQuote(result);
     } catch (err) {
@@ -90,7 +93,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
     try {
       const order = await placeOrder({
         id: request.id,
-        body: { landedCost: { destination, shippingService, category }, shippingAddress },
+        body: { landedCost: { destination, shippingService, category, insurance }, shippingAddress },
       }).unwrap();
       toast.success("Order placed for the customer.");
       close();
@@ -117,7 +120,12 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
               <select
                 className="input w-full"
                 value={destination}
-                onChange={(e) => { setDestination(e.target.value as LandedCostDestination); setQuote(null); }}
+                onChange={(e) => {
+                  const next = e.target.value as LandedCostDestination;
+                  setDestination(next);
+                  if (next !== "lagos") setInsurance(false);
+                  setQuote(null);
+                }}
               >
                 <option value="lagos">Lagos</option>
                 <option value="outside_lagos">Outside Lagos</option>
@@ -156,6 +164,17 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
               <option value="books">Books</option>
             </select>
           </label>
+
+          {destination === "lagos" && (
+            <label className="flex items-center gap-2 text-sm text-shop-ink">
+              <input
+                type="checkbox"
+                checked={insurance}
+                onChange={(e) => { setInsurance(e.target.checked); setQuote(null); }}
+              />
+              Add cargo insurance (3% of item cost)
+            </label>
+          )}
 
           <button
             type="button"

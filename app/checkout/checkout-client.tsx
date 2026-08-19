@@ -115,6 +115,7 @@ export function CheckoutClient() {
   const [destination, setDestination] = useState<LandedCostDestination>("lagos");
   const [shippingService, setShippingService] = useState<LandedCostService>("air");
   const [category, setCategory] = useState<LandedCostCategory>("generic");
+  const [insurance, setInsurance] = useState(false);
   const [landedCostQuote, setLandedCostQuote] = useState<LandedCostQuoteResponse | null>(null);
   const [quoteError, setQuoteError] = useState("");
   const [pendingFormData, setPendingFormData] = useState<{
@@ -132,6 +133,11 @@ export function CheckoutClient() {
   const resumeId = resumeParam && isUuid(resumeParam) ? resumeParam : null;
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Cargo insurance is only offered on Lagos-destined shipments.
+  useEffect(() => {
+    if (destination !== "lagos" && insurance) setInsurance(false);
+  }, [destination, insurance]);
 
   useEffect(() => {
     if (resumeId) {
@@ -297,6 +303,7 @@ export function CheckoutClient() {
         shippingService,
         category,
         displayCurrency: "NGN",
+        insurance,
       }).unwrap();
       setLandedCostQuote(quoteResult);
     } catch {
@@ -319,7 +326,7 @@ export function CheckoutClient() {
     try {
       const order = await createOrder({
         shippingAddress: pendingFormData,
-        landedCost: { destination, shippingService, category },
+        landedCost: { destination, shippingService, category, insurance },
       }).unwrap();
       setOrderSnapshot(order);
       setActiveOrderId(order.id);
@@ -747,6 +754,22 @@ export function CheckoutClient() {
                     <option value="books">Books</option>
                   </select>
                 </label>
+                {destination === "lagos" && (
+                  <label className="flex items-start gap-2.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-black/20 text-shop-accent-hover focus:ring-shop-accent-hover"
+                      checked={insurance}
+                      onChange={(e) => setInsurance(e.target.checked)}
+                    />
+                    <span>
+                      <span className="block font-medium text-shop-ink">Add cargo insurance</span>
+                      <span className="block text-xs text-black/60">
+                        3% of item cost{apiSubtotal > 0 ? ` (~$${(apiSubtotal * 0.03).toFixed(2)})` : ""} — covers loss or damage in transit to Lagos.
+                      </span>
+                    </span>
+                  </label>
+                )}
               </div>
 
               {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
