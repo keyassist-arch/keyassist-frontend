@@ -5,9 +5,8 @@ import { Plus, Trash2, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   useGetCategoriesQuery,
-  useGetUploadSignatureMutation,
+  useUploadProductImageMutation,
 } from "@/store/routes/unified-commerce-api";
-import { uploadImageToCloudinary } from "@/lib/cloudinary-upload";
 import { getErrorMessage } from "@/lib/rtk-error";
 import type {
   AdminCreateProductRequest,
@@ -52,7 +51,7 @@ export function ProductForm({
   onSubmit: (body: AdminCreateProductRequest) => Promise<void>;
 }) {
   const { data: categories } = useGetCategoriesQuery();
-  const [getUploadSignature] = useGetUploadSignatureMutation();
+  const [uploadProductImage] = useUploadProductImageMutation();
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -158,8 +157,7 @@ export function ProductForm({
     try {
       const uploaded: string[] = [];
       for (const file of Array.from(files)) {
-        const sig = await getUploadSignature().unwrap();
-        const url = await uploadImageToCloudinary(file, sig);
+        const { url } = await uploadProductImage(file).unwrap();
         uploaded.push(url);
       }
       setImages((prev) => [...prev, ...uploaded]);

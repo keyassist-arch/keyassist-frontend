@@ -335,13 +335,10 @@ export interface ApiProduct {
   categoryId?: string | null;
 }
 
-/** Signed params for a direct-to-Cloudinary upload from `POST /admin/uploads/signature`. */
-export interface CloudinaryUploadSignature {
-  timestamp: number;
-  signature: string;
-  apiKey: string;
-  cloudName: string;
-  folder: string;
+/** Response from `POST /admin/uploads` — the uploaded image's storage key and public URL. */
+export interface UploadedProductImage {
+  key: string;
+  url: string;
 }
 
 export interface AdminProductVariantRequest {

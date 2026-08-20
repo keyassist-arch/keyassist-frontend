@@ -12,7 +12,7 @@ import type {
   ApiProduct,
   CartResponse,
   Category,
-  CloudinaryUploadSignature,
+  UploadedProductImage,
   CreateAdminUserRequest,
   PatchAdminUserRequest,
   PaginatedApiProducts,
@@ -500,8 +500,12 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["AdminProducts", "CatalogProducts"],
     }),
 
-    getUploadSignature: builder.mutation<CloudinaryUploadSignature, void>({
-      query: () => ({ url: "/admin/uploads/signature", method: "POST" }),
+    uploadProductImage: builder.mutation<UploadedProductImage, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return { url: "/admin/uploads", method: "POST", body: formData };
+      },
     }),
 
     /* ---------- Admin team (ADMIN_SUPER only) ---------- */
@@ -813,7 +817,7 @@ export const {
   useDeleteAdminProductMutation,
   useCreateAdminProductMutation,
   useUpdateAdminProductMutation,
-  useGetUploadSignatureMutation,
+  useUploadProductImageMutation,
   useGetAdminUsersQuery,
   useCreateAdminUserMutation,
   usePatchAdminUserMutation,
