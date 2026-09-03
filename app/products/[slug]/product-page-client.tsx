@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Heart, Share2, Loader2 } from "lucide-react";
+import { Check, Heart, Share2, Loader2, ShoppingBag } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
@@ -551,7 +551,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               return (
                 <button key={opt} type="button"
                   onClick={() => setSelection((prev) => ({ ...prev, [dim.name]: opt }))}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}
+                  className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition ${active ? "border-shop-ink bg-shop-ink text-white" : "border-shop-border bg-white text-gray-700 hover:border-gray-400"}`}
                   aria-pressed={active}
                 >{opt}</button>
               );
@@ -1157,8 +1157,21 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       );
     }
 
+    if (parts.length === 0 && inStock) {
+      parts.push(
+        <span
+          key="in-stock"
+          className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-semibold"
+          style={{ background: "var(--shop-accent-soft)", color: "var(--shop-primary)" }}
+        >
+          <span className="h-2 w-2 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
+          In stock
+        </span>
+      );
+    }
+
     return parts.length ? <div className="flex flex-wrap gap-2">{parts}</div> : null;
-  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity]);
+  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity, inStock]);
 
   // ─── Price meta (below price row) ────────────────────────────────────────────
 
@@ -1353,36 +1366,38 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       ) : (
         <>
           <button type="button" disabled={!inStock || submitting || (dimensions.length > 0 && !allAxesSelected)} onClick={onAdd}
-            className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: "#059669" }}>
-            {submitting ? "Adding…" : "Add to Cart"}
+            className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-center text-[15px] font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ background: "var(--shop-primary)" }}>
+            <ShoppingBag className="h-[18px] w-[18px]" aria-hidden />
+            {submitting ? "Adding…" : `Add to cart${inStock ? ` · ${displayedPriceStr}` : ""}`}
           </button>
 
           {/* Apple: deep-link to carrier checkout when carrier + storage + colour are selected */}
           {adapterApple && appleCarrierUrl ? (
             <a href={appleCarrierUrl} target="_blank" rel="noopener noreferrer"
-              className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800">
+              className="block w-full rounded-full py-3.5 text-center text-[15px] font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--shop-ink)" }}>
               Buy on Apple
             </a>
           ) : null}
 
           <div className="flex gap-3">
-            <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-              <Heart className="h-4 w-4" /> Save
+            <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5">
+              <Heart className="h-[17px] w-[17px]" /> Save
             </button>
             {listingUrl ? (
               <a href={listingUrl}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5"
                 target="_blank" rel="noopener noreferrer">
-                <Share2 className="h-4 w-4" /> View on {retailer}
+                <Share2 className="h-[17px] w-[17px]" /> View on {retailer}
               </a>
             ) : (
-              <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-                <Share2 className="h-4 w-4" /> Share
+              <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5">
+                <Share2 className="h-[17px] w-[17px]" /> Share
               </button>
             )}
           </div>
-          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to add this item to your cart.</p> : null}
+          {!token ? <p className="w-full text-center text-xs text-shop-muted">Sign in to add this item to your cart.</p> : null}
         </>
       )}
     </>

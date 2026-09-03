@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Check, Info } from "lucide-react";
 import type { ProductAttribute, ProductDetailZones } from "@/types/product-detail";
 
 function groupAttributes(attrs: ProductAttribute[]): Map<string, ProductAttribute[]> {
@@ -15,12 +16,13 @@ export function ProductHighlightList({ items }: { items: string[] }) {
   if (!items.length) return null;
   return (
     <section className="max-w-3xl" aria-labelledby="pdp-highlights-heading">
-      <h2 id="pdp-highlights-heading" className="text-xl font-semibold text-shop-ink">
+      <h2 id="pdp-highlights-heading" className="text-xl font-bold text-shop-ink">
         Highlights
       </h2>
-      <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-shop-muted marker:text-shop-ink/40">
+      <ul className="mt-4 flex flex-col gap-2.5">
         {items.map((line, i) => (
-          <li key={i} className="text-shop-ink">
+          <li key={i} className="flex items-center gap-2.5 text-sm text-shop-ink">
+            <Check className="h-4 w-4 shrink-0" style={{ color: "var(--shop-primary)" }} aria-hidden />
             {line}
           </li>
         ))}
@@ -29,31 +31,45 @@ export function ProductHighlightList({ items }: { items: string[] }) {
   );
 }
 
-export function ProductSpecTable({ attributes }: { attributes: ProductAttribute[] }) {
-  if (!attributes.length) return null;
+export function ProductSpecTable({
+  attributes,
+  whatsInTheBox,
+}: {
+  attributes: ProductAttribute[];
+  whatsInTheBox?: string[];
+}) {
+  if (!attributes.length && !whatsInTheBox?.length) return null;
   const groups = groupAttributes(attributes);
   const entries = Array.from(groups.entries());
 
   return (
-    <div className="max-w-3xl space-y-10">
-      {entries.map(([groupName, rows], gi) => {
-        const headingId = `pdp-spec-${gi}`;
-        return (
-        <section key={groupName || `specs-${gi}`} aria-labelledby={headingId}>
-          <h2 id={headingId} className="text-xl font-semibold text-shop-ink">
-            {groupName || "Specifications"}
-          </h2>
-          <dl className="mt-4 grid grid-cols-1 gap-x-10 gap-y-3 text-sm sm:grid-cols-[minmax(8rem,12rem)_1fr]">
-            {rows.map((row, i) => (
-              <Fragment key={`${row.key}-${i}`}>
-                <dt className="text-shop-muted">{row.key}</dt>
-                <dd className="text-shop-ink [&_a]:text-shop-accent [&_a]:underline">{row.value}</dd>
-              </Fragment>
-            ))}
-          </dl>
-        </section>
-        );
-      })}
+    <div
+      className="flex w-full max-w-[420px] flex-col gap-4 rounded-[20px] border border-shop-border bg-white p-6"
+      aria-labelledby="pdp-spec-heading"
+    >
+      <h2 id="pdp-spec-heading" className="text-base font-bold text-shop-ink">
+        Specifications
+      </h2>
+      {entries.map(([groupName, rows], gi) => (
+        <Fragment key={groupName || `specs-${gi}`}>
+          {groupName ? <p className="text-xs font-semibold uppercase tracking-wide text-shop-muted">{groupName}</p> : null}
+          {rows.map((row, i) => (
+            <div
+              key={`${row.key}-${i}`}
+              className="flex items-center justify-between gap-4 border-b border-shop-border pb-3 last:border-b-0 last:pb-0"
+            >
+              <dt className="text-[13px] text-shop-muted">{row.key}</dt>
+              <dd className="text-[13px] font-semibold text-shop-ink [&_a]:text-shop-accent [&_a]:underline">{row.value}</dd>
+            </div>
+          ))}
+        </Fragment>
+      ))}
+      {whatsInTheBox?.length ? (
+        <div className="flex flex-col gap-2 border-t border-shop-border pt-3.5">
+          <p className="text-[13px] font-bold text-shop-ink">In the box</p>
+          <p className="text-[13px] leading-[1.5] text-shop-muted">{whatsInTheBox.join(", ")}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -62,15 +78,19 @@ export function ProductComplianceCallout({ lines }: { lines: string[] }) {
   if (!lines.length) return null;
   return (
     <aside
-      className="max-w-3xl rounded-xl border border-amber-200 bg-amber-50/60 py-4 pl-4 pr-4"
+      className="flex max-w-3xl flex-col gap-2.5 rounded-[14px] p-[18px]"
+      style={{ background: "#FEF9EC", border: "1px solid #F5E4B8" }}
       aria-labelledby="pdp-compliance-heading"
     >
-      <h2 id="pdp-compliance-heading" className="text-sm font-semibold text-shop-ink">
-        Important information
-      </h2>
-      <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-shop-muted">
+      <div className="flex items-center gap-2">
+        <Info className="h-4 w-4 shrink-0" style={{ color: "#B7791F" }} aria-hidden />
+        <h2 id="pdp-compliance-heading" className="text-sm font-bold" style={{ color: "#8A6314" }}>
+          Important information
+        </h2>
+      </div>
+      <ul className="flex flex-col gap-1.5">
         {lines.map((line, i) => (
-          <li key={i} className="text-shop-ink/90">
+          <li key={i} className="text-[13px] leading-[1.55]" style={{ color: "#8A6314" }}>
             {line}
           </li>
         ))}
@@ -83,12 +103,12 @@ export function ProductWhatsInTheBox({ lines }: { lines: string[] }) {
   if (!lines.length) return null;
   return (
     <section className="max-w-3xl" aria-labelledby="pdp-inbox-heading">
-      <h2 id="pdp-inbox-heading" className="text-xl font-semibold text-shop-ink">
+      <h2 id="pdp-inbox-heading" className="text-xl font-bold text-shop-ink">
         In the box
       </h2>
-      <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-shop-muted marker:text-shop-ink/40">
+      <ul className="mt-4 flex flex-col gap-2.5">
         {lines.map((line, i) => (
-          <li key={i} className="text-shop-ink">
+          <li key={i} className="text-sm text-shop-ink">
             {line}
           </li>
         ))}
@@ -104,7 +124,7 @@ export function ProductDetailZonesAboveStory({ zones }: { zones?: ProductDetailZ
   const a = zones.attributes?.filter((x) => x.key?.trim() && x.value?.trim()) ?? [];
   if (!h.length && !a.length) return null;
   return (
-    <div className="mt-16 space-y-12 border-t border-black/10 pt-16">
+    <div className="mt-16 space-y-12 border-t border-shop-border pt-16">
       <ProductHighlightList items={h} />
       <ProductSpecTable attributes={a} />
     </div>
@@ -115,12 +135,10 @@ export function ProductDetailZonesAboveStory({ zones }: { zones?: ProductDetailZ
 export function ProductDetailZonesBelowStory({ zones }: { zones?: ProductDetailZones }) {
   if (!zones) return null;
   const c = zones.compliance?.filter(Boolean) ?? [];
-  const w = zones.whatsInTheBox?.filter(Boolean) ?? [];
-  if (!c.length && !w.length) return null;
+  if (!c.length) return null;
   return (
-    <div className="mt-12 space-y-10 border-t border-black/10 pt-12">
+    <div className="mt-10 border-t border-shop-border pt-10">
       <ProductComplianceCallout lines={c} />
-      <ProductWhatsInTheBox lines={w} />
     </div>
   );
 }

@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Lock, Mail } from "lucide-react";
 import { useLoginMutation, useLazyGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { useAppDispatch } from "@/store/hooks";
 import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 import { getErrorMessage } from "@/lib/rtk-error";
 import {
   AuthShell,
+  AuthField,
   AuthInput,
   AuthPasswordInput,
   AuthButton,
@@ -51,30 +53,20 @@ export default function AdminLoginPage() {
   return (
     <AuthShell
       heading="Admin sign in"
-      subAction={
-        <>
-          Or{" "}
-          <Link href="/auth/login" className="font-medium text-[#059669] hover:underline">
-            sign in as customer
-          </Link>
-        </>
+      topRight={
+        <Link
+          href="/auth/login"
+          className="rounded-full border border-shop-border bg-white px-4 py-[9px] text-[13px] font-semibold text-shop-ink transition hover:bg-black/5"
+        >
+          Sign in as customer
+        </Link>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-3">
-        <AuthInput
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Admin email"
-          required
-          autoFocus
-        />
-        <AuthPasswordInput
-          name="password"
-          autoComplete="current-password"
-          placeholder="Password"
-          required
-        />
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <AuthField label="Admin email">
+          <AuthInput icon={Mail} name="email" type="email" autoComplete="email" placeholder="you@example.com" required autoFocus />
+        </AuthField>
+        <AuthPasswordInput icon={Lock} label="Password" name="password" autoComplete="current-password" placeholder="Enter your password" required />
 
         {(isError || formError) && (
           <p className="px-1 text-xs text-red-500">{formError || getErrorMessage(error)}</p>
@@ -85,10 +77,7 @@ export default function AdminLoginPage() {
         </AuthButton>
 
         <div className="text-center">
-          <Link
-            href="/auth/forgot-password"
-            className="text-sm text-gray-500 hover:text-gray-800 hover:underline"
-          >
+          <Link href="/auth/forgot-password" className="text-sm text-shop-muted hover:text-shop-ink hover:underline">
             Forgot password?
           </Link>
         </div>

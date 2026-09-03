@@ -26,10 +26,10 @@ export function OrderCard({ order, href, compact }: Props) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-4 transition hover:border-[#059669]/30 hover:shadow-md"
+      className="group flex items-center gap-4 rounded-2xl border border-shop-border bg-white p-4 transition hover:border-shop-primary/30 hover:shadow-md"
     >
       {/* Image thumbnail */}
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-(--background)">
         {image ? (
           <Image
             src={image}
@@ -39,7 +39,7 @@ export function OrderCard({ order, href, compact }: Props) {
             unoptimized
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-gray-300">
+          <div className="flex h-full w-full items-center justify-center text-shop-muted/50">
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
             </svg>
@@ -50,12 +50,12 @@ export function OrderCard({ order, href, compact }: Props) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         {!compact && (
-          <p className="truncate text-sm font-medium text-gray-900">{title}</p>
+          <p className="truncate text-sm font-medium text-shop-ink">{title}</p>
         )}
-        <p className={`font-mono text-xs text-gray-400 ${compact ? "" : "mt-0.5"}`}>{shortId}</p>
+        <p className={`font-mono text-xs text-shop-muted ${compact ? "" : "mt-0.5"}`}>{shortId}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <StatusBadge status={order.status} />
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-shop-muted">
             {order.items.length} item{order.items.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -63,10 +63,10 @@ export function OrderCard({ order, href, compact }: Props) {
 
       {/* Amount + arrow */}
       <div className="flex shrink-0 items-center gap-3">
-        <span className="text-sm font-semibold tabular-nums text-gray-900">
+        <span className="text-sm font-semibold tabular-nums text-shop-ink">
           {formatApiMoney(amount, currency)}
         </span>
-        <ArrowRight className="h-4 w-4 text-gray-300 transition group-hover:text-[#059669]" aria-hidden />
+        <ArrowRight className="h-4 w-4 text-shop-muted/50 transition group-hover:text-shop-primary" aria-hidden />
       </div>
     </Link>
   );

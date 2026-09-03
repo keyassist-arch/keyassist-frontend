@@ -93,13 +93,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (!token) {
     return (
       <InnerShell>
-        <section className="mx-auto max-w-lg rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Sign in to your account</h1>
-          <p className="mt-2 text-sm text-gray-500">Manage orders, profile, and settings after signing in.</p>
+        <section className="mx-auto max-w-lg rounded-[20px] border border-shop-border bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-bold text-shop-ink">Sign in to your account</h1>
+          <p className="mt-2 text-sm text-shop-muted">Manage orders, profile, and settings after signing in.</p>
           <Link
             href="/auth/login"
-            className="mt-5 inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ background: "#059669" }}
+            className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-shop-primary py-3 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Sign in
           </Link>
@@ -124,18 +123,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Sidebar */}
           <aside className="hidden shrink-0 lg:block lg:w-60">
             {/* User card */}
-            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-(--background) px-4 py-4">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ background: "#059669" }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-shop-primary text-sm font-bold text-white"
                 aria-hidden
               >
                 {ini}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
+                <p className="truncate text-sm font-semibold text-shop-ink">{displayName}</p>
                 {me?.email && (
-                  <p className="truncate text-[11px] text-gray-400">{me.email}</p>
+                  <p className="truncate text-[11px] text-shop-muted">{me.email}</p>
                 )}
               </div>
             </div>
@@ -150,13 +148,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     href={href}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                       active
-                        ? "text-[#059669]"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-shop-accent-soft text-shop-primary"
+                        : "text-shop-muted hover:bg-(--background) hover:text-shop-ink"
                     }`}
-                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-shop-primary" : "text-shop-muted"}`}
                       aria-hidden
                     />
                     {label}
@@ -169,7 +166,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setShowSignOutModal(true)}
-              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
+              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-shop-muted transition hover:bg-(--background) hover:text-shop-ink lg:mt-6"
             >
               <LogOut className="h-4 w-4 shrink-0" aria-hidden />
               Sign out
@@ -213,28 +210,27 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               navEnter ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4">
+            <div className="flex items-center justify-between gap-3 border-b border-shop-border px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4">
               <div className="flex min-w-0 items-center gap-3">
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ background: "#059669" }}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-shop-primary text-sm font-bold text-white"
                   aria-hidden
                 >
                   {ini}
                 </span>
                 <div className="min-w-0">
-                  <p id="mobile-nav-title" className="truncate text-sm font-semibold text-gray-900">
+                  <p id="mobile-nav-title" className="truncate text-sm font-semibold text-shop-ink">
                     {displayName}
                   </p>
                   {me?.email && (
-                    <p className="truncate text-[11px] text-gray-400">{me.email}</p>
+                    <p className="truncate text-[11px] text-shop-muted">{me.email}</p>
                   )}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setNavOpen(false)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-shop-muted transition hover:bg-(--background) hover:text-shop-ink"
                 aria-label="Close navigation"
               >
                 <X className="h-5 w-5" aria-hidden />
@@ -250,13 +246,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     href={href}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition ${
                       active
-                        ? "text-[#059669]"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-shop-accent-soft text-shop-primary"
+                        : "text-shop-muted hover:bg-(--background) hover:text-shop-ink"
                     }`}
-                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-shop-primary" : "text-shop-muted"}`}
                       aria-hidden
                     />
                     {label}
@@ -265,14 +260,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
 
-            <div className="shrink-0 border-t border-gray-100 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+            <div className="shrink-0 border-t border-shop-border p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
               <button
                 type="button"
                 onClick={() => {
                   setNavOpen(false);
                   setShowSignOutModal(true);
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-shop-muted transition hover:bg-(--background) hover:text-shop-ink"
               >
                 <LogOut className="h-4 w-4 shrink-0" aria-hidden />
                 Sign out

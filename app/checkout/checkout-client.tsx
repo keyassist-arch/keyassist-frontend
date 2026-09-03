@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { ChevronDown, Check, CreditCard, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { Steps } from "@/components/ui/steps";
 import { InnerShell } from "@/components/layout/inner-shell";
@@ -28,11 +29,12 @@ import type {
   PaymentMethodEntry,
   PaymentProvider,
 } from "@/types/api";
-import { ErrorState, LoadingState, SuccessState } from "@/components/feedback/query-state";
+import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { coerceNumber } from "@/lib/coerce-number";
 import { formatApiMoney } from "@/lib/format-price";
 import { orderLineTotal } from "@/lib/dashboard-orders";
+import { lineImage, lineTitle } from "@/lib/cart-item-helpers";
 import {
   clearPendingCheckoutOrderId,
   getPendingCheckoutOrderId,
@@ -45,42 +47,106 @@ import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 
 const PAYPAL_STORAGE = "uc_paypal_checkout";
 
+/* ── shared field styles (rounded-xl, dense form) ── */
+const fieldInputCls =
+  "flex h-[46px] w-full items-center rounded-xl border border-shop-border bg-white px-4 text-sm text-shop-ink outline-none transition placeholder:text-[#A8A29E] focus:border-shop-accent";
+const fieldLabelCls = "text-[13px] font-semibold text-shop-ink";
+
+function Field({
+  label, name, placeholder, required, defaultValue, type,
+}: {
+  label: string; name: string; placeholder?: string; required?: boolean; defaultValue?: string; type?: string;
+}) {
+  return (
+    <label className="flex w-full flex-col gap-[7px]">
+      <span className={fieldLabelCls}>{label}</span>
+      <input
+        className={fieldInputCls}
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        required={required}
+        defaultValue={defaultValue}
+      />
+    </label>
+  );
+}
+
+function SelectField<T extends string>({
+  label, value, onChange, options,
+}: {
+  label: string; value: T; onChange: (v: T) => void; options: { value: T; label: string }[];
+}) {
+  return (
+    <label className="flex w-full flex-col gap-[7px]">
+      <span className={fieldLabelCls}>{label}</span>
+      <div className="relative">
+        <select
+          className={`${fieldInputCls} appearance-none pr-10 font-medium`}
+          value={value}
+          onChange={(e) => onChange(e.target.value as T)}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-shop-muted" aria-hidden />
+      </div>
+    </label>
+  );
+}
+
+function SectionCard({
+  icon: Icon, title, children,
+}: {
+  icon: typeof MapPin; title: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-7">
+      <div className="flex items-center gap-2.5">
+        <Icon className="h-[18px] w-[18px]" style={{ color: "var(--shop-primary)" }} aria-hidden />
+        <h2 className="text-[17px] font-bold text-shop-ink">{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
   const cur = summary.currency;
+  const rows: [string, number, boolean?][] = [
+    ["Product", Number(summary.product)],
+    ["Import & delivery", Number(summary.importAndDelivery)],
+    ["Service fee", Number(summary.serviceFee)],
+  ];
+  if (Number(summary.discount) > 0) rows.push(["Discount", Number(summary.discount), true]);
+
   return (
     <>
-      <div className="flex items-center justify-between">
-        <span>Product</span>
-        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.product), cur)}</span>
+      <div className="flex flex-col gap-[11px]">
+        {rows.map(([label, amount, isDiscount]) => (
+          <div key={label} className="flex items-center justify-between text-sm">
+            <span style={isDiscount ? { color: "var(--shop-primary)" } : { color: "var(--shop-muted)" }}>{label}</span>
+            <span
+              className="font-semibold tabular-nums"
+              style={isDiscount ? { color: "var(--shop-primary)" } : { color: "var(--shop-ink)" }}
+            >
+              {isDiscount ? "-" : ""}
+              {formatApiMoney(amount, cur)}
+            </span>
+          </div>
+        ))}
       </div>
+      <div className="h-px w-full bg-shop-border" />
       <div className="flex items-center justify-between">
-        <span className="text-black/60">Import &amp; delivery</span>
-        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-black/60">Service fee</span>
-        <span className="font-medium tabular-nums">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
-      </div>
-      {Number(summary.discount) > 0 && (
-        <div className="flex items-center justify-between">
-          <span className="text-black/60">Discount</span>
-          <span className="font-medium tabular-nums text-emerald-600">-{formatApiMoney(Number(summary.discount), cur)}</span>
-        </div>
-      )}
-      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-        <span>Total</span>
-        <span className="tabular-nums">{formatApiMoney(Number(summary.total), cur)}</span>
+        <span className="text-[15px] font-bold text-shop-ink">Total</span>
+        <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{formatApiMoney(Number(summary.total), cur)}</span>
       </div>
     </>
   );
 }
 
-const DEFAULT_METHODS: PaymentMethodEntry[] = [
-  { provider: "paystack", available: true, reason: null },
-  { provider: "stripe", available: true, reason: null },
-  { provider: "paypal", available: true, reason: null },
-  { provider: "myaza", available: true, reason: null },
-];
+const DEFAULT_METHODS: PaymentMethodEntry[] = [{ provider: "stripe", available: true, reason: null }];
 
 function isPaymentProvider(p: string | undefined | null): p is PaymentProvider {
   return p === "paystack" || p === "stripe" || p === "paypal" || p === "myaza";
@@ -107,7 +173,7 @@ export function CheckoutClient() {
   const [orderSnapshot, setOrderSnapshot] = useState<OrderResponse | null>(null);
   const [formError, setFormError] = useState("");
   const [payInitError, setPayInitError] = useState(false);
-  const [provider, setProvider] = useState<PaymentProvider>("paystack");
+  const [provider, setProvider] = useState<PaymentProvider>("stripe");
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
@@ -194,10 +260,12 @@ export function CheckoutClient() {
   const oDisc = coerceNumber(displayOrder?.discount, 0);
   const oFees = coerceNumber(displayOrder?.fees, oSvc - oDisc);
   const oTotal = coerceNumber(displayOrder?.total, oSub + oFees);
-  const methodRows: PaymentMethodEntry[] = useMemo(
-    () => (methodsError || !paymentMethods?.methods?.length ? DEFAULT_METHODS : paymentMethods.methods),
-    [paymentMethods, methodsError]
-  );
+
+  // Payment options are restricted to Stripe only.
+  const methodRows: PaymentMethodEntry[] = useMemo(() => {
+    const rows = methodsError || !paymentMethods?.methods?.length ? DEFAULT_METHODS : paymentMethods.methods;
+    return rows.filter((m) => m.provider === "stripe");
+  }, [paymentMethods, methodsError]);
 
   const availableProviders = useMemo(() => methodRows.filter((x) => x.available).map((x) => x.provider), [methodRows]);
 
@@ -360,12 +428,6 @@ export function CheckoutClient() {
 
   const showQuoteConfirm = Boolean(pendingFormData && !inPaymentStep);
   const loading = meLoading || cartLoading || methodsLoading;
-  const providerLabels: Record<PaymentProvider, string> = {
-    paystack: "Paystack",
-    stripe: "Stripe Checkout",
-    paypal: "PayPal",
-    myaza: "Myaza (crypto)",
-  };
 
   if (!mounted) {
     return (
@@ -378,7 +440,7 @@ export function CheckoutClient() {
   if (!token) {
     return (
       <InnerShell>
-        <div className="card max-w-lg space-y-4">
+        <div className="max-w-lg space-y-4 rounded-[20px] border border-shop-border bg-white p-7">
           <h1 className="text-xl font-semibold">Sign in to checkout</h1>
           <p className="text-sm text-black/70">
             Sign in to place an order and pay securely.
@@ -405,7 +467,7 @@ export function CheckoutClient() {
   if (activeOrderId && displayOrder && displayOrder.status === "PAID") {
     return (
       <InnerShell>
-        <div className="card max-w-lg space-y-3">
+        <div className="max-w-lg space-y-3 rounded-[20px] border border-shop-border bg-white p-7">
           <h1 className="text-lg font-semibold">Order already paid</h1>
           <p className="text-sm text-black/70">This order is complete. You can open it from your account.</p>
           <Link className="btn-primary" href={`/dashboard/orders/${displayOrder.id}`}>
@@ -416,36 +478,36 @@ export function CheckoutClient() {
     );
   }
 
+  const summaryItems = inPaymentStep || showMyaza
+    ? (displayOrder?.items ?? []).map((i) => ({ title: i.title, quantity: i.quantity, image: i.images?.[0], key: i.title }))
+    : apiItems.map((i) => ({ title: lineTitle(i), quantity: i.quantity, image: lineImage(i), key: i.id }));
+
+  const totalLabel = inPaymentStep || showMyaza
+    ? formatApiMoney(displayOrder?.displaySummary ? Number(displayOrder.displaySummary.total) : oTotal, displayOrder?.currency ?? orderCurrency)
+    : showQuoteConfirm && landedCostQuote?.totalDisplay
+      ? `${landedCostQuote.displayCurrency} ${landedCostQuote.totalDisplay.toLocaleString()}`
+      : `${apiCurrency} ${apiTotal.toFixed(2)}`;
+
   return (
     <InnerShell>
-      <div className="space-y-6">
-        <section className="card">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">Checkout</h1>
-              <p className="mt-2 text-sm text-black/70">
-                {inPaymentStep
-                  ? "Your order is placed. Choose a payment method below to complete checkout."
-                  : "Enter your shipping details, then place the order to proceed to payment."}
-              </p>
-            </div>
-            <Steps
-              current={1}
-              steps={[
-                { label: "Cart", href: "/cart" },
-                { label: "Checkout", href: "/checkout" },
-                { label: "Success", href: "/checkout/success" },
-              ]}
-            />
-          </div>
-        </section>
+      <div className="flex flex-col gap-7">
+        <Steps
+          current={1}
+          steps={[
+            { label: "Cart", href: "/cart" },
+            { label: "Checkout", href: "/checkout" },
+            { label: "Success" },
+          ]}
+        />
+
+        <h1 className="text-[34px] font-extrabold tracking-[-0.8px] text-shop-ink">Checkout</h1>
 
         {loading && !inPaymentStep && <LoadingState label="Loading…" />}
         {createErr && <ErrorState error={createError} title="Couldn't place order" />}
         {payErr && payInitError && <ErrorState error={payError} title="Payment setup failed" />}
 
         {showMyaza && myazaOrderId ? (
-          <section className="card space-y-4 border-shop-accent/30">
+          <section className="flex flex-col gap-4 rounded-[20px] border border-shop-border bg-white p-7">
             <h2 className="text-lg font-semibold">Complete Myaza payment</h2>
             <p className="text-sm text-black/70">
               Send the indicated amount to the address below, or use the hosted checkout if you opened it in a new tab. Open
@@ -513,456 +575,348 @@ export function CheckoutClient() {
           </section>
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          {inPaymentStep && displayOrder && !showMyaza ? (
-            <form className="card space-y-4" onSubmit={onPay}>
-              <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
-              <p className="text-sm text-amber-900/80">
-                Status: <span className="font-medium">{displayOrder.status}</span>. Your cart was cleared when the order was placed — use the totals below to complete payment.
-              </p>
-              {displayOrder.shippingAddress ? (
-                <div className="rounded-lg border border-black/10 bg-black/2 p-3 text-sm">
-                  <p className="font-medium text-shop-ink">Ship to</p>
-                  <p className="mt-1 text-black/80">
-                    {displayOrder.shippingAddress.fullName}
-                    <br />
-                    {displayOrder.shippingAddress.line1}
-                    {displayOrder.shippingAddress.line2 ? <>, {displayOrder.shippingAddress.line2}</> : null}
-                    <br />
-                    {displayOrder.shippingAddress.city}
-                    {displayOrder.shippingAddress.state ? `, ${displayOrder.shippingAddress.state}` : ""}{" "}
-                    {displayOrder.shippingAddress.postalCode}
-                    <br />
-                    {displayOrder.shippingAddress.country}
-                  </p>
-                </div>
-              ) : null}
-
-              <h3 className="pt-2 text-base font-semibold">Payment</h3>
-              {!methodsError && availableProviders.length === 0 ? (
-                <p className="text-sm text-amber-800">No payment methods are available right now.</p>
-              ) : null}
-              {methodsError ? (
-                <p className="text-xs text-black/50">Couldn't check payment options — all methods are shown.</p>
-              ) : null}
-              <div className="space-y-1.5">
-                <p className="text-sm text-black/70">Payment method</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {methodRows.map((m) => {
-                    const isSelected = provider === m.provider;
-                    const isDisabled = !m.available || (!methodsError && availableProviders.length === 0);
-                    return (
-                      <label
-                        key={m.provider}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
-                          isDisabled ? "cursor-not-allowed opacity-50" : ""
-                        } ${
-                          isSelected
-                            ? "border-shop-primary bg-shop-primary/[0.03]"
-                            : "border-black/10 hover:border-black/25"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="paymentProvider"
-                          value={m.provider}
-                          checked={isSelected}
-                          disabled={isDisabled}
-                          onChange={() => {
-                            setProvider(m.provider);
-                            setPayInitError(false);
-                            resetPayError();
-                          }}
-                          className="sr-only"
-                        />
-                        <div
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                            isSelected ? "border-shop-primary" : "border-black/25"
-                          }`}
-                        >
-                          {isSelected && <div className="h-2 w-2 rounded-full bg-shop-primary" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-shop-ink">{providerLabels[m.provider]}</p>
-                          {!m.available && m.reason ? (
-                            <p className="text-xs text-black/50">{m.reason}</p>
-                          ) : null}
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-              {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  className="btn-primary w-full sm:w-auto"
-                  type="submit"
-                  disabled={paying || (!methodsError && availableProviders.length === 0)}
-                >
-                  {paying ? "Starting…" : "Complete payment"}
-                </button>
-                {payInitError || payErr ? (
-                  <button
-                    type="button"
-                    className="btn-secondary w-full sm:w-auto"
-                    onClick={() => {
-                      setFormError("");
-                      setPayInitError(false);
-                      resetPayError();
-                    }}
-                  >
-                    Dismiss error
-                  </button>
-                ) : null}
-              </div>
-              <p className="text-xs text-black/50">
-                If payment didn't start, you can <span className="font-medium">try again</span> with the same or a different method. Your order stays open.
-              </p>
-            </form>
-          ) : !inPaymentStep && !showMyaza && !showQuoteConfirm ? (
-            <form className="card space-y-4" onSubmit={onGetQuote}>
-              <h2 className="text-lg font-semibold">Shipping</h2>
-              <p className="text-xs text-black/60">
-                Placing the order <span className="font-medium">clears your cart</span>. You'll complete payment on the next step.
-              </p>
-
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Full name</span>
-                <input
-                  className="input w-full"
-                  name="fullName"
-                  placeholder="Jane Doe"
-                  required
-                  defaultValue={me?.defaultShippingAddress?.fullName ?? ""}
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Address line 1</span>
-                <input
-                  className="input w-full"
-                  name="line1"
-                  placeholder="Street, building, unit"
-                  required
-                  defaultValue={me?.defaultShippingAddress?.line1 ?? ""}
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Address line 2 (optional)</span>
-                <input
-                  className="input w-full"
-                  name="line2"
-                  placeholder="Apt, suite, etc."
-                  defaultValue={me?.defaultShippingAddress?.line2 ?? ""}
-                />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="text-black/70">City</span>
-                  <input
-                    className="input w-full"
-                    name="city"
-                    placeholder="City"
-                    required
-                    defaultValue={me?.defaultShippingAddress?.city ?? ""}
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="text-black/70">State / region</span>
-                  <input
-                    className="input w-full"
-                    name="state"
-                    placeholder="State or region"
-                    defaultValue={me?.defaultShippingAddress?.state ?? ""}
-                  />
-                </label>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="text-black/70">Country code</span>
-                  <input
-                    className="input w-full"
-                    name="country"
-                    placeholder="e.g. NG"
-                    defaultValue={me?.defaultShippingAddress?.country ?? "NG"}
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="text-black/70">Postal code</span>
-                  <input
-                    className="input w-full"
-                    name="postalCode"
-                    placeholder="Postal or ZIP"
-                    defaultValue={me?.defaultShippingAddress?.postalCode ?? ""}
-                  />
-                </label>
-              </div>
-              <label className="block space-y-1 text-sm">
-                <span className="text-black/70">Phone</span>
-                <input
-                  className="input w-full"
-                  name="phone"
-                  type="tel"
-                  placeholder="+234 …"
-                  defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""}
-                />
-              </label>
-
-              <div className="border-t border-black/10 pt-4 space-y-3">
-                <p className="text-sm font-medium">Delivery options</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block space-y-1 text-sm">
-                    <span className="text-black/70">Destination</span>
-                    <select
-                      className="input w-full"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value as LandedCostDestination)}
-                    >
-                      <option value="lagos">Lagos</option>
-                      <option value="outside_lagos">Outside Lagos</option>
-                    </select>
-                  </label>
-                  <label className="block space-y-1 text-sm">
-                    <span className="text-black/70">Shipping service</span>
-                    <select
-                      className="input w-full"
-                      value={shippingService}
-                      onChange={(e) => setShippingService(e.target.value as LandedCostService)}
-                    >
-                      <option value="air">Air (faster)</option>
-                      <option value="ocean_small">Ocean small box</option>
-                    </select>
-                  </label>
-                </div>
-                <label className="block space-y-1 text-sm">
-                  <span className="text-black/70">Product category</span>
-                  <select
-                    className="input w-full"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as LandedCostCategory)}
-                  >
-                    <option value="generic">General / Other</option>
-                    <option value="sneakers">Sneakers</option>
-                    <option value="clothing">Clothing</option>
-                    <option value="phone">Phone</option>
-                    <option value="laptop">Laptop</option>
-                    <option value="tablet">Tablet</option>
-                    <option value="tv">TV</option>
-                    <option value="electronics_small">Electronics (small)</option>
-                    <option value="electronics_large">Electronics (large)</option>
-                    <option value="accessories">Accessories</option>
-                    <option value="books">Books</option>
-                  </select>
-                </label>
-                {destination === "lagos" && (
-                  <label className="flex items-start gap-2.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 text-sm">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4 rounded border-black/20 text-shop-accent-hover focus:ring-shop-accent-hover"
-                      checked={insurance}
-                      onChange={(e) => setInsurance(e.target.checked)}
-                    />
-                    <span>
-                      <span className="block font-medium text-shop-ink">Add cargo insurance</span>
-                      <span className="block text-xs text-black/60">
-                        3% of item cost{apiSubtotal > 0 ? ` (~$${(apiSubtotal * 0.03).toFixed(2)})` : ""} — covers loss or damage in transit to Lagos.
-                      </span>
-                    </span>
-                  </label>
-                )}
-              </div>
-
-              {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-              <button
-                className="btn-primary w-full"
-                type="submit"
-                disabled={quoting || apiItems.length === 0 || loading}
-              >
-                {quoting ? "Getting estimate…" : "Get cost estimate"}
-              </button>
-            </form>
-          ) : showQuoteConfirm && !inPaymentStep && !showMyaza ? (
-            <div className="card space-y-4">
-              <h2 className="text-lg font-semibold">Confirm your order</h2>
-              <p className="text-xs text-black/60">
-                Review the estimated landed cost below. Once you place the order, your cart is cleared.
-              </p>
-              {landedCostQuote ? (
-                <div className="rounded-xl border border-black/10 bg-black/[0.02] p-4 space-y-2">
-                  <p className="text-sm font-medium text-shop-ink">Estimated landed cost</p>
-                  {landedCostQuote.marketplaceConfidence === "low" && (
-                    <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
-                      Marketplace estimates are approximate. Final cost may vary slightly.
+        <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+          <div className="flex flex-col gap-6">
+            {inPaymentStep && displayOrder && !showMyaza ? (
+              <form className="flex flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-7" onSubmit={onPay}>
+                <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
+                <p className="text-sm text-amber-900/80">
+                  Status: <span className="font-medium">{displayOrder.status}</span>. Your cart was cleared when the order was placed — use the totals below to complete payment.
+                </p>
+                {displayOrder.shippingAddress ? (
+                  <div className="rounded-xl border border-shop-border bg-(--background) p-3 text-sm">
+                    <p className="font-medium text-shop-ink">Ship to</p>
+                    <p className="mt-1 text-black/80">
+                      {displayOrder.shippingAddress.fullName}
+                      <br />
+                      {displayOrder.shippingAddress.line1}
+                      {displayOrder.shippingAddress.line2 ? <>, {displayOrder.shippingAddress.line2}</> : null}
+                      <br />
+                      {displayOrder.shippingAddress.city}
+                      {displayOrder.shippingAddress.state ? `, ${displayOrder.shippingAddress.state}` : ""}{" "}
+                      {displayOrder.shippingAddress.postalCode}
+                      <br />
+                      {displayOrder.shippingAddress.country}
                     </p>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-2.5 pt-2">
+                  <CreditCard className="h-[18px] w-[18px]" style={{ color: "var(--shop-primary)" }} aria-hidden />
+                  <h3 className="text-[17px] font-bold text-shop-ink">Payment method</h3>
+                </div>
+                {!methodsError && availableProviders.length === 0 ? (
+                  <p className="text-sm text-amber-800">No payment methods are available right now.</p>
+                ) : null}
+                {methodsError ? (
+                  <p className="text-xs text-black/50">Couldn&apos;t check payment options — Stripe is shown by default.</p>
+                ) : null}
+
+                <div
+                  className="flex items-center gap-3 rounded-xl p-4"
+                  style={{ background: "var(--shop-accent-soft)", border: "1.5px solid var(--shop-primary)" }}
+                >
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                    style={{ border: "2px solid var(--shop-primary)", background: "#FFFFFF" }}
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--shop-primary)" }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-shop-ink">Stripe Checkout</p>
+                    <p className="text-xs text-shop-muted">International cards</p>
+                  </div>
+                </div>
+
+                {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    className="btn-primary w-full sm:w-auto"
+                    type="submit"
+                    disabled={paying || (!methodsError && availableProviders.length === 0)}
+                  >
+                    {paying ? "Starting…" : "Complete payment"}
+                  </button>
+                  {payInitError || payErr ? (
+                    <button
+                      type="button"
+                      className="btn-secondary w-full sm:w-auto"
+                      onClick={() => {
+                        setFormError("");
+                        setPayInitError(false);
+                        resetPayError();
+                      }}
+                    >
+                      Dismiss error
+                    </button>
+                  ) : null}
+                </div>
+                <p className="text-xs text-black/50">
+                  If payment didn&apos;t start, you can <span className="font-medium">try again</span>. Your order stays open.
+                </p>
+              </form>
+            ) : !inPaymentStep && !showMyaza && !showQuoteConfirm ? (
+              <form className="flex flex-col gap-6" onSubmit={onGetQuote}>
+                <SectionCard icon={MapPin} title="Shipping details">
+                  <p className="-mt-2 text-xs text-shop-muted">
+                    Placing the order <span className="font-medium text-shop-ink">clears your cart</span>. You&apos;ll complete payment on the next step.
+                  </p>
+                  <Field label="Full name" name="fullName" placeholder="Jane Doe" required defaultValue={me?.defaultShippingAddress?.fullName ?? ""} />
+                  <Field label="Address line 1" name="line1" placeholder="Street, building, unit" required defaultValue={me?.defaultShippingAddress?.line1 ?? ""} />
+                  <Field label="Address line 2 (optional)" name="line2" placeholder="Apartment, suite, etc." defaultValue={me?.defaultShippingAddress?.line2 ?? ""} />
+                  <div className="flex w-full gap-4">
+                    <Field label="City" name="city" placeholder="Lagos" required defaultValue={me?.defaultShippingAddress?.city ?? ""} />
+                    <Field label="State / region" name="state" placeholder="Lagos" defaultValue={me?.defaultShippingAddress?.state ?? ""} />
+                  </div>
+                  <div className="flex w-full gap-4">
+                    <Field label="Country" name="country" placeholder="Nigeria" defaultValue={me?.defaultShippingAddress?.country ?? "NG"} />
+                    <Field label="Postal code" name="postalCode" placeholder="100001" defaultValue={me?.defaultShippingAddress?.postalCode ?? ""} />
+                  </div>
+                  <Field label="Phone" name="phone" type="tel" placeholder="+234 …" defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""} />
+                </SectionCard>
+
+                <SectionCard icon={Truck} title="Delivery options">
+                  <div className="flex w-full gap-4">
+                    <SelectField
+                      label="Destination"
+                      value={destination}
+                      onChange={setDestination}
+                      options={[
+                        { value: "lagos", label: "Lagos" },
+                        { value: "outside_lagos", label: "Outside Lagos" },
+                      ]}
+                    />
+                    <SelectField
+                      label="Shipping service"
+                      value={shippingService}
+                      onChange={setShippingService}
+                      options={[
+                        { value: "air", label: "Air (faster)" },
+                        { value: "ocean_small", label: "Ocean small box" },
+                      ]}
+                    />
+                  </div>
+                  <SelectField
+                    label="Product category"
+                    value={category}
+                    onChange={setCategory}
+                    options={[
+                      { value: "generic", label: "General / Other" },
+                      { value: "sneakers", label: "Sneakers" },
+                      { value: "clothing", label: "Clothing" },
+                      { value: "phone", label: "Phone" },
+                      { value: "laptop", label: "Laptop" },
+                      { value: "tablet", label: "Tablet" },
+                      { value: "tv", label: "TV" },
+                      { value: "electronics_small", label: "Electronics (small)" },
+                      { value: "electronics_large", label: "Electronics (large)" },
+                      { value: "accessories", label: "Accessories" },
+                      { value: "books", label: "Books" },
+                    ]}
+                  />
+                  {destination === "lagos" && (
+                    <label className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-shop-border bg-(--background) p-4">
+                      <input type="checkbox" className="sr-only" checked={insurance} onChange={(e) => setInsurance(e.target.checked)} />
+                      <span
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px]"
+                        style={insurance ? { background: "var(--shop-primary)" } : { border: "1.5px solid var(--shop-border)", background: "#FFFFFF" }}
+                      >
+                        {insurance && <Check className="h-[13px] w-[13px] text-white" aria-hidden />}
+                      </span>
+                      <span className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold text-shop-ink">Add cargo insurance</span>
+                        <span className="text-[13px] leading-[1.45] text-shop-muted">
+                          3% of item cost{apiSubtotal > 0 ? ` (~$${(apiSubtotal * 0.03).toFixed(2)})` : ""} — covers loss or damage in transit to Lagos.
+                        </span>
+                      </span>
+                    </label>
                   )}
+                </SectionCard>
+
+                {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
+                <button
+                  className="btn-primary w-full"
+                  type="submit"
+                  disabled={quoting || apiItems.length === 0 || loading}
+                >
+                  {quoting ? "Getting estimate…" : "Get cost estimate"}
+                </button>
+              </form>
+            ) : showQuoteConfirm && !inPaymentStep && !showMyaza ? (
+              <div className="flex flex-col gap-4 rounded-[20px] border border-shop-border bg-white p-7">
+                <h2 className="text-lg font-semibold">Confirm your order</h2>
+                <p className="text-xs text-black/60">
+                  Review the estimated landed cost below. Once you place the order, your cart is cleared.
+                </p>
+                {landedCostQuote ? (
+                  <div className="space-y-2 rounded-xl border border-shop-border bg-(--background) p-4">
+                    <p className="text-sm font-medium text-shop-ink">Estimated landed cost</p>
+                    {landedCostQuote.marketplaceConfidence === "low" && (
+                      <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
+                        Marketplace estimates are approximate. Final cost may vary slightly.
+                      </p>
+                    )}
+                    <ul className="space-y-1 text-xs text-black/70 font-mono">
+                      {landedCostQuote.breakdown.map((line, i) => (
+                        <li key={i} className="whitespace-pre-wrap">{line}</li>
+                      ))}
+                    </ul>
+                    {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
+                      <p className="pt-2 text-sm font-semibold text-shop-ink border-t border-shop-border">
+                        Estimated total: {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ) : quoteError ? (
+                  <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{quoteError}</p>
+                ) : null}
+                {phoneVerificationBlocked && (
+                  <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                    Verify your phone number via WhatsApp in{" "}
+                    <Link href="/dashboard/settings" className="font-semibold underline">
+                      Settings
+                    </Link>{" "}
+                    before checking out.
+                  </p>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    className="btn-secondary"
+                    type="button"
+                    onClick={() => { setLandedCostQuote(null); setPendingFormData(null); setQuoteError(""); }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="btn-primary flex-1"
+                    type="button"
+                    disabled={creating || placeOrderBusy || phoneVerificationBlocked}
+                    onClick={onPlaceOrder}
+                  >
+                    {creating || placeOrderBusy ? "Placing order…" : "Place order"}
+                  </button>
+                </div>
+                {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
+              </div>
+            ) : null}
+          </div>
+
+          <section className="flex h-fit flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-[26px] lg:sticky lg:top-24">
+            <h2 className="text-lg font-bold text-shop-ink">Order summary</h2>
+
+            {summaryItems.length > 0 && (
+              <div className="flex flex-col gap-3 border-b border-shop-border pb-4">
+                {summaryItems.map((item) => (
+                  <div key={item.key} className="flex items-center gap-3">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-(--background)">
+                      {item.image ? (
+                        <Image src={item.image} alt="" fill className="object-contain p-1" unoptimized />
+                      ) : null}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-shop-ink">
+                      {item.title} × {item.quantity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(inPaymentStep || showMyaza) && displayOrder ? (
+              <>
+                {displayOrder.displaySummary ? (
+                  <CheckoutDisplaySummary summary={displayOrder.displaySummary} />
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-[11px] text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-shop-muted">Product</span>
+                        <span className="font-semibold tabular-nums text-shop-ink">{orderCurrency} {oSub.toFixed(2)}</span>
+                      </div>
+                      {oSvc > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-shop-muted">Service charge</span>
+                          <span className="font-semibold tabular-nums text-shop-ink">{orderCurrency} {oSvc.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {oDisc > 0 && (
+                        <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
+                          <span>Discount</span>
+                          <span className="font-semibold tabular-nums">-{orderCurrency} {oDisc.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-px w-full bg-shop-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-bold text-shop-ink">Total</span>
+                      <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{formatApiMoney(oTotal, displayOrder.currency ?? orderCurrency)}</span>
+                    </div>
+                  </>
+                )}
+                {displayOrder.pricingBreakdown && displayOrder.pricingBreakdown.length > 0 && (
+                  <details className="border-t border-shop-border pt-3 text-xs text-black/50">
+                    <summary className="cursor-pointer select-none hover:text-black/80">Cost breakdown</summary>
+                    <ul className="mt-2 space-y-0.5 font-mono">
+                      {displayOrder.pricingBreakdown.map((line, i) => (
+                        <li key={i} className="whitespace-pre-wrap">{line}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-shop-muted">
+                  {apiItems.length} {apiItems.length === 1 ? "item" : "items"} in your cart
+                </p>
+                {localItems.length > 0 ? (
+                  <p className="-mt-2 text-xs text-shop-muted">
+                    {localItems.length} saved in your browser only
+                  </p>
+                ) : null}
+
+                {showQuoteConfirm && landedCostQuote ? (
                   <ul className="space-y-1 text-xs text-black/70 font-mono">
                     {landedCostQuote.breakdown.map((line, i) => (
                       <li key={i} className="whitespace-pre-wrap">{line}</li>
                     ))}
                   </ul>
-                  {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
-                    <p className="pt-2 text-sm font-semibold text-shop-ink border-t border-black/10">
-                      Estimated total: {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              ) : quoteError ? (
-                <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{quoteError}</p>
-              ) : null}
-              {phoneVerificationBlocked && (
-                <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-                  Verify your phone number via WhatsApp in{" "}
-                  <Link href="/dashboard/settings" className="font-semibold underline">
-                    Settings
-                  </Link>{" "}
-                  before checking out.
-                </p>
-              )}
-              <div className="flex gap-3">
-                <button
-                  className="btn-secondary"
-                  type="button"
-                  onClick={() => { setLandedCostQuote(null); setPendingFormData(null); setQuoteError(""); }}
-                >
-                  Back
-                </button>
-                <button
-                  className="btn-primary flex-1"
-                  type="button"
-                  disabled={creating || placeOrderBusy || phoneVerificationBlocked}
-                  onClick={onPlaceOrder}
-                >
-                  {creating || placeOrderBusy ? "Placing order…" : "Place order"}
-                </button>
-              </div>
-              {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
-            </div>
-          ) : null}
-
-          <section className="card h-fit">
-            <h2 className="text-lg font-semibold">Summary</h2>
-            {(inPaymentStep || showMyaza) && displayOrder ? (
-              <>
-                <p className="mt-2 text-sm font-medium text-shop-ink">Order total</p>
-                <p className="mt-1 text-xs text-black/55">Totals are locked in from your order.</p>
-                <ul className="mt-3 space-y-2 border-b border-black/10 pb-3 text-sm">
-                  {displayOrder.items.map((item, idx) => (
-                    <li key={`${item.title}-${idx}`} className="flex justify-between gap-2">
-                      <span className="min-w-0 text-black/80">
-                        {item.title} × {item.quantity}
-                      </span>
-                      <span className="shrink-0 font-medium tabular-nums text-shop-ink">
-                        {formatApiMoney(
-                          orderLineTotal(item as (typeof displayOrder.items)[number]),
-                          item.currency
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 space-y-2 text-sm">
-                  {displayOrder.displaySummary ? (
-                    <CheckoutDisplaySummary summary={displayOrder.displaySummary} />
-                  ) : (
-                    <>
+                ) : (
+                  <div className="flex flex-col gap-[11px] text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-shop-muted">Product</span>
+                      <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiSubtotal.toFixed(2)}</span>
+                    </div>
+                    {apiServiceCharge > 0 && (
                       <div className="flex items-center justify-between">
-                        <span>Subtotal</span>
-                        <span className="font-medium tabular-nums">{orderCurrency} {oSub.toFixed(2)}</span>
+                        <span className="text-shop-muted">Service charge</span>
+                        <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiServiceCharge.toFixed(2)}</span>
                       </div>
-                      {oSvc > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-black/60">Service charge</span>
-                          <span className="font-medium tabular-nums">{orderCurrency} {oSvc.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {oDisc > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-black/60">Discount</span>
-                          <span className="font-medium tabular-nums text-emerald-600">-{orderCurrency} {oDisc.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-                        <span>Total</span>
-                        <span className="tabular-nums">{formatApiMoney(oTotal, displayOrder.currency ?? orderCurrency)}</span>
+                    )}
+                    {apiDiscount > 0 && (
+                      <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
+                        <span>Discount</span>
+                        <span className="font-semibold tabular-nums">-{apiCurrency} {apiDiscount.toFixed(2)}</span>
                       </div>
-                    </>
-                  )}
-                  {displayOrder.pricingBreakdown && displayOrder.pricingBreakdown.length > 0 && (
-                    <details className="border-t border-black/10 pt-2 text-xs text-black/50">
-                      <summary className="cursor-pointer select-none hover:text-black/80">Cost breakdown</summary>
-                      <ul className="mt-2 space-y-0.5 font-mono">
-                        {displayOrder.pricingBreakdown.map((line, i) => (
-                          <li key={i} className="whitespace-pre-wrap">{line}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
+                    )}
+                  </div>
+                )}
+                <div className="h-px w-full bg-shop-border" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-bold text-shop-ink">Total</span>
+                  <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{totalLabel}</span>
                 </div>
-              </>
-            ) : (
-              <>
-                <p className="mt-3 text-sm text-black/70">
-                  {apiItems.length} {apiItems.length === 1 ? "item" : "items"} in your cart
-                </p>
                 {localItems.length > 0 ? (
-                  <p className="mt-2 text-xs text-black/50">
-                    {localItems.length} saved in your browser only
+                  <p className="text-xs text-shop-muted">
+                    On-device only: USD {localSubtotal.toFixed(2)}
                   </p>
                 ) : null}
-                <div className="mt-4 space-y-2 text-sm">
-                  {showQuoteConfirm && landedCostQuote ? (
-                    <>
-                      <ul className="space-y-1 text-xs text-black/70 font-mono">
-                        {landedCostQuote.breakdown.map((line, i) => (
-                          <li key={i} className="whitespace-pre-wrap">{line}</li>
-                        ))}
-                      </ul>
-                      {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
-                        <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-                          <span>Total</span>
-                          <span className="tabular-nums">
-                            {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span>Subtotal</span>
-                        <span className="font-medium tabular-nums">
-                          {apiCurrency} {apiSubtotal.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Service charge</span>
-                        <span className="font-medium tabular-nums">
-                          {apiCurrency} {apiServiceCharge.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Discount</span>
-                        <span className="font-medium tabular-nums">
-                          -{apiCurrency} {apiDiscount.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
-                        <span>Total</span>
-                        <span className="tabular-nums">
-                          {apiCurrency} {apiTotal.toFixed(2)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {localItems.length > 0 ? (
-                    <div className="flex items-center justify-between border-t border-black/10 pt-2 text-xs text-black/50">
-                      <span>On-device only</span>
-                      <span className="tabular-nums">USD {localSubtotal.toFixed(2)}</span>
-                    </div>
-                  ) : null}
-                </div>
               </>
             )}
+
+            <div className="flex items-center justify-center gap-[7px] pt-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-shop-muted" aria-hidden />
+              <span className="text-xs text-shop-muted">Secure, encrypted checkout</span>
+            </div>
           </section>
         </div>
       </div>

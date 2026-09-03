@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState, Suspense } from "react";
-import { ArrowLeft, Fingerprint } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, ScanFace } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { registerUrl } from "@/lib/auth-redirect";
 import { passkeyPref } from "@/lib/passkey-pref";
@@ -31,6 +31,7 @@ import {
 import type { LocalCartLine } from "@/types/api";
 import {
   AuthShell,
+  AuthField,
   AuthInput,
   AuthPasswordInput,
   AuthButton,
@@ -38,6 +39,51 @@ import {
 } from "@/components/auth/auth-shell";
 
 type Step = "email" | "password" | "totp";
+const OTP_LENGTH = 6;
+
+function OtpInput({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+  const digits = Array.from({ length: OTP_LENGTH }, (_, i) => value[i] ?? "");
+
+  const setDigit = (i: number, d: string) => {
+    const next = digits.slice();
+    next[i] = d;
+    onChange(next.join(""));
+  };
+
+  return (
+    <div className="flex gap-2">
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          value={d}
+          disabled={disabled}
+          inputMode="numeric"
+          autoComplete={i === 0 ? "one-time-code" : "off"}
+          maxLength={1}
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, "").slice(-1);
+            setDigit(i, v);
+            if (v && i < OTP_LENGTH - 1) refs.current[i + 1]?.focus();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" && !digits[i] && i > 0) refs.current[i - 1]?.focus();
+          }}
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+            if (!pasted) return;
+            e.preventDefault();
+            onChange(pasted.padEnd(OTP_LENGTH, "").slice(0, OTP_LENGTH).replace(/\s/g, ""));
+            refs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
+          }}
+          className="h-[52px] flex-1 rounded-xl border-[1.5px] text-center text-xl font-bold text-shop-ink outline-none transition"
+          style={{ borderColor: d ? "var(--shop-primary)" : "var(--shop-border)" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function LoginPageInner() {
   const router = useRouter();
@@ -60,6 +106,7 @@ function LoginPageInner() {
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [resendReadyIn, setResendReadyIn] = useState(0);
   const [passkeyAvailable] = useState(() => passkeyPref.get());
+  const [otpCode, setOtpCode] = useState("");
 
   const preAuthTokenRef = useRef<string | null>(null);
   const localLinesRef = useRef<LocalCartLine[]>([]);
@@ -136,10 +183,9 @@ function LoginPageInner() {
   const onSubmitTotp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError("");
-    const fd = new FormData(e.currentTarget);
-    const code = normalizeTotpCode(String(fd.get("code") ?? ""));
+    const code = normalizeTotpCode(otpCode);
     if (!code || code.length < 6) {
-      setFormError("Enter the 6–8 digit code from your authenticator app.");
+      setFormError("Enter the 6-digit code from your authenticator app.");
       return;
     }
     const pre = preAuthTokenRef.current;
@@ -209,57 +255,51 @@ function LoginPageInner() {
   };
 
   const busy = isLoading || loading2fa;
+  const topRight = (
+    <div className="flex items-center gap-2">
+      <span className="text-[13px] text-shop-muted">New here?</span>
+      <Link
+        href={registerUrl(redirect)}
+        className="rounded-full border border-shop-border bg-white px-4 py-[9px] text-[13px] font-semibold text-shop-ink transition hover:bg-black/5"
+      >
+        Create account
+      </Link>
+    </div>
+  );
 
   /* ── Step: email ── */
   if (step === "email") {
     return (
-      <AuthShell
-        heading="Sign in to save your favorites"
-        subAction={
-          <>
-            Or{" "}
-            <Link href={registerUrl(redirect)} className="font-medium text-[#059669] hover:underline">
-              create an account
-            </Link>
-          </>
-        }
-      >
-        <form onSubmit={onContinueEmail} className="space-y-3">
-          <AuthInput
-            name="email"
-            type="email"
-            autoComplete={passkeyAvailable ? "username webauthn" : "email"}
-            placeholder="Enter your email"
-            defaultValue={email}
-            required
-            autoFocus
-          />
+      <AuthShell heading="Welcome back" subhead="Sign in to track orders, save favorites and check out faster." topRight={topRight}>
+        <form onSubmit={onContinueEmail} className="flex flex-col gap-4">
+          <AuthField label="Email address">
+            <AuthInput
+              icon={Mail}
+              name="email"
+              type="email"
+              autoComplete={passkeyAvailable ? "username webauthn" : "email"}
+              placeholder="you@example.com"
+              defaultValue={email}
+              required
+              autoFocus
+            />
+          </AuthField>
           {formError && <p className="px-1 text-xs text-red-500">{formError}</p>}
-          <AuthButton type="submit">Continue</AuthButton>
+          <AuthButton type="submit" icon={ArrowRight}>Continue</AuthButton>
+
+          {passkeyAvailable && (
+            <>
+              <div className="flex items-center gap-3.5 py-1">
+                <span className="h-px flex-1 bg-shop-border" />
+                <span className="text-xs text-shop-muted">or</span>
+                <span className="h-px flex-1 bg-shop-border" />
+              </div>
+              <AuthGhostButton type="button" icon={ScanFace} onClick={() => void onPasskeyLogin()} disabled={passkeyLoading}>
+                {passkeyLoading ? "Waiting for passkey…" : "Sign in with a passkey"}
+              </AuthGhostButton>
+            </>
+          )}
         </form>
-
-        {passkeyAvailable && (
-          <>
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-3 text-xs text-gray-400">or</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void onPasskeyLogin()}
-              disabled={passkeyLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-            >
-              <Fingerprint className={`h-5 w-5 ${passkeyLoading ? "animate-pulse text-[#059669]" : "text-gray-500"}`} aria-hidden />
-              {passkeyLoading ? "Waiting for passkey…" : "Sign in with a passkey"}
-            </button>
-          </>
-        )}
       </AuthShell>
     );
   }
@@ -267,15 +307,18 @@ function LoginPageInner() {
   /* ── Step: password ── */
   if (step === "password") {
     return (
-      <AuthShell heading="Enter your password">
-        <form onSubmit={onSubmitPassword} className="space-y-3">
-          {/* Show which account */}
-          <div className="flex items-center justify-between rounded-full border border-gray-200 px-5 py-3">
-            <span className="truncate text-sm text-gray-700">{email}</span>
+      <AuthShell heading="Enter your password" topRight={topRight}>
+        <form onSubmit={onSubmitPassword} className="flex flex-col gap-4">
+          <div
+            className="flex items-center justify-between rounded-full px-4 py-3"
+            style={{ background: "var(--background)", border: "1px solid var(--shop-border)" }}
+          >
+            <span className="truncate text-sm text-shop-ink">{email}</span>
             <button
               type="button"
               onClick={() => { setStep("email"); setFormError(""); }}
-              className="ml-2 shrink-0 text-[#059669] transition hover:opacity-75"
+              className="ml-2 shrink-0 transition hover:opacity-75"
+              style={{ color: "var(--shop-primary)" }}
               aria-label="Change email"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -283,29 +326,31 @@ function LoginPageInner() {
           </div>
 
           <AuthPasswordInput
+            icon={Lock}
             name="password"
             autoComplete="current-password"
-            placeholder="Password"
+            placeholder="Enter your password"
             required
             autoFocus
           />
 
           {notVerified && (
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600 space-y-2">
-              <p className="font-semibold text-gray-800">Verify your email first</p>
-              <p>{notVerified.message}</p>
+            <div className="flex flex-col gap-2 rounded-2xl p-4 text-xs" style={{ background: "var(--background)" }}>
+              <p className="font-semibold text-shop-ink">Verify your email first</p>
+              <p className="text-shop-muted">{notVerified.message}</p>
               {notVerified.email && (
                 resendReadyIn > 0 ? (
-                  <p className="text-gray-400">
+                  <p className="text-shop-muted">
                     Resend available in{" "}
-                    <span className="tabular-nums font-medium text-gray-700">
+                    <span className="tabular-nums font-medium text-shop-ink">
                       {Math.floor(resendReadyIn / 60)}:{String(resendReadyIn % 60).padStart(2, "0")}
                     </span>
                   </p>
                 ) : (
                   <button
                     type="button"
-                    className="font-medium text-[#059669] hover:underline disabled:opacity-50"
+                    className="font-medium hover:underline disabled:opacity-50"
+                    style={{ color: "var(--shop-primary)" }}
                     onClick={onResend}
                     disabled={resendLoading}
                   >
@@ -325,10 +370,7 @@ function LoginPageInner() {
           </AuthButton>
 
           <div className="text-center">
-            <Link
-              href="/auth/forgot-password"
-              className="text-sm text-gray-500 hover:text-gray-800 hover:underline"
-            >
+            <Link href="/auth/forgot-password" className="text-sm text-shop-muted hover:text-shop-ink hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -339,21 +381,14 @@ function LoginPageInner() {
 
   /* ── Step: 2FA ── */
   return (
-    <AuthShell heading="Two-step verification">
-      <form onSubmit={onSubmitTotp} className="space-y-3">
-        <p className="px-1 text-sm text-gray-500">
+    <AuthShell heading="Two-step verification" topRight={topRight}>
+      <form onSubmit={onSubmitTotp} className="flex flex-col gap-4">
+        <p className="px-1 text-sm text-shop-muted">
           Enter the code from your authenticator app for{" "}
-          <span className="font-medium text-gray-800">{email}</span>.
+          <span className="font-medium text-shop-ink">{email}</span>.
         </p>
 
-        <AuthInput
-          name="code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="123456"
-          required
-          autoFocus
-        />
+        <OtpInput value={otpCode} onChange={setOtpCode} disabled={busy} />
 
         {(err2fa || formError) && (
           <p className="px-1 text-xs text-red-500">{formError || getErrorMessage(error2fa)}</p>
@@ -365,7 +400,7 @@ function LoginPageInner() {
 
         <AuthGhostButton
           type="button"
-          onClick={() => { setStep("password"); preAuthTokenRef.current = null; setFormError(""); }}
+          onClick={() => { setStep("password"); preAuthTokenRef.current = null; setFormError(""); setOtpCode(""); }}
         >
           Back
         </AuthGhostButton>

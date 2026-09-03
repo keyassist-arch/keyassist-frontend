@@ -60,17 +60,17 @@ export default function AdminProductsPage() {
   return (
     <>
       <div className="space-y-6">
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Products</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-xl font-semibold text-shop-ink">Products</h1>
+            <p className="mt-1 text-sm text-shop-muted">
               {adminProducts?.length ?? 0} catalog items. Preview a product from any URL to see how it imports.
             </p>
           </div>
           <Link
             href="/admin/products/new"
             className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-            style={{ background: "#059669" }}
+            style={{ background: "var(--shop-primary)" }}
           >
             <Plus className="h-4 w-4" aria-hidden />
             Add product
@@ -80,17 +80,17 @@ export default function AdminProductsPage() {
         {notice?.ok && <SuccessState message={notice.text} />}
         {notice && !notice.ok && <ErrorState error={notice.text} title="Delete failed" />}
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Product preview</h2>
-          <p className="mt-1 text-xs text-gray-500">
+        <section className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-shop-ink">Product preview</h2>
+          <p className="mt-1 text-xs text-shop-muted">
             Preview a product from any URL. Nothing is saved to the catalog until you import it from the storefront.
           </p>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onScrapePreview}>
             <label htmlFor={previewUrlFieldId} className="min-w-0 flex-1 space-y-1 text-sm">
-              <span className="text-gray-500">Product URL</span>
+              <span className="text-shop-muted">Product URL</span>
               <input
                 id={previewUrlFieldId}
-                className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
+                className="w-full rounded-full border border-shop-border px-4 py-2.5 text-sm outline-none transition placeholder:text-shop-muted focus:border-shop-primary focus:ring-2 focus:ring-shop-primary/10"
                 value={previewUrl}
                 onChange={(e) => setPreviewUrl(e.target.value)}
                 placeholder="https://..."
@@ -98,7 +98,7 @@ export default function AdminProductsPage() {
             </label>
             <button
               type="submit"
-              className="rounded-full border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 shrink-0"
+              className="rounded-full border border-shop-border px-6 py-2.5 text-sm font-medium text-shop-ink transition hover:bg-(--background) disabled:opacity-50 shrink-0"
               disabled={scraping}
             >
               {scraping ? "Fetching…" : "Run preview"}
@@ -110,20 +110,20 @@ export default function AdminProductsPage() {
             </div>
           ) : null}
           {previewJson ? (
-            <pre className="mt-4 max-h-80 overflow-auto rounded-xl border border-gray-100 bg-gray-50 p-4 text-xs">
+            <pre className="mt-4 max-h-80 overflow-auto rounded-xl border border-shop-border bg-(--background) p-4 text-xs">
               {previewJson}
             </pre>
           ) : null}
         </section>
 
         {(adminProducts ?? []).length > 0 && (
-          <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">All catalog items</h2>
+          <section className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-shop-ink">All catalog items</h2>
             <div className="mt-4 space-y-2">
               {(adminProducts ?? []).map((product) => (
-                <div key={product.id} className="flex items-center gap-4 rounded-xl border border-gray-100 px-4 py-3 text-sm">
+                <div key={product.id} className="flex items-center gap-4 rounded-xl border border-shop-border px-4 py-3 text-sm">
                   <Link href={`/products/${product.slug ?? product.id}`} className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-(--background)">
                       {product.images?.[0] ? (
                         <img
                           src={product.images[0]}
@@ -131,24 +131,24 @@ export default function AdminProductsPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                        <div className="flex h-full w-full items-center justify-center text-xs text-shop-muted">
                           —
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-gray-900 hover:text-[#059669] transition-colors">{product.title}</p>
-                      <p className="truncate text-xs text-gray-400 font-mono">{product.id}</p>
+                      <p className="truncate font-medium text-shop-ink hover:text-shop-primary transition-colors">{product.title}</p>
+                      <p className="truncate text-xs text-shop-muted font-mono">{product.id}</p>
                     </div>
                   </Link>
                   {product.salePrice && (
-                    <span className="shrink-0 text-sm font-medium text-gray-700">
+                    <span className="shrink-0 text-sm font-medium text-shop-ink">
                       {product.currency} {product.salePrice}
                     </span>
                   )}
                   <Link
                     href={`/admin/products/${product.id}`}
-                    className="shrink-0 rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    className="shrink-0 rounded-full p-2 text-shop-muted transition hover:bg-(--background) hover:text-shop-ink"
                     aria-label={`Edit ${product.title}`}
                   >
                     <Pencil className="h-4 w-4" />
@@ -157,7 +157,7 @@ export default function AdminProductsPage() {
                     type="button"
                     onClick={() => setConfirmDelete({ id: product.id, title: product.title })}
                     disabled={deleting}
-                    className="shrink-0 rounded-full p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                    className="shrink-0 rounded-full p-2 text-shop-muted transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                     aria-label={`Delete ${product.title}`}
                   >
                     <Trash2 className="h-4 w-4" />

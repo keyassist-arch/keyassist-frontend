@@ -133,7 +133,7 @@ export function StickySearchBar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 24 }}
               transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-              className="fixed bottom-6 left-0 right-0 z-40 hidden justify-center px-4 md:flex lg:left-[84px]"
+              className="fixed bottom-6 left-0 right-0 z-40 hidden justify-center px-4 md:flex"
             >
               <form onSubmit={onSubmit} className="w-full max-w-xl">
                 <div

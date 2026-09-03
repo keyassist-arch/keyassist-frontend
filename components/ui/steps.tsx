@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 export function Steps({
   current,
@@ -8,40 +9,62 @@ export function Steps({
   steps: Array<{ label: string; href?: string }>;
 }) {
   return (
-    <nav aria-label="Checkout steps" className="flex flex-wrap gap-3">
+    <nav aria-label="Checkout steps" className="flex items-center">
       {steps.map((s, idx) => {
         const isActive = idx === current;
         const isDone = idx < current;
-        const common =
-          "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm transition dark:border-white/10";
-        const cls = isActive
-          ? "border-black bg-black text-white dark:border-white"
-          : isDone
-            ? "border-black/15 bg-black/5 text-black/80 dark:border-white/15 dark:bg-white/5 dark:text-white/80"
-            : "border-black/10 bg-white text-black/60 dark:border-white/10 dark:bg-neutral-950 dark:text-white/60";
 
-        const content = (
-          <>
-            <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${isDone ? "bg-black text-white" : "bg-black/5 text-black dark:bg-white/5 dark:text-white"}`}>
-              {isDone ? "✓" : idx + 1}
-            </span>
-            <span className="font-medium">{s.label}</span>
-          </>
+        const circle = (
+          <span
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold"
+            style={
+              isActive || isDone
+                ? { background: "var(--shop-primary)", color: "#FFFFFF" }
+                : { background: "#FFFFFF", color: "var(--shop-muted)", border: "1.5px solid var(--shop-border)" }
+            }
+          >
+            {isDone ? <Check className="h-3.5 w-3.5" aria-hidden /> : idx + 1}
+          </span>
+        );
+
+        const label = (
+          <span
+            className="text-sm"
+            style={
+              isActive
+                ? { color: "var(--shop-ink)", fontWeight: 700 }
+                : isDone
+                  ? { color: "var(--shop-ink)", fontWeight: 500 }
+                  : { color: "var(--shop-muted)", fontWeight: 500 }
+            }
+          >
+            {s.label}
+          </span>
         );
 
         return (
-          <div key={s.label} className={common + " " + cls}>
+          <span key={s.label} className="flex items-center">
             {s.href ? (
-              <Link href={s.href} className="flex items-center gap-2">
-                {content}
+              <Link href={s.href} className="flex items-center gap-2.5">
+                {circle}
+                {label}
               </Link>
             ) : (
-              content
+              <span className="flex items-center gap-2.5">
+                {circle}
+                {label}
+              </span>
             )}
-          </div>
+            {idx < steps.length - 1 && (
+              <span
+                className="mx-2.5 h-0.5 w-14 shrink-0"
+                style={{ background: isDone ? "var(--shop-primary)" : "var(--shop-border)" }}
+                aria-hidden
+              />
+            )}
+          </span>
         );
       })}
     </nav>
   );
 }
-

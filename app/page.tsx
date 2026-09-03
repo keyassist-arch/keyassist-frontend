@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { HomeShopHero } from "@/components/storefront/home-shop-hero";
-import { HomeCategoryGrid } from "@/components/storefront/home-category-grid";
-import { HomeBrandCarousel } from "@/components/storefront/home-brand-carousel";
+import { LogoStrip } from "@/components/storefront/logo-strip";
 import { HowItWorks } from "@/components/storefront/how-it-works";
+import { FeaturedProducts } from "@/components/storefront/featured-products";
+import { LandingCategories } from "@/components/storefront/landing-categories";
+import { WhyKeyAssist } from "@/components/storefront/why-key-assist";
+import { Testimonials } from "@/components/storefront/testimonials";
+import { LandingCtaBand } from "@/components/storefront/landing-cta-band";
 
 export const metadata: Metadata = {
   openGraph: {
@@ -23,9 +27,13 @@ export default function HomePage() {
   return (
     <div className="w-full">
       <HomeShopHero />
+      <LogoStrip />
       <HowItWorks />
-      <HomeCategoryGrid />
-      <HomeBrandCarousel />
+      <FeaturedProducts />
+      <LandingCategories />
+      <WhyKeyAssist />
+      <Testimonials />
+      <LandingCtaBand />
     </div>
   );
 }

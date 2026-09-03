@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "static.nike.com", pathname: "/**" },
       { protocol: "https", hostname: "static.zara.net", pathname: "/**" },
       { protocol: "https", hostname: "cdn.simpleicons.org", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
     ],
   },
 };
