@@ -87,19 +87,19 @@ export default function DashboardHomePage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+          <p className="text-xs font-semibold uppercase tracking-widest text-shop-muted">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-shop-ink">
             {firstName ? `Hey, ${firstName} 👋` : "Overview"}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-shop-muted">
             Here&apos;s a snapshot of your account activity.
           </p>
         </div>
         <Link
           href="/shop"
-          className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-[#059669]/40 hover:text-[#059669]"
+          className="inline-flex items-center gap-2 rounded-full border border-shop-border bg-white px-4 py-2 text-sm font-medium text-shop-ink shadow-sm transition hover:border-shop-accent/40 hover:text-shop-primary"
         >
           <ShoppingBag className="h-4 w-4" aria-hidden />
           Browse shop
@@ -109,9 +109,9 @@ export default function DashboardHomePage() {
       {/* Metric cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metricCards.map((m) => (
-          <article key={m.label} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
+          <article key={m.label} className="rounded-[20px] border border-shop-border bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{m.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-shop-muted">{m.label}</p>
               <span
                 className="flex h-9 w-9 items-center justify-center rounded-xl"
                 style={{ background: m.bg }}
@@ -119,22 +119,22 @@ export default function DashboardHomePage() {
                 <m.Icon className="h-[18px] w-[18px]" style={{ color: m.color }} aria-hidden />
               </span>
             </div>
-            <p className="mt-4 text-3xl font-bold tabular-nums text-gray-900">{m.value}</p>
-            <p className="mt-1 text-xs text-gray-400">{m.sub}</p>
+            <p className="mt-4 text-3xl font-bold tabular-nums text-shop-ink">{m.value}</p>
+            <p className="mt-1 text-xs text-shop-muted">{m.sub}</p>
           </article>
         ))}
       </div>
 
       {/* Recent orders */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-black/[0.06] px-6 py-4">
+      <div className="rounded-[20px] border border-shop-border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-shop-border px-6 py-4">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Recent orders</h2>
-            <p className="mt-0.5 text-xs text-gray-400">Your 5 most recent purchases</p>
+            <h2 className="text-base font-semibold text-shop-ink">Recent orders</h2>
+            <p className="mt-0.5 text-xs text-shop-muted">Your 5 most recent purchases</p>
           </div>
           <Link
             href="/dashboard/orders"
-            className="inline-flex items-center gap-1 text-sm font-medium text-[#059669] transition hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-shop-primary transition hover:underline"
           >
             View all <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
@@ -142,13 +142,13 @@ export default function DashboardHomePage() {
 
         <div className="p-4">
           {recent.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-black/10 bg-gray-50/60 py-10 text-center">
-              <Package className="mx-auto h-8 w-8 text-gray-300" aria-hidden />
-              <p className="mt-3 text-sm font-medium text-gray-500">No orders yet</p>
-              <p className="mt-1 text-xs text-gray-400">Your orders will show up here once you place one.</p>
+            <div className="rounded-xl border border-dashed border-shop-border bg-(--background)/60 py-10 text-center">
+              <Package className="mx-auto h-8 w-8 text-shop-muted/60" aria-hidden />
+              <p className="mt-3 text-sm font-medium text-shop-muted">No orders yet</p>
+              <p className="mt-1 text-xs text-shop-muted">Your orders will show up here once you place one.</p>
               <Link
                 href="/shop"
-                className="mt-4 inline-flex items-center gap-1 rounded-full bg-[#059669] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#047857]"
+                className="mt-4 inline-flex items-center gap-1 rounded-full bg-shop-primary px-5 py-2 text-sm font-medium text-white transition hover:bg-shop-primary-hover"
               >
                 Start shopping <ArrowRight className="h-3.5 w-3.5" />
               </Link>

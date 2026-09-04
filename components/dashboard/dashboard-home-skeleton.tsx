@@ -16,7 +16,7 @@ export function DashboardHomeSkeleton() {
       {/* Metric cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
+          <div key={i} className="rounded-2xl border border-shop-border bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-9 w-9 rounded-xl" />
@@ -28,8 +28,8 @@ export function DashboardHomeSkeleton() {
       </div>
 
       {/* Recent orders */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-black/[0.06] px-6 py-4">
+      <div className="rounded-2xl border border-shop-border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-shop-border px-6 py-4">
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-3 w-40" />
@@ -38,7 +38,7 @@ export function DashboardHomeSkeleton() {
         </div>
         <div className="space-y-2 p-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-2xl border border-black/[0.07] p-4">
+            <div key={i} className="flex items-center gap-4 rounded-2xl border border-shop-border p-4">
               <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className="h-4 w-40" />

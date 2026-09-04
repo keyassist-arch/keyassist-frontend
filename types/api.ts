@@ -1,14 +1,12 @@
 /** NestJS unified-commerce API shapes (see integration guide). */
 
 import type { ProductAttribute } from "./product-detail";
-import type { WannaBuyItemStatus } from "./index";
 
 export type JwtRole = "USER" | "ADMIN_SUPER" | "ADMIN_STAFF";
 
 /** Screens an ADMIN_STAFF user may access. Ignored for ADMIN_SUPER (implicit all-access). */
 export type AdminPermission =
   | "ORDERS"
-  | "BATCHES"
   | "PRODUCTS"
   | "REFUNDS"
   | "ISSUES"
@@ -248,7 +246,8 @@ export type ProductSource =
   | "etsy"
   | "reebelo"
   | "walmart"
-  | "backmarket";
+  | "backmarket"
+  | "keyassist";
 
 /** One variant dimension; `variantSelection` keys must match `name`. */
 export interface ApiProductVariantDimension {
@@ -332,7 +331,47 @@ export interface ApiProduct {
   attributes?: ProductAttribute[];
   compliance?: string[];
   whatsInTheBox?: string[];
+  /** FK to a category, null = uncategorized. */
+  categoryId?: string | null;
 }
+
+/** Response from `POST /admin/uploads` — the uploaded image's storage key and public URL. */
+export interface UploadedProductImage {
+  key: string;
+  url: string;
+}
+
+export interface AdminProductVariantRequest {
+  name: string;
+  options: string[];
+}
+
+export interface AdminProductConfigurationPriceRequest {
+  label: string;
+  originalPrice: string;
+  sku?: string;
+  variantSelections?: Record<string, string>;
+  available?: boolean;
+  stockQuantity?: number;
+}
+
+/** Body for `POST /admin/products` — hand-entered product, no scrape. */
+export interface AdminCreateProductRequest {
+  title: string;
+  description?: string;
+  brand?: string;
+  originalPrice: number;
+  images: string[];
+  variants?: AdminProductVariantRequest[];
+  configurationPrices?: AdminProductConfigurationPriceRequest[];
+  stockQuantity?: number;
+  categoryId?: string;
+  availability?: string;
+  compareAtPrice?: number;
+}
+
+/** Body for `PATCH /admin/products/:id` — same shape, all optional. */
+export type AdminUpdateProductRequest = Partial<AdminCreateProductRequest>;
 
 export type ImportJobStatus = "queued" | "processing" | "completed" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
 
@@ -487,10 +526,12 @@ export interface OrderResponse {
   marketplaceTax?: string | number;
   /** Estimated marketplace → warehouse shipping. */
   marketplaceShipping?: string | number;
-  /** Warehouse receiving and processing fee. */
+  /** Box / warehouse packaging & handling fee. */
   domesticHandling?: string | number;
   /** Nigeria import duty + VAT + customs clearing fee combined. */
   customsTotal?: string | number;
+  /** Optional Kingz cargo insurance (3% of item cost). "0.00" unless the customer opted in. */
+  insurance?: string | number;
   /** 2.5% exchange-rate buffer. */
   fxBuffer?: string | number;
   /** 6% operational risk buffer. */
@@ -525,16 +566,12 @@ export interface OrderUpdatedEvent {
   status: OrderStatus | string;
 }
 
-/** Socket.IO `wannaBuyItem.updated` event payload. */
-export interface WannaBuyItemUpdatedEvent {
-  itemId: string;
-  status: WannaBuyItemStatus | string;
-}
-
 export interface LandedCostInput {
   destination: LandedCostDestination;
   shippingService: LandedCostService;
   category?: LandedCostCategory;
+  /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+  insurance?: boolean;
 }
 
 export interface CreateOrderRequest {
@@ -617,6 +654,42 @@ export interface PatchAdminOrderRequest {
   trackingStatus?: string;
   /** Human-readable note shown to the customer on the tracking event (max 512 chars). */
   trackingMessage?: string;
+}
+
+export type ManualImportFulfillmentStatus = "pending" | "ordered" | "dismissed";
+
+/** A customer's manually-submitted product (auto-scrape failed) awaiting admin order placement. */
+export interface ManualImportRequestSummary {
+  id: string;
+  sourceUrl: string;
+  fulfillmentStatus: ManualImportFulfillmentStatus;
+  createdAt: string;
+  product: {
+    id: string;
+    slug: string | null;
+    title: string;
+    images: string[];
+    salePrice?: string;
+    currency?: string;
+  } | null;
+  requestedByUser: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  orderId: string | null;
+  dismissedAt: string | null;
+  dismissReason: string | null;
+}
+
+export interface AdminPlaceManualImportOrderRequest {
+  shippingAddress?: ShippingAddress;
+  landedCost: LandedCostInput;
+}
+
+export interface AdminDismissManualImportRequest {
+  reason?: string;
 }
 
 /** Append-only tracking event from `GET /orders/:id` → `tracking[]`. */
@@ -816,6 +889,8 @@ export type LandedCostQuoteRequest =
       weightLbs?: number;
       dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
       displayCurrency?: string;
+      /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+      insurance?: boolean;
     }
   | {
       productPriceUsd: number;
@@ -827,7 +902,19 @@ export type LandedCostQuoteRequest =
       weightLbs?: number;
       dimensions?: { lengthIn: number; widthIn: number; heightIn: number };
       displayCurrency?: string;
+      /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+      insurance?: boolean;
     };
+
+/** `POST /landed-cost/quote-cart` — quotes the current user's entire cart, not one line. */
+export interface LandedCostCartQuoteRequest {
+  destination: LandedCostDestination;
+  shippingService: LandedCostService;
+  category?: LandedCostCategory;
+  displayCurrency?: string;
+  /** Opt in to Kingz cargo insurance (3% of item cost). Lagos destinations only. */
+  insurance?: boolean;
+}
 
 export interface LandedCostQuoteResponse {
   marketplace?: string;
@@ -839,11 +926,14 @@ export interface LandedCostQuoteResponse {
   productSubtotalUsd: number;
   marketplaceTaxUsd: number;
   marketplaceShippingUsd: number;
+  /** Box / warehouse packaging & handling fee. */
   domesticHandlingUsd: number;
   boxHandlingFeeUsd?: number;
   cargoInsuranceUsd?: number;
   internationalShippingUsd: number;
   importAndDeliveryUsd?: number;
+  /** Optional cargo insurance (3% of item cost, Lagos only). 0 unless opted in. */
+  insuranceUsd?: number;
   customsDutyUsd: number;
   customsVatUsd: number;
   customsClearingFeeUsd: number;

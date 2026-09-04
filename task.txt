@@ -1,4 +1,0 @@
-https://www.kingzlogistics.com/quote - do background scrape to calculate shipping prices
-add forms on the admin to upload digital products
-add skeleton loaders for the product description
-add logout confirmation ( also confirm important actions )

@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { loginUrl, registerUrl } from "@/lib/auth-redirect";
 import { ClipboardEvent, FormEvent, useEffect, useId, useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
-import { useCart } from "@/context/cart-context";
+import { Menu, X, ShoppingBag } from "lucide-react";
 import { siteContext } from "@/lib/site-context";
 import { STORE_NAV_LINKS } from "@/lib/store-nav-links";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loggedOut } from "@/store/slices/authSlice";
 import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
-import { IconCart, IconUser } from "@/components/storefront/header-icons";
+import { useCart } from "@/context/cart-context";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
+import { IconUser } from "@/components/storefront/header-icons";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 
 function looksLikeUrl(v: string) {
@@ -37,7 +37,7 @@ function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount:
         <IconUser className="h-[18px] w-[18px]" />
       </Link>
       <OpenCartTrigger className={iconBtn} aria-label={cartLabel} title="Cart">
-        <IconCart className="h-[18px] w-[18px]" />
+        <ShoppingBag className="h-[18px] w-[18px]" />
         {cartCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop-primary px-0.5 text-[9px] font-bold leading-none text-white">
             {cartCount > 99 ? "99+" : cartCount}
@@ -49,10 +49,10 @@ function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount:
 }
 
 export function StoreMainHeader() {
-  const { items: localItems } = useCart();
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.accessToken);
   const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
+  const { items: localCartItems } = useCart();
   const router = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState("");
@@ -74,12 +74,16 @@ export function StoreMainHeader() {
   }, [navOpen]);
 
   const cartCount = useMemo(() => {
-    if (token && apiCart?.items) return apiCart.items.length;
-    return localItems.length;
-  }, [token, apiCart, localItems.length]);
+    const items = token ? (apiCart?.items ?? []) : localCartItems;
+    return items.reduce((sum, i) => sum + i.quantity, 0);
+  }, [token, apiCart, localCartItems]);
 
   const cartLabel =
-    cartCount === 0 ? "Cart, empty" : cartCount === 1 ? "Cart, 1 item" : `Cart, ${cartCount} items`;
+    cartCount === 0
+      ? "Cart, empty"
+      : cartCount === 1
+        ? "Cart, 1 item"
+        : `Cart, ${cartCount} items`;
 
   const {
     triggerImport,
@@ -160,7 +164,7 @@ export function StoreMainHeader() {
 
           <div className="flex-1 lg:hidden" />
 
-          {/* Auth + cart */}
+          {/* Auth + Cart */}
           <div className="flex shrink-0 items-center gap-1">
             {token ? (
               <button

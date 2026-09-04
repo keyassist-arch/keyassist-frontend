@@ -15,6 +15,7 @@ import { isUuid } from "@/lib/uuid";
 import { useGetOrderQuery, useCancelOrderMutation } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
 import type { OrderStatus, OrderDisplaySummary } from "@/types/api";
 
@@ -32,34 +33,34 @@ function OrderTotals({
     return (
       <>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Product</span>
-          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.product), cur)}</span>
+          <span className="text-shop-muted">Product</span>
+          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.product), cur)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Import &amp; delivery</span>
-          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
+          <span className="text-shop-muted">Import &amp; delivery</span>
+          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Service fee</span>
-          <span className="font-medium text-gray-700">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
+          <span className="text-shop-muted">Service fee</span>
+          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
         </div>
         {Number(summary.discount) > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Discount</span>
+            <span className="text-shop-muted">Discount</span>
             <span className="font-medium text-emerald-600">−{formatApiMoney(Number(summary.discount), cur)}</span>
           </div>
         )}
-        <div className="flex justify-between border-t border-black/[0.06] pt-3 text-sm font-semibold">
-          <span className="text-gray-900">Total</span>
-          <span className="text-gray-900">{formatApiMoney(Number(summary.total), cur)}</span>
+        <div className="flex justify-between border-t border-shop-border pt-3 text-sm font-semibold">
+          <span className="text-shop-ink">Total</span>
+          <span className="text-shop-ink">{formatApiMoney(Number(summary.total), cur)}</span>
         </div>
       </>
     );
   }
   return (
-    <div className="flex justify-between border-t border-black/[0.06] pt-3 text-sm font-semibold">
-      <span className="text-gray-900">Total</span>
-      <span className="text-gray-900">{formatApiMoney(fallbackAmount, fallbackCurrency)}</span>
+    <div className="flex justify-between border-t border-shop-border pt-3 text-sm font-semibold">
+      <span className="text-shop-ink">Total</span>
+      <span className="text-shop-ink">{formatApiMoney(fallbackAmount, fallbackCurrency)}</span>
     </div>
   );
 }
@@ -108,9 +109,9 @@ function StatusJourney({ status }: { status: OrderStatus | string }) {
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
                     done
                       ? current
-                        ? "bg-[#059669] text-white ring-4 ring-[#059669]/20"
-                        : "bg-[#059669] text-white"
-                      : "bg-gray-100 text-gray-400"
+                        ? "bg-shop-primary text-white ring-4 ring-shop-primary/20"
+                        : "bg-shop-primary text-white"
+                      : "bg-(--background) text-shop-muted"
                   }`}
                 >
                   {done && !current ? (
@@ -121,7 +122,7 @@ function StatusJourney({ status }: { status: OrderStatus | string }) {
                 </span>
                 <span
                   className={`max-w-[72px] text-center text-[10px] leading-tight ${
-                    done ? "font-semibold text-gray-700" : "text-gray-400"
+                    done ? "font-semibold text-shop-ink" : "text-shop-muted"
                   }`}
                 >
                   {step.label}
@@ -129,7 +130,7 @@ function StatusJourney({ status }: { status: OrderStatus | string }) {
               </div>
               {i < JOURNEY.length - 1 && (
                 <div
-                  className={`mx-1 mb-5 h-0.5 w-10 sm:w-14 ${done && currentIndex > i ? "bg-[#059669]" : "bg-gray-100"}`}
+                  className={`mx-1 mb-5 h-0.5 w-10 sm:w-14 ${done && currentIndex > i ? "bg-shop-primary" : "bg-(--background)"}`}
                 />
               )}
             </div>
@@ -201,45 +202,45 @@ export default function DashboardOrderDetailPage() {
       {/* Back nav */}
       <Link
         href="/dashboard/orders"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-shop-muted transition hover:text-shop-ink"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Orders
       </Link>
 
       {/* Header card */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Order ID</p>
-            <p className="mt-1 break-all font-mono text-lg font-semibold text-gray-900">{order.id}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-shop-muted">Order ID</p>
+            <p className="mt-1 break-all font-mono text-lg font-semibold text-shop-ink">{order.id}</p>
           </div>
           <StatusBadge status={order.status} />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-black/[0.06] pt-4 text-sm">
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-shop-border pt-4 text-sm">
           <div>
-            <span className="text-gray-400">Total</span>
-            <span className="ml-2 font-semibold text-gray-900">{formatApiMoney(amount, currency)}</span>
+            <span className="text-shop-muted">Total</span>
+            <span className="ml-2 font-semibold text-shop-ink">{formatApiMoney(amount, currency)}</span>
           </div>
           <div>
-            <span className="text-gray-400">Items</span>
-            <span className="ml-2 font-semibold text-gray-900">
+            <span className="text-shop-muted">Items</span>
+            <span className="ml-2 font-semibold text-shop-ink">
               {order.items.length} line{order.items.length !== 1 ? "s" : ""}
             </span>
           </div>
           {order.payment?.provider && (
             <div>
-              <span className="text-gray-400">Payment</span>
-              <span className="ml-2 font-semibold text-gray-900 capitalize">{order.payment.provider}</span>
+              <span className="text-shop-muted">Payment</span>
+              <span className="ml-2 font-semibold text-shop-ink capitalize">{order.payment.provider}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Status journey */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
-        <h2 className="mb-5 text-sm font-semibold text-gray-900">Order status</h2>
+      <div className="rounded-2xl border border-shop-border bg-white p-5 shadow-sm">
+        <h2 className="mb-5 text-sm font-semibold text-shop-ink">Order status</h2>
         <StatusJourney status={order.status} />
       </div>
 
@@ -271,19 +272,19 @@ export default function DashboardOrderDetailPage() {
       )}
 
       {/* Items */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white shadow-sm">
-        <div className="flex items-center gap-2.5 border-b border-black/[0.06] px-6 py-4">
-          <Package className="h-4 w-4 text-gray-400" aria-hidden />
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-2xl border border-shop-border bg-white shadow-sm">
+        <div className="flex items-center gap-2.5 border-b border-shop-border px-6 py-4">
+          <Package className="h-4 w-4 text-shop-muted" aria-hidden />
+          <h2 className="text-sm font-semibold text-shop-ink">
             Items ({order.items.length})
           </h2>
         </div>
-        <ul className="divide-y divide-black/[0.06]">
+        <ul className="divide-y divide-shop-border">
           {order.items.map((item, idx) => {
             const lineTotal = orderLineTotal(item);
             return (
               <li key={`${item.title}-${idx}`} className="flex gap-4 p-5">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-(--background)">
                   {item.images?.[0] ? (
                     <Image
                       src={item.images[0]}
@@ -293,18 +294,18 @@ export default function DashboardOrderDetailPage() {
                       unoptimized
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-gray-300">
+                    <div className="flex h-full w-full items-center justify-center text-shop-muted/50">
                       <Package className="h-6 w-6" aria-hidden />
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 line-clamp-2">{item.title}</p>
-                  <p className="mt-1 text-sm text-gray-400">
+                  <p className="font-medium text-shop-ink line-clamp-2">{item.title}</p>
+                  <p className="mt-1 text-sm text-shop-muted">
                     {formatApiMoney(item.price, item.currency)} × {item.quantity}
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-shop-ink">
                   {formatApiMoney(lineTotal, item.currency)}
                 </p>
               </li>
@@ -313,14 +314,14 @@ export default function DashboardOrderDetailPage() {
         </ul>
 
         {/* Totals footer */}
-        <div className="space-y-2 border-t border-black/[0.06] px-6 py-4">
+        <div className="space-y-2 border-t border-shop-border px-6 py-4">
           <OrderTotals summary={order.displaySummary} fallbackAmount={amount} fallbackCurrency={currency} />
         </div>
 
         {/* Pricing breakdown accordion */}
         {order.pricingBreakdown && order.pricingBreakdown.length > 0 && (
-          <details className="border-t border-black/[0.06] px-6 py-3 text-xs text-gray-500">
-            <summary className="cursor-pointer select-none font-medium text-gray-600 hover:text-gray-900">
+          <details className="border-t border-shop-border px-6 py-3 text-xs text-shop-muted">
+            <summary className="cursor-pointer select-none font-medium text-shop-muted hover:text-shop-ink">
               Cost breakdown
             </summary>
             <ul className="mt-3 space-y-0.5 font-mono">
@@ -334,20 +335,20 @@ export default function DashboardOrderDetailPage() {
 
       {/* Payment */}
       {order.payment?.provider && (
-        <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
-            <CreditCard className="h-4 w-4 text-gray-400" aria-hidden />
-            <h2 className="text-sm font-semibold text-gray-900">Payment</h2>
+            <CreditCard className="h-4 w-4 text-shop-muted" aria-hidden />
+            <h2 className="text-sm font-semibold text-shop-ink">Payment</h2>
           </div>
           <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm">
             <div>
-              <p className="text-xs text-gray-400">Provider</p>
-              <p className="mt-0.5 font-medium capitalize text-gray-900">{order.payment.provider}</p>
+              <p className="text-xs text-shop-muted">Provider</p>
+              <p className="mt-0.5 font-medium capitalize text-shop-ink">{order.payment.provider}</p>
             </div>
             {order.payment.methodDetails?.checkoutId && (
               <div>
-                <p className="text-xs text-gray-400">Reference</p>
-                <p className="mt-0.5 break-all font-mono text-xs text-gray-600">
+                <p className="text-xs text-shop-muted">Reference</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-shop-muted">
                   {String(order.payment.methodDetails.checkoutId)}
                 </p>
               </div>
@@ -358,12 +359,12 @@ export default function DashboardOrderDetailPage() {
 
       {/* Shipping address */}
       {order.shippingAddress && (
-        <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
-            <MapPin className="h-4 w-4 text-gray-400" aria-hidden />
-            <h2 className="text-sm font-semibold text-gray-900">Shipping address</h2>
+            <MapPin className="h-4 w-4 text-shop-muted" aria-hidden />
+            <h2 className="text-sm font-semibold text-shop-ink">Shipping address</h2>
           </div>
-          <address className="mt-4 text-sm not-italic leading-relaxed text-gray-600">
+          <address className="mt-4 text-sm not-italic leading-relaxed text-shop-muted">
             {[
               order.shippingAddress.line1,
               order.shippingAddress.line2,
@@ -379,14 +380,14 @@ export default function DashboardOrderDetailPage() {
       )}
 
       {/* Tracking */}
-      <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <svg className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+          <svg className="h-4 w-4 text-shop-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
           </svg>
-          <h2 className="text-sm font-semibold text-gray-900">Tracking &amp; delivery</h2>
+          <h2 className="text-sm font-semibold text-shop-ink">Tracking &amp; delivery</h2>
         </div>
-        <p className="mt-1 text-xs text-gray-400">Carrier updates and fulfilment events.</p>
+        <p className="mt-1 text-xs text-shop-muted">Carrier updates and fulfilment events.</p>
         <div className="mt-5">
           <TrackingSection tracking={order.tracking} />
         </div>
@@ -403,39 +404,23 @@ export default function DashboardOrderDetailPage() {
       </div>
     </div>
 
-    {showCancelModal && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-          <h3 className="text-lg font-semibold text-gray-900">Cancel order</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Are you sure you want to cancel this order? This cannot be undone.
-          </p>
-          {cancelError && (
-            <div className="mt-3">
-              <ErrorState error={cancelError} title="Could not cancel order" />
-            </div>
-          )}
-          <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowCancelModal(false)}
-              disabled={cancelling}
-              className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              Keep order
-            </button>
-            <button
-              type="button"
-              onClick={onCancelOrder}
-              disabled={cancelling}
-              className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-            >
-              {cancelling ? "Cancelling…" : "Cancel order"}
-            </button>
-          </div>
+    <ConfirmModal
+      open={showCancelModal}
+      title="Cancel order"
+      description="Are you sure you want to cancel this order? This cannot be undone."
+      confirmLabel={cancelling ? "Cancelling…" : "Cancel order"}
+      confirmDisabled={cancelling}
+      cancelLabel="Keep order"
+      danger
+      onConfirm={onCancelOrder}
+      onCancel={() => setShowCancelModal(false)}
+    >
+      {cancelError && (
+        <div className="mt-3">
+          <ErrorState error={cancelError} title="Could not cancel order" />
         </div>
-      </div>
-    )}
+      )}
+    </ConfirmModal>
     </>
   );
 }

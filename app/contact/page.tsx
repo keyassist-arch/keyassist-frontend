@@ -6,7 +6,7 @@ import { InnerShell } from "@/components/layout/inner-shell";
 import { ContactForm } from "@/components/contact/contact-form";
 import { siteContext } from "@/lib/site-context";
 
-const SUPPORT_EMAIL = "help@unifiedcommerce.com";
+const SUPPORT_EMAIL = "contact@keyassistco.com";
 const SUPPORT_PHONE = "+1 (555) 010-0199";
 
 export const metadata: Metadata = {

@@ -16,7 +16,8 @@ export type Marketplace =
   | "Etsy"
   | "Reebelo"
   | "Walmart"
-  | "Back Market";
+  | "Back Market"
+  | "Key Assist";
 
 export interface ProductVariant {
   id: string;
@@ -87,77 +88,3 @@ export interface UserProfile {
   savedPaymentMethod: string;
 }
 
-// ── Wanna Buy List ───────────────────────────────────────────────────────────
-
-export type WannaBuyItemStatus =
-  | "pending"
-  | "quoted"
-  | "confirmed"
-  | "paid"
-  | "ordered"
-  | "cancelled"
-  | "expired";
-
-export type BatchStatus =
-  | "collecting"
-  | "processing"
-  | "placing_orders"
-  | "in_transit"
-  | "at_warehouse"
-  | "shipped"
-  | "delivered"
-  | "cancelled";
-
-export interface WannaBuyItem {
-  id: string;
-  userId: string;
-  batchId: string | null;
-  productUrl: string;
-  productTitle: string | null;
-  imageUrl: string | null;
-  marketplace: string | null;
-  variantSelection: Record<string, string> | null;
-  status: WannaBuyItemStatus;
-  scrapedPriceUsd: string | null;
-  adminPriceUsd: string | null;
-  priceEditNote: string | null;
-  taxAmountUsd: string | null;
-  platformFeeUsd: string | null;
-  kingzShippingUsd: string | null;
-  fxBufferUsd: string | null;
-  totalUsd: string | null;
-  totalNgn: string | null;
-  notifiedAt: string | null;
-  confirmedAt: string | null;
-  paidAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Batch {
-  id: string;
-  status: BatchStatus;
-  label: string | null;
-  processingStartedAt: string | null;
-  placingOrdersAt: string | null;
-  inTransitAt: string | null;
-  atWarehouseAt: string | null;
-  shippedAt: string | null;
-  deliveredAt: string | null;
-  items?: WannaBuyItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AddWannaBuyItemRequest {
-  productUrl: string;
-  variantSelection?: Record<string, string>;
-}
-
-export interface AdminQuoteRequest {
-  adminPriceUsd?: number;
-  priceEditNote?: string;
-  taxAmountUsd?: number;
-  kingzShippingUsd?: number;
-  notifyUser?: boolean;
-}

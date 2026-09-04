@@ -7,9 +7,12 @@ import { isTokenLoginResult } from "@/lib/auth-login-guards";
 import type {
   AddCartItemRequest,
   AdminUserResponse,
+  AdminCreateProductRequest,
+  AdminUpdateProductRequest,
   ApiProduct,
   CartResponse,
   Category,
+  UploadedProductImage,
   CreateAdminUserRequest,
   PatchAdminUserRequest,
   PaginatedApiProducts,
@@ -22,6 +25,7 @@ import type {
   ForgotPasswordResponse,
   InitializePaymentRequest,
   LandedCostQuoteRequest,
+  LandedCostCartQuoteRequest,
   LandedCostQuoteResponse,
   Login2faRequest,
   LoginRequest,
@@ -45,6 +49,10 @@ import type {
   PatchShippingRatesRequest,
   PendingPaymentResponse,
   PatchAdminOrderRequest,
+  ManualImportFulfillmentStatus,
+  ManualImportRequestSummary,
+  AdminPlaceManualImportOrderRequest,
+  AdminDismissManualImportRequest,
   PatchMeRequest,
   PaymentInitResponse,
   PaymentMethodsResponse,
@@ -83,12 +91,6 @@ import type {
   VerifyEmailResponse,
   TokenResponse,
 } from "@/types/api";
-import type {
-  WannaBuyItem,
-  Batch,
-  AddWannaBuyItemRequest,
-  AdminQuoteRequest,
-} from "@/types/index";
 
 async function postAuthJson<TBody>(
   url: string,
@@ -106,7 +108,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "WannaBuy", "Batches", "AdminUsers"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "AdminUsers", "AdminManualImports"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -468,6 +470,21 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["AdminOrders", "Orders"],
     }),
 
+    getAdminManualImports: builder.query<ManualImportRequestSummary[], ManualImportFulfillmentStatus | void>({
+      query: (status) => ({ url: `/admin/manual-imports?status=${status ?? "pending"}`, method: "GET" }),
+      providesTags: ["AdminManualImports"],
+    }),
+
+    placeAdminManualImportOrder: builder.mutation<OrderResponse, { id: string; body: AdminPlaceManualImportOrderRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/manual-imports/${id}/order`, method: "POST", body }),
+      invalidatesTags: ["AdminManualImports", "AdminOrders"],
+    }),
+
+    dismissAdminManualImport: builder.mutation<{ ok: boolean }, { id: string; body: AdminDismissManualImportRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/manual-imports/${id}/dismiss`, method: "POST", body }),
+      invalidatesTags: ["AdminManualImports"],
+    }),
+
     getAdminProducts: builder.query<ApiProduct[], void>({
       query: () => ({ url: "/admin/products", method: "GET" }),
       providesTags: ["AdminProducts"],
@@ -480,6 +497,24 @@ export const unifiedCommerceApi = createApi({
     deleteAdminProduct: builder.mutation<void, string>({
       query: (id) => ({ url: `/admin/products/${id}`, method: "DELETE" }),
       invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    createAdminProduct: builder.mutation<ApiProduct, AdminCreateProductRequest>({
+      query: (body) => ({ url: "/admin/products", method: "POST", body }),
+      invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    updateAdminProduct: builder.mutation<ApiProduct, { id: string; body: AdminUpdateProductRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/products/${id}`, method: "PATCH", body }),
+      invalidatesTags: ["AdminProducts", "CatalogProducts"],
+    }),
+
+    uploadProductImage: builder.mutation<UploadedProductImage, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return { url: "/admin/uploads", method: "POST", body: formData };
+      },
     }),
 
     /* ---------- Admin team (ADMIN_SUPER only) ---------- */
@@ -589,9 +624,14 @@ export const unifiedCommerceApi = createApi({
       query: (body) => ({ url: "/shipping/quote", method: "POST", body }),
     }),
 
-    /* ---------- Landed cost quote (public) — use for checkout ---------- */
+    /* ---------- Landed cost quote (public) — single line, e.g. a PDP estimate ---------- */
     getLandedCostQuote: builder.mutation<LandedCostQuoteResponse, LandedCostQuoteRequest>({
       query: (body) => ({ url: "/landed-cost/quote", method: "POST", body }),
+    }),
+
+    /* ---------- Landed cost quote (auth) — the whole cart, for checkout ---------- */
+    getLandedCostCartQuote: builder.mutation<LandedCostQuoteResponse, LandedCostCartQuoteRequest>({
+      query: (body) => ({ url: "/landed-cost/quote-cart", method: "POST", body }),
     }),
 
     /* ---------- User reconciliation ---------- */
@@ -727,41 +767,6 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["PaymentMethods"],
     }),
 
-    // ── Wanna Buy List (user) ─────────────────────────────────────────────────
-    addWannaBuyItem: builder.mutation<WannaBuyItem, AddWannaBuyItemRequest>({
-      query: (body) => ({ url: "/wanna-buy", method: "POST", body }),
-      invalidatesTags: ["WannaBuy"],
-    }),
-    getWannaBuyItems: builder.query<WannaBuyItem[], void>({
-      query: () => "/wanna-buy",
-      providesTags: ["WannaBuy"],
-    }),
-    payWannaBuyItem: builder.mutation<OrderResponse, string>({
-      query: (id) => ({ url: `/wanna-buy/${id}/pay`, method: "POST" }),
-      invalidatesTags: ["WannaBuy", "Orders"],
-    }),
-
-    // ── Wanna Buy List (admin) ────────────────────────────────────────────────
-    getAdminBatches: builder.query<Batch[], void>({
-      query: () => "/admin/batches",
-      providesTags: ["Batches"],
-    }),
-    createAdminBatch: builder.mutation<Batch, { label?: string }>({
-      query: (body) => ({ url: "/admin/batches", method: "POST", body }),
-      invalidatesTags: ["Batches"],
-    }),
-    patchAdminBatchStatus: builder.mutation<Batch, { id: string; status: string }>({
-      query: ({ id, status }) => ({ url: `/admin/batches/${id}/status`, method: "PATCH", body: { status } }),
-      invalidatesTags: ["Batches"],
-    }),
-    getAdminBatchItems: builder.query<WannaBuyItem[], string>({
-      query: (batchId) => `/admin/batches/${batchId}/items`,
-      providesTags: (_r, _e, batchId) => [{ type: "Batches", id: batchId }],
-    }),
-    patchAdminWannaBuyQuote: builder.mutation<WannaBuyItem, { id: string; body: AdminQuoteRequest }>({
-      query: ({ id, body }) => ({ url: `/admin/wanna-buy/${id}/quote`, method: "PATCH", body }),
-      invalidatesTags: ["Batches", "WannaBuy"],
-    }),
   }),
 });
 
@@ -814,9 +819,15 @@ export const {
   useCapturePaypalMutation,
   useGetAdminOrdersQuery,
   usePatchAdminOrderMutation,
+  useGetAdminManualImportsQuery,
+  usePlaceAdminManualImportOrderMutation,
+  useDismissAdminManualImportMutation,
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,
   useDeleteAdminProductMutation,
+  useCreateAdminProductMutation,
+  useUpdateAdminProductMutation,
+  useUploadProductImageMutation,
   useGetAdminUsersQuery,
   useCreateAdminUserMutation,
   usePatchAdminUserMutation,
@@ -837,6 +848,7 @@ export const {
   useGetShippingQuoteMutation,
   // Landed cost quote
   useGetLandedCostQuoteMutation,
+  useGetLandedCostCartQuoteMutation,
   // User reconciliation
   useCreatePriceDisputeMutation,
   useCreateUserIssueMutation,
@@ -861,13 +873,4 @@ export const {
   useConfirmPaypalVaultSetupMutation,
   useSetDefaultPaymentMethodMutation,
   useDeletePaymentMethodMutation,
-  // Wanna Buy List
-  useAddWannaBuyItemMutation,
-  useGetWannaBuyItemsQuery,
-  usePayWannaBuyItemMutation,
-  useGetAdminBatchesQuery,
-  useCreateAdminBatchMutation,
-  usePatchAdminBatchStatusMutation,
-  useGetAdminBatchItemsQuery,
-  usePatchAdminWannaBuyQuoteMutation,
 } = unifiedCommerceApi;

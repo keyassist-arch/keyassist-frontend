@@ -2,13 +2,14 @@
 
 import { useMemo, useState, type MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { loginUrl } from "@/lib/auth-redirect";
 import Image from "next/image";
 import { Heart } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
 import { useLocalSaves } from "@/context/saves-context";
 import { useCart } from "@/context/cart-context";
-import type { ProductVariant } from "@/types";
 import {
   useAddCartItemMutation,
   useGetCatalogProductsQuery,
@@ -23,10 +24,12 @@ import { isUuid } from "@/lib/uuid";
 import { productDetailPath } from "@/lib/product-detail-path";
 
 export default function SavesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const token = useAppSelector((s) => s.auth.accessToken);
   const { localSavedIds, toggleLocalSave, removeLocalSave } = useLocalSaves();
-  const { addItem, openCartDrawer } = useCart();
-  const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
+  const { openCartDrawer } = useCart();
+  const [addCartItem, { isLoading: addingToCart }] = useAddCartItemMutation();
   const [unsaveProduct] = useUnsaveProductMutation();
   const { data: serverSaves, isLoading: savesLoading } = useGetSavesQuery(undefined, { skip: !token });
   const { data: catalog, isLoading: catalogLoading } = useGetCatalogProductsQuery();
@@ -61,31 +64,27 @@ export default function SavesPage() {
     e.preventDefault();
     e.stopPropagation();
     setApiErr(null);
-    const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
-    if (token && isUuid(product.id)) {
-      try {
-        await addCartItem({
-          productId: product.id,
-          quantity: 1,
-          ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
-        }).unwrap();
-        openCartDrawer();
-      } catch (err) {
-        setApiErr(getErrorMessage(err));
-      }
+    if (!token) {
+      router.push(loginUrl(pathname));
       return;
     }
-    const selKey = product.variants.map((v) => `${v.name}:${v.value}`).sort().join("|");
-    const cartVariant: ProductVariant = {
-      id: selKey || "default",
-      name: "Selection",
-      value: product.variants.map((v) => `${v.name}: ${v.value}`).join(", "),
-    };
-    addItem(product, 1, cartVariant);
-    openCartDrawer();
+    if (!isUuid(product.id)) return;
+    const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
+    try {
+      await addCartItem({
+        productId: product.id,
+        quantity: 1,
+        ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
+      }).unwrap();
+      toast.success("Added to cart");
+      openCartDrawer();
+    } catch (err) {
+      setApiErr(getErrorMessage(err));
+    }
   };
 
   return (
+    <>
     <div className="mx-auto max-w-(--shop-layout-max) px-4 py-8 sm:px-8">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -156,10 +155,10 @@ export default function SavesPage() {
                       <button
                         type="button"
                         onClick={(e) => onAddToCart(p, e)}
-                        disabled={addingApi}
+                        disabled={addingToCart}
                         className="inline-flex items-center justify-center rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
                       >
-                        Add to cart
+                        Add to Cart
                       </button>
                       <button
                         type="button"
@@ -177,5 +176,6 @@ export default function SavesPage() {
         </section>
       )}
     </div>
+    </>
   );
 }

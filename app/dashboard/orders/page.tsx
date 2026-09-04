@@ -48,8 +48,8 @@ export default function DashboardOrdersPage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Orders</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold tracking-tight text-shop-ink">Orders</h1>
+          <p className="mt-1 text-sm text-shop-muted">
             {sorted.length > 0
               ? `${sorted.length} order${sorted.length !== 1 ? "s" : ""} placed`
               : "Track and manage your purchases"}
@@ -69,14 +69,14 @@ export default function DashboardOrdersPage() {
                 onClick={() => setActiveFilter(f.key)}
                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active
-                    ? "bg-[#059669] text-white shadow-sm"
-                    : "border border-black/10 bg-white text-gray-600 hover:border-[#059669]/30 hover:text-[#059669]"
+                    ? "bg-shop-primary text-white shadow-sm"
+                    : "border border-shop-border bg-white text-shop-muted hover:border-shop-primary/30 hover:text-shop-primary"
                 }`}
               >
                 {f.label}
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
-                    active ? "bg-white/20 text-white" : "bg-black/[0.06] text-gray-500"
+                    active ? "bg-white/20 text-white" : "bg-(--background) text-shop-muted"
                   }`}
                 >
                   {count}
@@ -89,12 +89,12 @@ export default function DashboardOrdersPage() {
 
       {/* Order list */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-black/10 bg-gray-50/60 py-14 text-center">
-          <Package className="mx-auto h-9 w-9 text-gray-300" aria-hidden />
-          <p className="mt-3 text-sm font-medium text-gray-500">
+        <div className="rounded-2xl border border-dashed border-shop-border bg-(--background)/60 py-14 text-center">
+          <Package className="mx-auto h-9 w-9 text-shop-muted/60" aria-hidden />
+          <p className="mt-3 text-sm font-medium text-shop-muted">
             {activeFilter === "all" ? "No orders yet" : `No ${FILTERS.find(f => f.key === activeFilter)?.label.toLowerCase()} orders`}
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-shop-muted">
             {activeFilter === "all"
               ? "Orders you place will appear here."
               : "Try a different filter above."}
@@ -102,7 +102,7 @@ export default function DashboardOrdersPage() {
           {activeFilter === "all" && (
             <Link
               href="/shop"
-              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#059669] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#047857]"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-shop-primary px-5 py-2 text-sm font-medium text-white transition hover:bg-shop-primary-hover"
             >
               Browse the shop
             </Link>

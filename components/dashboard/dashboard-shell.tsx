@@ -10,20 +10,22 @@ import {
   LogOut,
   AlertCircle,
   CreditCard,
-  Heart,
+  Menu,
+  X,
 } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { loggedOut } from "@/store/slices/authSlice";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+
+const NAV_DRAWER_MS = 300;
 
 const NAV = [
   { href: "/dashboard",                    label: "Overview",        icon: LayoutDashboard, end: true  },
   { href: "/dashboard/orders",             label: "Orders",          icon: Package,         end: false },
-  { href: "/dashboard/wanna-buy",          label: "Wanna Buy",       icon: Heart,           end: false },
   { href: "/dashboard/disputes",           label: "Disputes",        icon: AlertCircle,     end: false },
   { href: "/dashboard/profile",            label: "Profile",         icon: User,            end: false },
   { href: "/dashboard/payment-methods",    label: "Payment Methods", icon: CreditCard,      end: false },
@@ -49,17 +51,54 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: me } = useGetMeQuery(undefined, { skip: !token });
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [navPresent, setNavPresent] = useState(false);
+  const [navEnter, setNavEnter] = useState(false);
+
+  useEffect(() => {
+    if (navOpen) {
+      setNavPresent(true);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setNavEnter(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    setNavEnter(false);
+    const t = window.setTimeout(() => setNavPresent(false), NAV_DRAWER_MS);
+    return () => window.clearTimeout(t);
+  }, [navOpen]);
+
+  useEffect(() => {
+    if (!navPresent) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [navPresent]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
 
   if (!token) {
     return (
       <InnerShell>
-        <section className="mx-auto max-w-lg rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Sign in to your account</h1>
-          <p className="mt-2 text-sm text-gray-500">Manage orders, profile, and settings after signing in.</p>
+        <section className="mx-auto max-w-lg rounded-[20px] border border-shop-border bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-bold text-shop-ink">Sign in to your account</h1>
+          <p className="mt-2 text-sm text-shop-muted">Manage orders, profile, and settings after signing in.</p>
           <Link
             href="/auth/login"
-            className="mt-5 inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ background: "#059669" }}
+            className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-shop-primary py-3 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Sign in
           </Link>
@@ -78,24 +117,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-24 sm:px-8 lg:pb-8">
+      <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-8 sm:px-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
 
           {/* Sidebar */}
           <aside className="hidden shrink-0 lg:block lg:w-60">
             {/* User card */}
-            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-(--background) px-4 py-4">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ background: "#059669" }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-shop-primary text-sm font-bold text-white"
                 aria-hidden
               >
                 {ini}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
+                <p className="truncate text-sm font-semibold text-shop-ink">{displayName}</p>
                 {me?.email && (
-                  <p className="truncate text-[11px] text-gray-400">{me.email}</p>
+                  <p className="truncate text-[11px] text-shop-muted">{me.email}</p>
                 )}
               </div>
             </div>
@@ -110,13 +148,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     href={href}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                       active
-                        ? "text-[#059669]"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-shop-accent-soft text-shop-primary"
+                        : "text-shop-muted hover:bg-(--background) hover:text-shop-ink"
                     }`}
-                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-shop-primary" : "text-shop-muted"}`}
                       aria-hidden
                     />
                     {label}
@@ -129,7 +166,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setShowSignOutModal(true)}
-              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
+              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-shop-muted transition hover:bg-(--background) hover:text-shop-ink lg:mt-6"
             >
               <LogOut className="h-4 w-4 shrink-0" aria-hidden />
               Sign out
@@ -141,40 +178,104 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Mobile bottom tabs - outside wrapper to avoid stacking context issues */}
-      <nav
-        className="fixed  bottom-0 z-[9999] flex h-16 flex-col items-center justify-center border-t border-gray-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
-        aria-label="Dashboard navigation"
+      {/* Mobile hamburger trigger - outside wrapper to avoid stacking context issues */}
+      <button
+        type="button"
+        onClick={() => setNavOpen(true)}
+        className="fixed bottom-5 right-4 z-[9999] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition active:scale-95 lg:hidden"
+        style={{ background: "var(--shop-primary)" }}
+        aria-label="Open dashboard navigation"
       >
-        <div className="mx-auto flex w-full max-w-(--shop-layout-max) flex-1 items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
-          {NAV.map(({ href, label, icon: Icon, end }) => {
-            const active = navActive(pathname, href, end);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
-                  active ? "text-[#059669]" : "text-gray-500 hover:text-gray-900"
-                }`}
-                style={active ? { background: "var(--shop-accent-soft)" } : undefined}
-              >
-                <Icon className={`h-5 w-5 ${active ? "text-[#059669]" : "text-gray-400"}`} aria-hidden />
-                <span className="truncate">{label}</span>
-              </Link>
-            );
-          })}
+        <Menu className="h-6 w-6" aria-hidden />
+      </button>
 
+      {/* Mobile slide-in nav drawer */}
+      {navPresent && (
+        <div
+          className="fixed inset-0 z-[9999] flex justify-end lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-nav-title"
+        >
           <button
             type="button"
-            onClick={() => setShowSignOutModal(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium text-gray-500 transition hover:text-gray-900"
-            aria-label="Sign out"
+            className={`absolute inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-300 ease-out ${
+              navEnter ? "opacity-100" : "opacity-0"
+            }`}
+            aria-label="Close navigation"
+            onClick={() => setNavOpen(false)}
+          />
+          <aside
+            className={`relative flex h-full w-full max-w-[300px] flex-col overflow-y-auto bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out will-change-transform ${
+              navEnter ? "translate-x-0" : "translate-x-full"
+            }`}
           >
-            <LogOut className="h-5 w-5 text-gray-400" aria-hidden />
-            <span className="truncate">Sign out</span>
-          </button>
+            <div className="flex items-center justify-between gap-3 border-b border-shop-border px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-shop-primary text-sm font-bold text-white"
+                  aria-hidden
+                >
+                  {ini}
+                </span>
+                <div className="min-w-0">
+                  <p id="mobile-nav-title" className="truncate text-sm font-semibold text-shop-ink">
+                    {displayName}
+                  </p>
+                  {me?.email && (
+                    <p className="truncate text-[11px] text-shop-muted">{me.email}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNavOpen(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-shop-muted transition hover:bg-(--background) hover:text-shop-ink"
+                aria-label="Close navigation"
+              >
+                <X className="h-5 w-5" aria-hidden />
+              </button>
+            </div>
+
+            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Dashboard navigation">
+              {NAV.map(({ href, label, icon: Icon, end }) => {
+                const active = navActive(pathname, href, end);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition ${
+                      active
+                        ? "bg-shop-accent-soft text-shop-primary"
+                        : "text-shop-muted hover:bg-(--background) hover:text-shop-ink"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-4 w-4 shrink-0 ${active ? "text-shop-primary" : "text-shop-muted"}`}
+                      aria-hidden
+                    />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="shrink-0 border-t border-shop-border p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setNavOpen(false);
+                  setShowSignOutModal(true);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-shop-muted transition hover:bg-(--background) hover:text-shop-ink"
+              >
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+                Sign out
+              </button>
+            </div>
+          </aside>
         </div>
-      </nav>
+      )}
 
       <ConfirmModal
         open={showSignOutModal}

@@ -27,10 +27,13 @@ function missingBaseError(): { error: FetchBaseQueryError } {
 const rawFetch = apiBase
   ? fetchBaseQuery({
       baseUrl: apiBase,
-      prepareHeaders: (headers, { getState }) => {
+      prepareHeaders: (headers, { getState, endpoint }) => {
         const token = (getState() as StateWithAuth).auth.accessToken;
         if (token) headers.set("Authorization", `Bearer ${token}`);
-        headers.set("Content-Type", "application/json");
+        // Multipart uploads (FormData body) need the browser-set boundary — leave Content-Type unset.
+        if (endpoint !== "uploadProductImage") {
+          headers.set("Content-Type", "application/json");
+        }
         return headers;
       },
     })

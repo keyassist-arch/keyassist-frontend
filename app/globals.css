@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Key Assist design tokens (Shop-app-inspired) */
 :root {
@@ -14,14 +15,14 @@
   /* Text + borders */
   --shop-ink: #111827;
   --shop-muted: #6b7280; /* gray-500 */
-  --shop-border: color-mix(in srgb, #111827 10%, transparent);
+  --shop-border: #e7e4de;
 
   /* Brand */
   --shop-primary: #059669;
   --shop-primary-hover: #047857;
   --shop-accent: #10b981;
   --shop-accent-hover: #059669;
-  --shop-accent-soft: color-mix(in srgb, var(--shop-accent) 10%, white);
+  --shop-accent-soft: #ecfdf5;
   --shop-accent-2: #34d399;
   --shop-primary-gradient: linear-gradient(135deg, #059669, #34d399);
 
@@ -53,6 +54,7 @@
   --color-foreground: var(--foreground);
   --color-shop-ink: var(--shop-ink);
   --color-shop-muted: var(--shop-muted);
+  --color-shop-border: var(--shop-border);
   --color-shop-accent: var(--shop-accent);
   --color-shop-accent-hover: var(--shop-accent-hover);
   --color-shop-accent-soft: var(--shop-accent-soft);

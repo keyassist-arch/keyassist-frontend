@@ -15,7 +15,6 @@ import type { AdminPermission, AdminUserResponse } from "@/types/api";
 
 const PERMISSION_OPTIONS: { value: AdminPermission; label: string }[] = [
   { value: "ORDERS", label: "Orders" },
-  { value: "BATCHES", label: "Wanna Buy / Batches" },
   { value: "PRODUCTS", label: "Products" },
   { value: "REFUNDS", label: "Refunds" },
   { value: "ISSUES", label: "Issues" },

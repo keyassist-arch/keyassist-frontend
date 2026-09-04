@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Trash2 } from "lucide-react";
+import { ArrowRight, ChevronDown, ShieldCheck, Trash2 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useAppSelector } from "@/store/hooks";
 import {
@@ -11,49 +11,15 @@ import {
   useGetCartQuery,
   usePatchCartItemMutation,
 } from "@/store/routes/unified-commerce-api";
-import type { ApiProduct, CartItemResponse } from "@/types/api";
+import type { CartItemResponse } from "@/types/api";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { formatApiMoney } from "@/lib/format-price";
 import { loginUrl } from "@/lib/auth-redirect";
-import { normalizeImageUrls } from "@/lib/normalize-image-urls";
+import { lineBrand, lineCurrency, lineImage, linePrice, lineTitle, lineUnitPrice } from "@/lib/cart-item-helpers";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
-/* ── helpers ── */
-function lineUnitPrice(item: CartItemResponse): number {
-  const p = item.product;
-  if (p && "title" in p) {
-    const prod = p as ApiProduct;
-    return coerceNumber(prod.salePrice ?? prod.originalPrice ?? 0, 0);
-  }
-  return 0;
-}
-function linePrice(item: CartItemResponse) { return lineUnitPrice(item) * item.quantity; }
-function lineTitle(item: CartItemResponse): string {
-  const p = item.product;
-  return p && "title" in p ? (p as ApiProduct).title : "Product";
-}
-function lineCurrency(item: CartItemResponse): string {
-  const p = item.product;
-  return p && "currency" in p ? ((p as ApiProduct).currency ?? "USD") : "USD";
-}
-function lineImage(item: CartItemResponse): string {
-  const p = item.product;
-  if (p && "images" in p) {
-    const imgs = normalizeImageUrls((p as ApiProduct).images);
-    if (imgs.length) return imgs[0];
-  }
-  return "/product-placeholder.svg";
-}
-function lineBrand(item: CartItemResponse): string {
-  const p = item.product;
-  if (p && "brand" in p) {
-    const b = (p as ApiProduct).brand?.trim();
-    if (b) return b;
-  }
-  return "Store";
-}
 function fmtMoney(amount: number, currency: string) {
   return formatApiMoney(amount, currency);
 }
@@ -215,26 +181,29 @@ function PageItemCard({
 
   return (
     <>
-      <article className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+      <article className="flex gap-[18px] rounded-[18px] border border-shop-border bg-white p-[18px]">
         {/* Image */}
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50">
-          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1.5" sizes="96px" unoptimized />
+        <div className="relative h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[14px] bg-(--background)">
+          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-2" sizes="110px" unoptimized />
         </div>
 
         {/* Info */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="text-[11px] font-medium text-gray-400">{brand}</p>
-          <p className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">{title}</p>
-          {variantLine && <p className="text-xs text-gray-400">{variantLine}</p>}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
+            <p className="text-xs font-semibold text-shop-muted">{brand}</p>
+          </div>
+          <p className="line-clamp-2 text-base font-semibold leading-[1.3] text-shop-ink">{title}</p>
+          {variantLine && <p className="text-[13px] text-shop-muted">{variantLine}</p>}
 
-          <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
+          <div className="mt-auto flex flex-wrap items-center gap-4 pt-2">
             <ProductQuantityStepper
               value={quantity} onChange={onQuantityChange}
-              min={1} max={maxQty} disabled={disabled}
+              min={1} max={maxQty} disabled={disabled} size="sm"
             />
             <button
               type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
-              className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-red-500 disabled:opacity-40"
+              className="flex items-center gap-1.5 text-[13px] font-medium text-shop-muted transition hover:text-red-500 disabled:opacity-40"
               aria-label="Remove item"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -244,10 +213,10 @@ function PageItemCard({
         </div>
 
         {/* Price */}
-        <div className="flex shrink-0 flex-col items-end justify-between">
-          <p className="text-base font-bold tabular-nums text-gray-900">{fmtMoney(lineTotal, currency)}</p>
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <p className="text-lg font-bold tabular-nums text-shop-ink">{fmtMoney(lineTotal, currency)}</p>
           {quantity > 1 && (
-            <p className="text-[11px] tabular-nums text-gray-400">{fmtMoney(unitPrice, currency)} each</p>
+            <p className="text-[11px] tabular-nums text-shop-muted">{fmtMoney(unitPrice, currency)} each</p>
           )}
         </div>
       </article>
@@ -266,6 +235,20 @@ function PageItemCard({
   );
 }
 
+function CartReassurance() {
+  return (
+    <div
+      className="flex w-full items-center gap-2.5 rounded-[14px] p-4"
+      style={{ background: "var(--shop-accent-soft)" }}
+    >
+      <ShieldCheck className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--shop-primary)" }} aria-hidden />
+      <p className="text-[13px] font-medium" style={{ color: "var(--shop-primary)" }}>
+        Every item is verified for authenticity at our US hub before it ships to you.
+      </p>
+    </div>
+  );
+}
+
 function PageSummary({
   count, totals, currencyLabel, ctaDisabled, onCheckoutNavigate, signInHint,
 }: {
@@ -275,57 +258,79 @@ function PageSummary({
   const fmt = (n: number) => fmtMoney(n, currencyLabel);
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:sticky lg:top-24">
-      <h2 className="mb-4 text-base font-bold text-gray-900">Order summary</h2>
+    <div className="rounded-[20px] border border-shop-border bg-white p-[26px] lg:sticky lg:top-24">
+      <h2 className="text-lg font-bold text-shop-ink">Order summary</h2>
 
-      <div className="space-y-3 text-sm">
-        <div className="flex items-center justify-between text-gray-600">
+      <div className="mt-[18px] flex flex-col gap-3 text-sm">
+        <div className="flex items-center justify-between text-shop-muted">
           <span>Subtotal ({count} {count === 1 ? "item" : "items"})</span>
-          <span className="tabular-nums font-medium text-gray-900">{fmt(totals.subtotal)}</span>
+          <span className="tabular-nums font-semibold text-shop-ink">{fmt(totals.subtotal)}</span>
         </div>
         {totals.serviceCharge > 0 && (
-          <div className="flex items-center justify-between text-gray-600">
+          <div className="flex items-center justify-between text-shop-muted">
             <span>Service fee</span>
-            <span className="tabular-nums">{fmt(totals.serviceCharge)}</span>
+            <span className="tabular-nums font-semibold text-shop-ink">{fmt(totals.serviceCharge)}</span>
           </div>
         )}
-        {totals.discount > 0 && (
-          <div className="flex items-center justify-between text-green-600">
-            <span>Discount</span>
-            <span className="tabular-nums">-{fmt(totals.discount)}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-gray-900">
-          <span className="font-semibold">Total</span>
-          <span className="text-xl font-bold tabular-nums">{fmt(totals.total)}</span>
+        <div className="flex items-center justify-between text-shop-muted">
+          <span>Estimated air freight</span>
+          <span className="text-shop-muted">At checkout</span>
         </div>
+        {totals.discount > 0 && (
+          <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
+            <span>Discount</span>
+            <span className="tabular-nums font-semibold">-{fmt(totals.discount)}</span>
+          </div>
+        )}
       </div>
 
-      <p className="mt-3 text-xs text-gray-400">Taxes and shipping calculated at checkout.</p>
+      <div className="my-[18px] h-px w-full bg-shop-border" />
+
+      <div className="flex items-center justify-between">
+        <span className="text-[15px] font-bold text-shop-ink">Estimated total</span>
+        <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{fmt(totals.total)}</span>
+      </div>
+
+      <p className="mt-[18px] text-xs leading-[1.45] text-shop-muted">
+        Final duties are confirmed at checkout based on destination and category.
+      </p>
 
       <Link
         href="/checkout"
         aria-disabled={ctaDisabled}
-        className={`mt-5 block w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "pointer-events-none opacity-40" : ""}`}
-        style={{ background: "#059669" }}
+        className={`mt-[18px] flex w-full items-center justify-center gap-2 rounded-full py-[15px] text-center text-[15px] font-bold text-white transition hover:opacity-90 ${ctaDisabled ? "pointer-events-none opacity-40" : ""}`}
+        style={{ background: "var(--shop-primary)" }}
         onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
       >
         Proceed to checkout
+        <ArrowRight className="h-[17px] w-[17px]" aria-hidden />
       </Link>
 
       {signInHint && (
-        <p className="mt-4 text-center text-xs text-gray-400">
-          <Link href={loginUrl("/cart")} className="font-medium hover:underline" style={{ color: "#059669" }}>Sign in</Link>{" "}
+        <p className="mt-4 text-center text-xs text-shop-muted">
+          <Link href={loginUrl("/cart")} className="font-medium hover:underline" style={{ color: "var(--shop-primary)" }}>Sign in</Link>{" "}
           to sync your cart across devices
         </p>
       )}
 
       <Link
         href="/shop"
-        className="mt-3 block w-full rounded-full border border-gray-200 py-3 text-center text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+        className="mt-3 block w-full rounded-full border border-shop-border py-[13px] text-center text-sm font-semibold text-shop-ink transition hover:bg-black/5"
       >
         Continue shopping
       </Link>
+
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-2 pt-3">
+        {["Visa", "Mastercard", "Paystack", "PayPal"].map((label) => (
+          <span
+            key={label}
+            className="rounded-[7px] border border-shop-border px-[9px] py-[5px] text-[10px] font-semibold text-shop-muted"
+            style={{ background: "var(--background)" }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -381,26 +386,31 @@ function GuestCartSection({
 
   /* Page layout */
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-3">
+    <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+      <div className="flex flex-col gap-4">
         {items.length === 0 ? (
           <EmptyBag />
-        ) : items.map((item) => (
-          <PageItemCard
-            key={item.id}
-            imageSrc={item.image}
-            imageAlt={item.title}
-            brand={String(item.marketplace)}
-            title={item.title}
-            variantLine={item.variant ? `${item.variant.name}: ${item.variant.value}` : undefined}
-            unitPrice={item.price}
-            lineTotal={item.price * item.quantity}
-            currency={currency}
-            quantity={item.quantity}
-            onQuantityChange={(q) => updateQuantity(item.id, q)}
-            onRemove={() => removeItem(item.id)}
-          />
-        ))}
+        ) : (
+          <>
+            {items.map((item) => (
+              <PageItemCard
+                key={item.id}
+                imageSrc={item.image}
+                imageAlt={item.title}
+                brand={String(item.marketplace)}
+                title={item.title}
+                variantLine={item.variant ? `${item.variant.name}: ${item.variant.value}` : undefined}
+                unitPrice={item.price}
+                lineTotal={item.price * item.quantity}
+                currency={currency}
+                quantity={item.quantity}
+                onQuantityChange={(q) => updateQuantity(item.id, q)}
+                onRemove={() => removeItem(item.id)}
+              />
+            ))}
+            <CartReassurance />
+          </>
+        )}
       </div>
       <PageSummary
         count={items.reduce((sum, i) => sum + i.quantity, 0)}
@@ -467,33 +477,38 @@ function ApiCartSection({
 
   /* Page layout */
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-3">
+    <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+      <div className="flex flex-col gap-4">
         {items.length === 0 ? (
           <EmptyBag />
-        ) : items.map((item) => {
-          const unit = lineUnitPrice(item);
-          const variantLine = item.variantSelection
-            ? Object.entries(item.variantSelection).map(([k, v]) => `${k}: ${v}`).join(" · ")
-            : undefined;
-          return (
-            <PageItemCard
-              key={item.id}
-              imageSrc={lineImage(item)}
-              imageAlt={lineTitle(item)}
-              brand={lineBrand(item)}
-              title={lineTitle(item)}
-              variantLine={variantLine}
-              unitPrice={unit}
-              lineTotal={linePrice(item)}
-              currency={currency}
-              quantity={item.quantity}
-              onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
-              onRemove={() => onRemove(item.id)}
-              disabled={busy}
-            />
-          );
-        })}
+        ) : (
+          <>
+            {items.map((item) => {
+              const unit = lineUnitPrice(item);
+              const variantLine = item.variantSelection
+                ? Object.entries(item.variantSelection).map(([k, v]) => `${k}: ${v}`).join(" · ")
+                : undefined;
+              return (
+                <PageItemCard
+                  key={item.id}
+                  imageSrc={lineImage(item)}
+                  imageAlt={lineTitle(item)}
+                  brand={lineBrand(item)}
+                  title={lineTitle(item)}
+                  variantLine={variantLine}
+                  unitPrice={unit}
+                  lineTotal={linePrice(item)}
+                  currency={currency}
+                  quantity={item.quantity}
+                  onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
+                  onRemove={() => onRemove(item.id)}
+                  disabled={busy}
+                />
+              );
+            })}
+            <CartReassurance />
+          </>
+        )}
       </div>
       <PageSummary
         count={items.reduce((sum, i) => sum + i.quantity, 0)}
@@ -508,13 +523,13 @@ function ApiCartSection({
 
 function EmptyBag() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-20 text-center">
-      <p className="text-base font-semibold text-gray-900">Your bag is empty</p>
-      <p className="mt-1 text-sm text-gray-400">Browse the shop and add something you love.</p>
+    <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-shop-border bg-white py-20 text-center">
+      <p className="text-base font-semibold text-shop-ink">Your bag is empty</p>
+      <p className="mt-1 text-sm text-shop-muted">Browse the shop and add something you love.</p>
       <Link
         href="/shop"
         className="mt-5 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-        style={{ background: "#059669" }}
+        style={{ background: "var(--shop-primary)" }}
       >
         Browse shop
       </Link>

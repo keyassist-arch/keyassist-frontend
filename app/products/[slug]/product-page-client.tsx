@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Heart, Share2, Loader2 } from "lucide-react";
+import { Check, Heart, Share2, Loader2, ShoppingBag } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useCart } from "@/context/cart-context";
+import toast from "react-hot-toast";
 import { useAppSelector } from "@/store/hooks";
-import { useAddCartItemMutation, useAddWannaBuyItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useAddCartItemMutation, useGetProductQuery, useGetVariantPriceQuery } from "@/store/routes/unified-commerce-api";
+import { useCart } from "@/context/cart-context";
 import { loginUrl } from "@/lib/auth-redirect";
 import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { getVariantDimensions } from "@/lib/api-product-variants";
@@ -16,17 +17,13 @@ import { coerceNumber } from "@/lib/coerce-number";
 import { splitProductDescription } from "@/lib/product-description-sections";
 import { buildProductDetailZonesFromApi } from "@/lib/build-product-detail-zones";
 import { ProductDetailLayout } from "@/components/product/product-detail-layout";
-import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { RelatedProducts } from "@/components/product/related-products";
 import { ProductDetailSkeleton } from "@/components/product/product-detail-skeleton";
 import { formatApiMoney, pricesAreEqual } from "@/lib/format-price";
-import { marketplaceFromApiSource, retailerLabelFromSource } from "@/lib/product-source";
-import type { Product, ProductVariant } from "@/types";
+import { retailerLabelFromSource } from "@/lib/product-source";
 import type { ApiConfigurationPrice, ApiProduct } from "@/types/api";
 import type { ProductDetailCrumb, ProductDetailDescriptionBlock, ProductDetailVariantSlot } from "@/types/product-detail";
-
-const UNLIMITED_LOCAL_STOCK = 999_999;
 
 export function ProductPageClient() {
   const params = useParams<{ slug: string }>();
@@ -260,11 +257,9 @@ function formatFreshLine(api: ApiProduct): string | null {
 function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const router = useRouter();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { addItem } = useCart();
   const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
-  const [addCartItem, { isLoading: adding }] = useAddCartItemMutation();
-  const [addWannaBuyItem, { isLoading: buyingNow }] = useAddWannaBuyItemMutation();
-  const [quantity, setQuantity] = useState(1);
+  const [addCartItem, { isLoading: submitting }] = useAddCartItemMutation();
+  const { openCartDrawer } = useCart();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [formErr, setFormErr] = useState("");
   const [stockxFetchingPrice, setStockxFetchingPrice] = useState(false);
@@ -275,7 +270,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   useEffect(() => {
     if (!api) return;
     setSelection({});
-    setQuantity(1);
     setStockxLivePrice(null);
   }, [api]);
 
@@ -408,24 +402,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     }
     return basePrice;
   }, [applePriceRow, allAxesSelected, variantPriceData, activeConfigPrice, adapterBackMarket, api, currency, dimensions, selection]);
-
-  // Unit price for cart (follows displayed price)
-  const unitPrice = useMemo(() => {
-    if (variantPriceData) return coerceNumber(variantPriceData.price, 0);
-    if (applePriceRow?.salePrice != null) return coerceNumber(applePriceRow.salePrice, 0);
-    if (allAxesSelected && activeConfigPrice?.salePrice != null) {
-      return coerceNumber(activeConfigPrice.salePrice, 0);
-    }
-    if (adapterBackMarket) {
-      for (const dim of dimensions) {
-        const selected = selection[dim.name];
-        if (!selected) continue;
-        const parsed = parsePriceFromLabel(selected);
-        if (parsed) return coerceNumber(parsed, 0);
-      }
-    }
-    return coerceNumber(api?.salePrice ?? api?.originalPrice ?? 0, 0);
-  }, [variantPriceData, applePriceRow, allAxesSelected, activeConfigPrice, adapterBackMarket, api, dimensions, selection]);
 
   // Discount badge — prefer raw text from adapter
   const discountLabel = api?.discount?.trim() || null;
@@ -575,7 +551,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               return (
                 <button key={opt} type="button"
                   onClick={() => setSelection((prev) => ({ ...prev, [dim.name]: opt }))}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}
+                  className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition ${active ? "border-shop-ink bg-shop-ink text-white" : "border-shop-border bg-white text-gray-700 hover:border-gray-400"}`}
                   aria-pressed={active}
                 >{opt}</button>
               );
@@ -1181,8 +1157,21 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
       );
     }
 
+    if (parts.length === 0 && inStock) {
+      parts.push(
+        <span
+          key="in-stock"
+          className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-semibold"
+          style={{ background: "var(--shop-accent-soft)", color: "var(--shop-primary)" }}
+        >
+          <span className="h-2 w-2 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
+          In stock
+        </span>
+      );
+    }
+
     return parts.length ? <div className="flex flex-wrap gap-2">{parts}</div> : null;
-  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity]);
+  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity, inStock]);
 
   // ─── Price meta (below price row) ────────────────────────────────────────────
 
@@ -1312,45 +1301,27 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     });
   }
 
-  // ─── Add to cart handler ─────────────────────────────────────────────────────
+  // ─── Add to Cart handler ──────────────────────────────────────────────────────
 
   const onAdd = async () => {
-    setFormErr("");
-    if (!api) return false;
-    const qty = Math.max(1, quantity);
-    if (token) {
-      try {
-        await addCartItem({ productId: api.id, quantity: qty, ...(Object.keys(variantSelection).length ? { variantSelection } : {}) }).unwrap();
-      } catch (e) { setFormErr(getErrorMessage(e)); return false; }
-      return true;
-    }
-    const marketplace = marketplaceFromApiSource(api.source, api.brand);
-    const variantsForProduct: ProductVariant[] = Object.entries(variantSelection).map(([name, value], i) => ({ id: `v-${i}`, name, value }));
-    const lineItemProduct: Product = {
-      id: api.id, slug: api.slug ?? undefined, title: api.title, description: api.description ?? "",
-      price: unitPrice, currency, marketplace, category: api.brand?.trim() ?? retailer ?? "Catalog",
-      collection: "Store", images,
-      variants: variantsForProduct, stock: stockNum ?? UNLIMITED_LOCAL_STOCK,
-      deliveryEstimate: "Set at checkout", seller: api.brand?.trim() ?? retailer,
-    };
-    const selKey = Object.entries(variantSelection).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}:${v}`).join("|");
-    addItem(lineItemProduct, qty, { id: selKey || "default", name: "Selection", value: Object.entries(variantSelection).map(([k, v]) => `${k}: ${v}`).join(", ") });
-    return true;
-  };
-
-  const onBuyNow = async () => {
     setFormErr("");
     if (!api) return;
     if (!token) {
       router.push(loginUrl(`/products/${idOrSlug}`));
       return;
     }
+    if (dimensions.length > 0 && !allAxesSelected) {
+      setFormErr("Select all options above before adding to cart.");
+      return;
+    }
     try {
-      await addWannaBuyItem({
-        productUrl: listingUrl ?? `${window.location.origin}/products/${idOrSlug}`,
+      await addCartItem({
+        productId: api.id,
+        quantity: 1,
         ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
       }).unwrap();
-      router.push("/dashboard/wanna-buy");
+      toast.success("Added to cart");
+      openCartDrawer();
     } catch (e) {
       setFormErr(getErrorMessage(e));
     }
@@ -1394,42 +1365,39 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
         </div>
       ) : (
         <>
-          <button type="button" disabled={!inStock || adding} onClick={onAdd}
-            className="w-full rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: "#059669" }}>
-            {adding ? "Adding…" : "Add to cart"}
+          <button type="button" disabled={!inStock || submitting || (dimensions.length > 0 && !allAxesSelected)} onClick={onAdd}
+            className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-center text-[15px] font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ background: "var(--shop-primary)" }}>
+            <ShoppingBag className="h-[18px] w-[18px]" aria-hidden />
+            {submitting ? "Adding…" : `Add to cart${inStock ? ` · ${displayedPriceStr}` : ""}`}
           </button>
 
           {/* Apple: deep-link to carrier checkout when carrier + storage + colour are selected */}
           {adapterApple && appleCarrierUrl ? (
             <a href={appleCarrierUrl} target="_blank" rel="noopener noreferrer"
-              className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800">
+              className="block w-full rounded-full py-3.5 text-center text-[15px] font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--shop-ink)" }}>
               Buy on Apple
             </a>
-          ) : (
-            <button type="button" disabled={!inStock || buyingNow} onClick={onBuyNow}
-              className="block w-full rounded-full bg-gray-900 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-              {buyingNow ? "Submitting…" : "Buy now"}
-            </button>
-          )}
+          ) : null}
 
           <div className="flex gap-3">
-            <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-              <Heart className="h-4 w-4" /> Save
+            <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5">
+              <Heart className="h-[17px] w-[17px]" /> Save
             </button>
             {listingUrl ? (
               <a href={listingUrl}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5"
                 target="_blank" rel="noopener noreferrer">
-                <Share2 className="h-4 w-4" /> View on {retailer}
+                <Share2 className="h-[17px] w-[17px]" /> View on {retailer}
               </a>
             ) : (
-              <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-                <Share2 className="h-4 w-4" /> Share
+              <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-full border border-shop-border py-3.5 text-[15px] font-semibold text-shop-ink transition hover:bg-black/5">
+                <Share2 className="h-[17px] w-[17px]" /> Share
               </button>
             )}
           </div>
-          {!token ? <p className="w-full text-center text-xs text-gray-400">Sign in to sync this item with your account cart.</p> : null}
+          {!token ? <p className="w-full text-center text-xs text-shop-muted">Sign in to add this item to your cart.</p> : null}
         </>
       )}
     </>
@@ -1456,10 +1424,6 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
           availabilitySlot={availabilitySlot}
           variantSlots={variantSlots}
           configurationPricesSlot={configurationPricesSlot}
-          quantitySlot={
-            <ProductQuantityStepper value={quantity} onChange={(n) => setQuantity(n)} min={1}
-              max={stockNum != null ? Math.max(1, stockNum) : undefined} disabled={!inStock} />
-          }
           actionsSlot={actionsSlot}
           metaLines={metaLines}
           detailZones={detailZones}

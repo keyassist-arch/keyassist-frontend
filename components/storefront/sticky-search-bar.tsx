@@ -133,7 +133,7 @@ export function StickySearchBar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 24 }}
               transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-              className="fixed bottom-6 left-0 right-0 z-40 hidden justify-center px-4 md:flex lg:left-[84px]"
+              className="fixed bottom-6 left-0 right-0 z-40 hidden justify-center px-4 md:flex"
             >
               <form onSubmit={onSubmit} className="w-full max-w-xl">
                 <div
@@ -181,7 +181,7 @@ export function StickySearchBar() {
               transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
               onClick={() => setMobileOpen(true)}
               className="fixed right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-[0_10px_36px_rgba(0,0,0,0.22)] md:hidden"
-              style={{ background: BRAND_COLOR, bottom: "calc(4.5rem + 1.5rem)" }}
+              style={{ background: BRAND_COLOR, bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
               aria-label="Open search"
             >
               <Search className="h-5 w-5" aria-hidden />

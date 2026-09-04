@@ -18,7 +18,7 @@ export function getEmailNotVerifiedPayload(error: unknown): {
   };
 }
 
-/** `POST /orders` or `POST /wanna-buy/:id/pay` when phone verification is required but missing (`403`). */
+/** `POST /orders` when phone verification is required but missing (`403`). */
 export function isPhoneVerificationRequiredError(error: unknown): boolean {
   const e = error as FetchBaseQueryError;
   if (e?.status !== 403 || !e.data || typeof e.data !== "object") return false;

@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, type MouseEvent } from "react";
-import { Heart, Star, ShoppingCart } from "lucide-react";
-import { useCart } from "@/context/cart-context";
+import toast from "react-hot-toast";
+import { Heart, Star, ShoppingBag } from "lucide-react";
 import { useLocalSaves } from "@/context/saves-context";
-import type { Product, ProductVariant } from "@/types";
+import { useCart } from "@/context/cart-context";
+import type { Product } from "@/types";
 import { useAppSelector } from "@/store/hooks";
 import {
   useAddCartItemMutation,
@@ -15,6 +17,7 @@ import {
   useUnsaveProductMutation,
 } from "@/store/routes/unified-commerce-api";
 import { productDetailPath } from "@/lib/product-detail-path";
+import { loginUrl } from "@/lib/auth-redirect";
 import { isUuid } from "@/lib/uuid";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { formatApiMoney } from "@/lib/format-price";
@@ -66,10 +69,12 @@ function StarRow({ filled, count }: { filled: number; count: number }) {
 }
 
 export function StoreProductCard({ product }: { product: Product }) {
-  const { addItem, openCartDrawer } = useCart();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toggleLocalSave, isSavedLocal, removeLocalSave } = useLocalSaves();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const [addCartItem, { isLoading: addingApi }] = useAddCartItemMutation();
+  const { openCartDrawer } = useCart();
+  const [addCartItem, { isLoading: adding }] = useAddCartItemMutation();
   const [saveProduct] = useSaveProductMutation();
   const [unsaveProduct] = useUnsaveProductMutation();
   const { data: saveStatus } = useGetSaveStatusQuery(product.id, { skip: !token || !isUuid(product.id) });
@@ -107,31 +112,27 @@ export function StoreProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
     setApiErr(null);
-    const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
-    if (token && isUuid(product.id)) {
-      try {
-        await addCartItem({
-          productId: product.id,
-          quantity: 1,
-          ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
-        }).unwrap();
-        openCartDrawer();
-      } catch (err) {
-        setApiErr(getErrorMessage(err));
-      }
+    if (!token) {
+      router.push(loginUrl(pathname));
       return;
     }
-    const selKey = product.variants.map((v) => `${v.name}:${v.value}`).sort().join("|");
-    const cartVariant: ProductVariant = {
-      id: selKey || "default",
-      name: "Selection",
-      value: product.variants.map((v) => `${v.name}: ${v.value}`).join(", "),
-    };
-    addItem(product, 1, cartVariant);
-    openCartDrawer();
+    if (!isUuid(product.id)) return;
+    const variantSelection = Object.fromEntries(product.variants.map((x) => [x.name, x.value]));
+    try {
+      await addCartItem({
+        productId: product.id,
+        quantity: 1,
+        ...(Object.keys(variantSelection).length ? { variantSelection } : {}),
+      }).unwrap();
+      toast.success("Added to cart");
+      openCartDrawer();
+    } catch (err) {
+      setApiErr(getErrorMessage(err));
+    }
   };
 
   return (
+    <>
     <article className="group flex flex-col overflow-hidden rounded-2xl bg-white transition hover:shadow-lg">
       {/* Image area */}
       <Link href={pdpHref} className="relative block h-[180px] overflow-hidden bg-gray-50 sm:h-[200px]">
@@ -173,15 +174,15 @@ export function StoreProductCard({ product }: { product: Product }) {
           />
         </button>
 
-        {/* Floating cart button */}
+        {/* Floating add-to-cart button */}
         <button
           type="button"
           onClick={onAdd}
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
           aria-label="Add to cart"
-          disabled={addingApi}
+          disabled={adding}
         >
-          <ShoppingCart className="h-4 w-4 text-gray-700" aria-hidden />
+          <ShoppingBag className="h-4 w-4 text-gray-700" aria-hidden />
         </button>
       </Link>
 
@@ -212,5 +213,6 @@ export function StoreProductCard({ product }: { product: Product }) {
         {apiErr ? <p className="text-[11px] text-red-500">{apiErr}</p> : null}
       </div>
     </article>
+    </>
   );
 }

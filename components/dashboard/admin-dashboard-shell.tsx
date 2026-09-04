@@ -9,6 +9,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { loggedOut } from "@/store/slices/authSlice";
 import { LoadingState } from "@/components/feedback/query-state";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ADMIN_NAV, canSeeAdminSection } from "@/lib/admin-nav";
 
 function navActive(pathname: string, href: string, end: boolean) {
@@ -37,13 +38,12 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
   if (!token && !isLoginPage) {
     return (
       <InnerShell>
-        <section className="mx-auto max-w-lg rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Admin sign in</h1>
-          <p className="mt-2 text-sm text-gray-500">Sign in with a staff account to access the admin panel.</p>
+        <section className="mx-auto max-w-lg rounded-[20px] border border-shop-border bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-bold text-shop-ink">Admin sign in</h1>
+          <p className="mt-2 text-sm text-shop-muted">Sign in with a staff account to access the admin panel.</p>
           <Link
             href="/admin/login"
-            className="mt-5 inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ background: "#059669" }}
+            className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-shop-primary py-3 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Sign in
           </Link>
@@ -63,14 +63,14 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
   if (!isAdmin && !isLoginPage) {
     return (
       <InnerShell>
-        <section className="mx-auto max-w-lg rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Access denied</h1>
-          <p className="mt-2 text-sm text-gray-500">
+        <section className="mx-auto max-w-lg rounded-[20px] border border-shop-border bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-bold text-shop-ink">Access denied</h1>
+          <p className="mt-2 text-sm text-shop-muted">
             This page is only available to admin accounts.
           </p>
           <Link
             href="/dashboard"
-            className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-shop-border py-3 text-sm font-medium text-shop-ink transition hover:bg-(--background)"
           >
             Back to account
           </Link>
@@ -88,29 +88,16 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
     router.push("/");
   };
 
-  const signOutModal = showSignOutModal && (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">Sign out</h3>
-        <p className="mt-2 text-sm text-gray-500">Are you sure you want to sign out of the admin panel?</p>
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setShowSignOutModal(false)}
-            className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => { setShowSignOutModal(false); onSignOut(); }}
-            className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    </div>
+  const signOutModal = (
+    <ConfirmModal
+      open={showSignOutModal}
+      title="Sign out"
+      description="Are you sure you want to sign out of the admin panel?"
+      confirmLabel="Sign out"
+      danger
+      onConfirm={() => { setShowSignOutModal(false); onSignOut(); }}
+      onCancel={() => setShowSignOutModal(false)}
+    />
   );
 
   if (isLoginPage) {
@@ -122,17 +109,16 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
       <div className="mx-auto w-full max-w-(--shop-layout-max) px-4 py-8 pb-24 sm:px-8 lg:pb-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
           <aside className="hidden shrink-0 lg:block lg:w-60">
-            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-(--background) px-4 py-4">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ background: "#059669" }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-shop-primary text-sm font-bold text-white"
                 aria-hidden
               >
                 {ini}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
-                <p className="truncate text-[11px] text-gray-400">
+                <p className="truncate text-sm font-semibold text-shop-ink">{displayName}</p>
+                <p className="truncate text-[11px] text-shop-muted">
                   {me?.role === "ADMIN_SUPER" ? "Super admin" : "Staff"}
                 </p>
               </div>
@@ -147,13 +133,12 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                     href={href}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                       active
-                        ? "text-[#059669]"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-shop-accent-soft text-shop-primary"
+                        : "text-shop-muted hover:bg-(--background) hover:text-shop-ink"
                     }`}
-                    style={active ? { background: "var(--shop-accent-soft)" } : undefined}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${active ? "text-[#059669]" : "text-gray-400"}`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-shop-primary" : "text-shop-muted"}`}
                       aria-hidden
                     />
                     {label}
@@ -165,7 +150,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={() => setShowSignOutModal(true)}
-              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 lg:mt-6"
+              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-shop-muted transition hover:bg-(--background) hover:text-shop-ink lg:mt-6"
             >
               <LogOut className="h-4 w-4 shrink-0" aria-hidden />
               Sign out
@@ -177,7 +162,7 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
       </div>
 
       <nav
-        className="fixed bottom-0 z-[9999] flex h-16 flex-col items-center justify-center border-t border-gray-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
+        className="fixed bottom-0 z-[9999] flex h-16 flex-col items-center justify-center border-t border-shop-border bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur lg:hidden"
         aria-label="Admin navigation"
       >
         <div className="mx-auto flex w-full max-w-(--shop-layout-max) flex-1 items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)] pt-2">
@@ -188,11 +173,10 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
                 key={href}
                 href={href}
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium transition ${
-                  active ? "text-[#059669]" : "text-gray-500 hover:text-gray-900"
+                  active ? "bg-shop-accent-soft text-shop-primary" : "text-shop-muted hover:text-shop-ink"
                 }`}
-                style={active ? { background: "var(--shop-accent-soft)" } : undefined}
               >
-                <Icon className={`h-5 w-5 ${active ? "text-[#059669]" : "text-gray-400"}`} aria-hidden />
+                <Icon className={`h-5 w-5 ${active ? "text-shop-primary" : "text-shop-muted"}`} aria-hidden />
                 <span className="truncate">{label}</span>
               </Link>
             );
@@ -201,10 +185,10 @@ export function AdminDashboardShell({ children }: { children: React.ReactNode })
           <button
             type="button"
             onClick={() => setShowSignOutModal(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium text-gray-500 transition hover:text-gray-900"
+            className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium text-shop-muted transition hover:text-shop-ink"
             aria-label="Sign out"
           >
-            <LogOut className="h-5 w-5 text-gray-400" aria-hidden />
+            <LogOut className="h-5 w-5 text-shop-muted" aria-hidden />
             <span className="truncate">Sign out</span>
           </button>
         </div>

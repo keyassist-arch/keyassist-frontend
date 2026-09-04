@@ -21,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 background: "var(--shop-white)",
                 color: "var(--shop-ink)",
                 border: "1px solid var(--shop-border)",
-                borderRadius: 0,
+                borderRadius: "1rem",
                 fontSize: "0.875rem",
                 boxShadow: "0 8px 24px rgba(26, 26, 26, 0.08)",
               },
