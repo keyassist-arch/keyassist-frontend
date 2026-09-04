@@ -896,24 +896,22 @@ export function CheckoutClient() {
                       {apiCurrency} {apiSubtotal.toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Service charge</span>
-                    <span className="font-medium tabular-nums">
-                      {apiCurrency} {apiServiceCharge.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Discount</span>
-                    <span className="font-medium tabular-nums">
-                      -{apiCurrency} {apiDiscount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Fees</span>
-                    <span className="font-medium tabular-nums">
-                      {apiCurrency} {apiFees.toFixed(2)}
-                    </span>
-                  </div>
+                  {apiServiceCharge > 0 && (
+                    <div className="flex items-center justify-between text-black/60">
+                      <span>Service fee</span>
+                      <span className="font-medium tabular-nums">
+                        {apiCurrency} {apiServiceCharge.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {apiDiscount > 0 && (
+                    <div className="flex items-center justify-between text-black/60">
+                      <span>Discount</span>
+                      <span className="font-medium tabular-nums text-emerald-600">
+                        -{apiCurrency} {apiDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between border-t border-black/10 pt-2 font-semibold">
                     <span>Total</span>
                     <span className="tabular-nums">

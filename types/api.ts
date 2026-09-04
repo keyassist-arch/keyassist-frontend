@@ -840,7 +840,10 @@ export interface LandedCostQuoteResponse {
   marketplaceTaxUsd: number;
   marketplaceShippingUsd: number;
   domesticHandlingUsd: number;
+  boxHandlingFeeUsd?: number;
+  cargoInsuranceUsd?: number;
   internationalShippingUsd: number;
+  importAndDeliveryUsd?: number;
   customsDutyUsd: number;
   customsVatUsd: number;
   customsClearingFeeUsd: number;

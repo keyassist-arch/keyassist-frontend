@@ -163,12 +163,16 @@ function DrawerFooter({
         <span className="text-sm font-bold tabular-nums text-shop-ink">{fmt(totals.subtotal)}</span>
       </div>
       <div className="mt-2 space-y-1 text-xs text-black/55">
-        <div className="flex items-center justify-between">
-          <span>Service charge</span><span>{fmt(totals.serviceCharge)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Discount</span><span>-{fmt(totals.discount)}</span>
-        </div>
+        {totals.serviceCharge > 0 && (
+          <div className="flex items-center justify-between">
+            <span>Service fee</span><span>{fmt(totals.serviceCharge)}</span>
+          </div>
+        )}
+        {totals.discount > 0 && (
+          <div className="flex items-center justify-between text-emerald-600">
+            <span>Discount</span><span>-{fmt(totals.discount)}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between border-t border-black/10 pt-1 font-semibold text-shop-ink">
           <span>Total</span><span>{fmt(totals.total)}</span>
         </div>
@@ -281,7 +285,7 @@ function PageSummary({
         </div>
         {totals.serviceCharge > 0 && (
           <div className="flex items-center justify-between text-gray-600">
-            <span>Service charge</span>
+            <span>Service fee</span>
             <span className="tabular-nums">{fmt(totals.serviceCharge)}</span>
           </div>
         )}
