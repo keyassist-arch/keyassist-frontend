@@ -928,7 +928,10 @@ export interface LandedCostQuoteResponse {
   marketplaceShippingUsd: number;
   /** Box / warehouse packaging & handling fee. */
   domesticHandlingUsd: number;
+  boxHandlingFeeUsd?: number;
+  cargoInsuranceUsd?: number;
   internationalShippingUsd: number;
+  importAndDeliveryUsd?: number;
   /** Optional cargo insurance (3% of item cost, Lagos only). 0 unless opted in. */
   insuranceUsd?: number;
   customsDutyUsd: number;

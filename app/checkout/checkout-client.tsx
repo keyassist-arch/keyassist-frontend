@@ -910,6 +910,7 @@ export function CheckoutClient() {
                     On-device only: USD {localSubtotal.toFixed(2)}
                   </p>
                 ) : null}
+
               </>
             )}
 

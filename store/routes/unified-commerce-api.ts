@@ -56,6 +56,7 @@ import type {
   PatchMeRequest,
   PaymentInitResponse,
   PaymentMethodsResponse,
+  PaymentProvider,
   PaypalCaptureRequest,
   SavedPaymentMethod,
   StripeSetupIntentResponse,
@@ -445,6 +446,14 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }, "Orders"],
     }),
 
+    verifyPayment: builder.mutation<
+      { success: boolean; status: OrderStatus; order: OrderResponse },
+      { orderId: string; provider?: PaymentProvider; sessionId?: string; reference?: string }
+    >({
+      query: (body) => ({ url: "/payments/verify", method: "POST", body }),
+      invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }, "Orders", "Cart"],
+    }),
+
     capturePaypal: builder.mutation<OrderResponse, PaypalCaptureRequest>({
       query: (body) => ({ url: "/payments/paypal/capture", method: "POST", body }),
       invalidatesTags: (_r, _e, arg) => [{ type: "Order", id: arg.orderId }, "Orders"],
@@ -806,6 +815,7 @@ export const {
   useCancelOrderMutation,
   useGetPaymentMethodsQuery,
   useInitializePaymentMutation,
+  useVerifyPaymentMutation,
   useCapturePaypalMutation,
   useGetAdminOrdersQuery,
   usePatchAdminOrderMutation,
