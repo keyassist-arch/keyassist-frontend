@@ -2,6 +2,7 @@
 
 import { ClipboardEvent, FormEvent, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Box, Globe, Link2, Plane, ReceiptText, ShieldCheck } from "lucide-react";
 import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
@@ -9,11 +10,11 @@ import { ImportFailedModal } from "@/components/ui/import-failed-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
 
 const MARKETPLACE_CHIPS = [
-  { label: "Amazon", bg: "#FFF3E0", color: "#B45200" },
-  { label: "Apple", bg: "#F2F2F4", color: "#1A1A1A" },
-  { label: "Nike", bg: "#F3F3F3", color: "#111111" },
-  { label: "GOAT", bg: "#E9F8EE", color: "#0A6528" },
-  { label: "StockX", bg: "#E6F4F7", color: "#006380" },
+  { label: "Amazon", url: "https://www.amazon.com", bg: "#FFF3E0", color: "#B45200" },
+  { label: "Apple", url: "https://www.apple.com", bg: "#F2F2F4", color: "#1A1A1A" },
+  { label: "Nike", url: "https://www.nike.com", bg: "#F3F3F3", color: "#111111" },
+  { label: "GOAT", url: "https://www.goat.com", bg: "#E9F8EE", color: "#0A6528" },
+  { label: "StockX", url: "https://www.stockx.com", bg: "#E6F4F7", color: "#006380" },
 ];
 
 const TRUST_ITEMS = [
@@ -166,17 +167,26 @@ export function HomeShopHero() {
 
           {/* Marketplace chips */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {MARKETPLACE_CHIPS.map(({ label, bg, color }) => (
-              <span
+            {MARKETPLACE_CHIPS.map(({ label, url, bg, color }) => (
+              <a
                 key={label}
-                className="inline-flex items-center gap-[7px] rounded-full border border-shop-border px-[15px] py-2 text-sm font-semibold"
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Shop on ${label} (opens in new tab)`}
+                className="inline-flex items-center gap-[7px] rounded-full border border-shop-border px-[15px] py-2 text-sm font-semibold transition hover:scale-105 hover:shadow-xs"
                 style={{ background: bg, color }}
               >
                 <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: color }} aria-hidden />
                 {label}
-              </span>
+              </a>
             ))}
-            <span className="text-sm font-medium text-shop-muted">+7 more</span>
+            <Link
+              href="/shop"
+              className="text-sm font-medium text-shop-muted transition hover:text-shop-ink hover:underline"
+            >
+              +7 more
+            </Link>
           </div>
 
           {/* Trust row */}

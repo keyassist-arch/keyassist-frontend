@@ -39,8 +39,8 @@ export function LandingCategories() {
           {CATEGORIES.map(({ name, imageUrl }) => (
             <Link
               key={name}
-              href="/shop"
-              className="relative flex h-[170px] w-full items-end overflow-hidden rounded-[18px] p-4"
+              href={`/shop?category=${encodeURIComponent(name)}`}
+              className="relative flex h-[170px] w-full items-end overflow-hidden rounded-[18px] p-4 transition hover:scale-[1.02]"
             >
               <Image src={imageUrl} alt="" fill sizes="(min-width: 1024px) 20vw, 50vw" className="object-cover" />
               <div

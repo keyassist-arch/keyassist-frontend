@@ -1,4 +1,13 @@
-const MARKETPLACES = ["amazon", "apple", "nike", "adidas", "zara", "ebay", "goat", "stockx"];
+const MARKETPLACES = [
+  { id: "amazon", label: "Amazon", url: "https://www.amazon.com" },
+  { id: "apple", label: "Apple", url: "https://www.apple.com" },
+  { id: "nike", label: "Nike", url: "https://www.nike.com" },
+  { id: "adidas", label: "Adidas", url: "https://www.adidas.com" },
+  { id: "zara", label: "Zara", url: "https://www.zara.com" },
+  { id: "ebay", label: "eBay", url: "https://www.ebay.com" },
+  { id: "goat", label: "GOAT", url: "https://www.goat.com" },
+  { id: "stockx", label: "StockX", url: "https://www.stockx.com" },
+];
 
 export function LogoStrip() {
   return (
@@ -11,10 +20,17 @@ export function LogoStrip() {
           SHOP FROM 12+ TRUSTED US MARKETPLACES
         </p>
         <div className="flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-4 sm:justify-between">
-          {MARKETPLACES.map((name) => (
-            <span key={name} className="text-[22px] font-bold" style={{ color: "#A8A29E" }}>
-              {name}
-            </span>
+          {MARKETPLACES.map(({ id, label, url }) => (
+            <a
+              key={id}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Shop on ${label} (opens in new tab)`}
+              className="text-[22px] font-bold text-[#A8A29E] transition hover:text-shop-ink hover:scale-105"
+            >
+              {id}
+            </a>
           ))}
         </div>
       </div>

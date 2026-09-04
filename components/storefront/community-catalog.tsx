@@ -203,6 +203,12 @@ function CommunityCatalogInner({
 }) {
   const searchParams = useSearchParams();
   const qRaw = searchParams.get("q")?.trim() ?? "";
+  const marketplaceParam =
+    searchParams.get("marketplace")?.trim() ||
+    searchParams.get("brand")?.trim() ||
+    searchParams.get("source")?.trim() ||
+    "";
+  const categoryParam = searchParams.get("category")?.trim() ?? "";
 
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedMarketplaces, setSelectedMarketplaces] = useState<Set<string>>(new Set());
@@ -210,8 +216,24 @@ function CommunityCatalogInner({
   const [sort, setSort] = useState<SortKey>("recommend");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const categories  = useMemo(() => [...new Set(products.map(p => p.category).filter(Boolean))].sort(), [products]);
-  const marketplaces = useMemo(() => [...new Set(products.map(p => p.marketplace).filter(Boolean))].sort(), [products]);
+  const categories = useMemo(() => [...new Set(products.map((p) => p.category).filter(Boolean))].sort(), [products]);
+  const marketplaces = useMemo(() => [...new Set(products.map((p) => p.marketplace).filter(Boolean))].sort(), [products]);
+
+  // Sync initial and URL-based marketplace param
+  useEffect(() => {
+    if (marketplaceParam) {
+      const match = marketplaces.find((m) => m.toLowerCase() === marketplaceParam.toLowerCase());
+      setSelectedMarketplaces(new Set([match || marketplaceParam]));
+    }
+  }, [marketplaceParam, marketplaces]);
+
+  // Sync initial and URL-based category param
+  useEffect(() => {
+    if (categoryParam) {
+      const match = categories.find((c) => c.toLowerCase() === categoryParam.toLowerCase());
+      setSelectedCategories(new Set([match || categoryParam]));
+    }
+  }, [categoryParam, categories]);
 
   const categoryCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -225,26 +247,42 @@ function CommunityCatalogInner({
     return m;
   }, [products]);
 
-  const saleCount = useMemo(() => products.filter(p => (p.discountPercent ?? 0) > 0).length, [products]);
+  const saleCount = useMemo(() => products.filter((p) => (p.discountPercent ?? 0) > 0).length, [products]);
 
   const filtered = useMemo(() => {
     let list = products;
     if (qRaw) {
       const q = qRaw.toLowerCase();
-      list = list.filter(p =>
+      list = list.filter((p) =>
         p.title.toLowerCase().includes(q) ||
         p.seller.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q),
+        p.category.toLowerCase().includes(q) ||
+        p.marketplace.toLowerCase().includes(q)
       );
     }
-    if (selectedCategories.size > 0)  list = list.filter(p => selectedCategories.has(p.category));
-    if (selectedMarketplaces.size > 0) list = list.filter(p => selectedMarketplaces.has(p.marketplace));
-    if (onSaleOnly) list = list.filter(p => (p.discountPercent ?? 0) > 0);
+    if (selectedCategories.size > 0) {
+      list = list.filter((p) =>
+        Array.from(selectedCategories).some(
+          (c) => c.toLowerCase() === p.category.toLowerCase()
+        )
+      );
+    }
+    if (selectedMarketplaces.size > 0) {
+      list = list.filter((p) =>
+        Array.from(selectedMarketplaces).some(
+          (m) =>
+            m.toLowerCase() === p.marketplace.toLowerCase() ||
+            m.toLowerCase() === p.seller.toLowerCase() ||
+            p.title.toLowerCase().includes(m.toLowerCase())
+        )
+      );
+    }
+    if (onSaleOnly) list = list.filter((p) => (p.discountPercent ?? 0) > 0);
 
     const out = [...list];
-    if (sort === "price-asc")  out.sort((a, b) => a.price - b.price);
+    if (sort === "price-asc") out.sort((a, b) => a.price - b.price);
     if (sort === "price-desc") out.sort((a, b) => b.price - a.price);
-    if (sort === "title-asc")  out.sort((a, b) => a.title.localeCompare(b.title));
+    if (sort === "title-asc") out.sort((a, b) => a.title.localeCompare(b.title));
     return out;
   }, [products, qRaw, selectedCategories, selectedMarketplaces, onSaleOnly, sort]);
 
@@ -258,10 +296,17 @@ function CommunityCatalogInner({
     selectedCategories.size + selectedMarketplaces.size + (onSaleOnly ? 1 : 0);
 
   const filterProps: FilterProps = {
-    categories, marketplaces, categoryCounts, marketplaceCounts,
-    selectedCategories, setSelectedCategories,
-    selectedMarketplaces, setSelectedMarketplaces,
-    onSaleOnly, setOnSaleOnly, saleCount,
+    categories,
+    marketplaces,
+    categoryCounts,
+    marketplaceCounts,
+    selectedCategories,
+    setSelectedCategories,
+    selectedMarketplaces,
+    setSelectedMarketplaces,
+    onSaleOnly,
+    setOnSaleOnly,
+    saleCount,
   };
 
   return (
@@ -277,11 +322,15 @@ function CommunityCatalogInner({
 
         <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900">{title}</h2>
 
-        {qRaw && (
+        {marketplaceParam ? (
+          <p className="mt-1 text-sm text-[#059669]">
+            Showing products from <span className="font-semibold text-gray-900">{marketplaceParam}</span>
+          </p>
+        ) : qRaw ? (
           <p className="mt-1 text-sm text-[#059669]">
             Results for <span className="font-medium text-gray-900">&ldquo;{qRaw}&rdquo;</span>
           </p>
-        )}
+        ) : null}
 
         {/* Toolbar */}
         <div className="mt-6 flex items-center justify-between gap-4">
