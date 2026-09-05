@@ -613,7 +613,7 @@ export function CheckoutClient() {
 
   return (
     <InnerShell>
-      <div className="flex flex-col gap-7">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-7">
         <Steps
           current={1}
           steps={[
@@ -698,8 +698,8 @@ export function CheckoutClient() {
           </section>
         ) : null}
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
-          <div className="flex flex-col gap-6">
+        <div className="grid w-full min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
             {inPaymentStep && displayOrder && !showMyaza ? (
               <form className="flex flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-7" onSubmit={onPay}>
                 <h2 className="text-lg font-semibold">Pay for order {displayOrder.id.slice(0, 8)}…</h2>
@@ -1029,7 +1029,7 @@ export function CheckoutClient() {
                 </button>
               </form>
             ) : showQuoteConfirm && !inPaymentStep && !showMyaza ? (
-              <div className="flex flex-col gap-4 rounded-[20px] border border-shop-border bg-white p-7">
+              <div className="flex min-w-0 max-w-full flex-col gap-4 rounded-[20px] border border-shop-border bg-white p-5 sm:p-7">
                 <h2 className="text-lg font-semibold">Confirm your order</h2>
                 <p className="text-xs text-black/60">
                   Review the estimated landed cost below. Once you place the order, your cart is cleared.
@@ -1042,7 +1042,7 @@ export function CheckoutClient() {
                         {addressMode === "saved" ? "Saved Profile Address" : saveToProfile ? "Saving as Default" : "Temporary Address"}
                       </span>
                     </div>
-                    <p className="mt-1 text-black/80">
+                    <p className="mt-1 break-words text-black/80">
                       <span className="font-semibold">{pendingFormData.fullName}</span> — {pendingFormData.line1}
                       {pendingFormData.line2 ? `, ${pendingFormData.line2}` : ""}, {pendingFormData.city}
                       {pendingFormData.state ? `, ${pendingFormData.state}` : ""} ({pendingFormData.country})
@@ -1094,13 +1094,13 @@ export function CheckoutClient() {
             ) : null}
           </div>
 
-          <section className="flex h-fit flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-[26px] lg:sticky lg:top-24">
+          <section className="flex h-fit w-full min-w-0 flex-col gap-[18px] rounded-[20px] border border-shop-border bg-white p-5 sm:p-[26px] lg:sticky lg:top-24">
             <h2 className="text-lg font-bold text-shop-ink">Order summary</h2>
 
             {summaryItems.length > 0 && (
               <div className="flex flex-col gap-3 border-b border-shop-border pb-4">
                 {summaryItems.map((item) => (
-                  <div key={item.key} className="flex items-center gap-3">
+                  <div key={item.key} className="flex min-w-0 items-center gap-3">
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-(--background)">
                       {item.image ? (
                         <Image src={item.image} alt="" fill className="object-contain p-1" unoptimized />
