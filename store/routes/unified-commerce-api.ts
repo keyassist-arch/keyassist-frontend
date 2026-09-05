@@ -405,7 +405,7 @@ export const unifiedCommerceApi = createApi({
     /* ---------- Orders (protected) ---------- */
     createOrder: builder.mutation<OrderResponse, CreateOrderRequest>({
       query: (body) => ({ url: "/orders", method: "POST", body }),
-      invalidatesTags: ["Cart", "Orders"],
+      invalidatesTags: ["Cart", "Orders", "Me"],
     }),
 
     getOrders: builder.query<OrderResponse[], { status?: OrderStatus } | void>({

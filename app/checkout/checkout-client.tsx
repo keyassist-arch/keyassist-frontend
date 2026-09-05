@@ -17,6 +17,7 @@ import {
   useGetPaymentMethodsQuery,
   useGetLandedCostCartQuoteMutation,
   useInitializePaymentMutation,
+  usePatchMeMutation,
 } from "@/store/routes/unified-commerce-api";
 import type {
   LandedCostDestination,
@@ -164,8 +165,15 @@ export function CheckoutClient() {
   const [getLandedCostQuote, { isLoading: quoting }] = useGetLandedCostCartQuoteMutation();
   const [initPayment, { isLoading: paying, isError: payErr, error: payError, reset: resetPayError }] =
     useInitializePaymentMutation();
+  const [patchMe] = usePatchMeMutation();
 
   const phoneVerificationBlocked = Boolean(me?.phoneVerificationRequired && !me?.phoneVerified);
+
+  const hasSavedAddress = Boolean(
+    me?.defaultShippingAddress &&
+      me.defaultShippingAddress.line1?.trim() &&
+      me.defaultShippingAddress.city?.trim()
+  );
 
   const [mounted, setMounted] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -177,6 +185,9 @@ export function CheckoutClient() {
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
+
+  const [addressMode, setAddressMode] = useState<"saved" | "new">("saved");
+  const [saveToProfile, setSaveToProfile] = useState(true);
 
   const [destination, setDestination] = useState<LandedCostDestination>("lagos");
   const [shippingService, setShippingService] = useState<LandedCostService>("air");
@@ -199,6 +210,14 @@ export function CheckoutClient() {
   const resumeId = resumeParam && isUuid(resumeParam) ? resumeParam : null;
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (hasSavedAddress) {
+      setAddressMode("saved");
+    } else {
+      setAddressMode("new");
+    }
+  }, [hasSavedAddress]);
 
   // Cargo insurance is only offered on Lagos-destined shipments.
   useEffect(() => {
@@ -349,22 +368,61 @@ export function CheckoutClient() {
       setFormError("Your cart is empty. Add something from the shop, then come back to checkout.");
       return;
     }
-    const fd = new FormData(e.currentTarget);
-    const fullName = String(fd.get("fullName") ?? "").trim();
-    const line1 = String(fd.get("line1") ?? "").trim();
-    const city = String(fd.get("city") ?? "").trim();
-    const country = String(fd.get("country") ?? "").trim() || "NG";
-    if (!fullName || !line1 || !city) {
-      setFormError("Full name, address line, and city are required.");
-      return;
+
+    let shippingData: {
+      fullName: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      state?: string;
+      country: string;
+      postalCode?: string;
+      phone?: string;
+    };
+
+    if (addressMode === "saved" && hasSavedAddress && me?.defaultShippingAddress) {
+      const s = me.defaultShippingAddress;
+      const fullName =
+        s.fullName?.trim() ||
+        [me.firstName, me.lastName].filter(Boolean).join(" ") ||
+        "Customer";
+      shippingData = {
+        fullName,
+        line1: s.line1.trim(),
+        line2: s.line2?.trim() || undefined,
+        city: s.city.trim(),
+        state: s.state?.trim() || undefined,
+        country: s.country?.trim() || "NG",
+        postalCode: s.postalCode?.trim() || undefined,
+        phone: s.phone?.trim() || me.phone?.trim() || undefined,
+      };
+    } else {
+      const fd = new FormData(e.currentTarget);
+      const fullName = String(fd.get("fullName") ?? "").trim();
+      const line1 = String(fd.get("line1") ?? "").trim();
+      const city = String(fd.get("city") ?? "").trim();
+      const country = String(fd.get("country") ?? "").trim() || "NG";
+      if (!fullName || !line1 || !city) {
+        setFormError("Full name, address line, and city are required.");
+        return;
+      }
+      shippingData = {
+        fullName,
+        line1,
+        city,
+        country,
+        line2: String(fd.get("line2") ?? "").trim() || undefined,
+        state: String(fd.get("state") ?? "").trim() || undefined,
+        postalCode: String(fd.get("postalCode") ?? "").trim() || undefined,
+        phone: String(fd.get("phone") ?? "").trim() || undefined,
+      };
+
+      if (saveToProfile) {
+        void patchMe({ defaultShippingAddress: shippingData });
+      }
     }
-    setPendingFormData({
-      fullName, line1, city, country,
-      line2: String(fd.get("line2") ?? "").trim() || undefined,
-      state: String(fd.get("state") ?? "").trim() || undefined,
-      postalCode: String(fd.get("postalCode") ?? "").trim() || undefined,
-      phone: String(fd.get("phone") ?? "").trim() || undefined,
-    });
+
+    setPendingFormData(shippingData);
     try {
       const quoteResult = await getLandedCostQuote({
         destination,
@@ -392,10 +450,15 @@ export function CheckoutClient() {
     }
     setPlaceOrderBusy(true);
     try {
+      const shouldSave = addressMode === "new" ? saveToProfile : !hasSavedAddress;
       const order = await createOrder({
         shippingAddress: pendingFormData,
+        saveAddressToProfile: shouldSave,
         landedCost: { destination, shippingService, category, insurance },
       }).unwrap();
+      if (shouldSave && addressMode === "new") {
+        void patchMe({ defaultShippingAddress: pendingFormData });
+      }
       setOrderSnapshot(order);
       setActiveOrderId(order.id);
       setPendingCheckoutOrderId(order.id);
@@ -403,7 +466,7 @@ export function CheckoutClient() {
       setMyazaOrderId(null);
       setLandedCostQuote(null);
       setPendingFormData(null);
-      dispatch(unifiedCommerceApi.util.invalidateTags(["Cart"]));
+      dispatch(unifiedCommerceApi.util.invalidateTags(["Cart", "Me"]));
       void refetchCart();
     } catch (err) {
       setFormError(getErrorMessage(err));
@@ -661,18 +724,181 @@ export function CheckoutClient() {
                   <p className="-mt-2 text-xs text-shop-muted">
                     Placing the order <span className="font-medium text-shop-ink">clears your cart</span>. You&apos;ll complete payment on the next step.
                   </p>
-                  <Field label="Full name" name="fullName" placeholder="Jane Doe" required defaultValue={me?.defaultShippingAddress?.fullName ?? ""} />
-                  <Field label="Address line 1" name="line1" placeholder="Street, building, unit" required defaultValue={me?.defaultShippingAddress?.line1 ?? ""} />
-                  <Field label="Address line 2 (optional)" name="line2" placeholder="Apartment, suite, etc." defaultValue={me?.defaultShippingAddress?.line2 ?? ""} />
-                  <div className="flex w-full gap-4">
-                    <Field label="City" name="city" placeholder="Lagos" required defaultValue={me?.defaultShippingAddress?.city ?? ""} />
-                    <Field label="State / region" name="state" placeholder="Lagos" defaultValue={me?.defaultShippingAddress?.state ?? ""} />
-                  </div>
-                  <div className="flex w-full gap-4">
-                    <Field label="Country" name="country" placeholder="Nigeria" defaultValue={me?.defaultShippingAddress?.country ?? "NG"} />
-                    <Field label="Postal code" name="postalCode" placeholder="100001" defaultValue={me?.defaultShippingAddress?.postalCode ?? ""} />
-                  </div>
-                  <Field label="Phone" name="phone" type="tel" placeholder="+234 …" defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""} />
+
+                  {hasSavedAddress && me?.defaultShippingAddress ? (
+                    <div className="flex flex-col gap-4">
+                      {/* Address mode switcher */}
+                      <div className="flex rounded-xl bg-black/5 p-1">
+                        <button
+                          type="button"
+                          onClick={() => setAddressMode("saved")}
+                          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition ${
+                            addressMode === "saved"
+                              ? "bg-white text-shop-ink shadow-sm"
+                              : "text-shop-muted hover:text-shop-ink"
+                          }`}
+                        >
+                          Deliver to saved address
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAddressMode("new")}
+                          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition ${
+                            addressMode === "new"
+                              ? "bg-white text-shop-ink shadow-sm"
+                              : "text-shop-muted hover:text-shop-ink"
+                          }`}
+                        >
+                          Use a different address
+                        </button>
+                      </div>
+
+                      {addressMode === "saved" ? (
+                        <div className="flex flex-col gap-3 rounded-xl border border-shop-border bg-(--background) p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                              <Check className="h-3.5 w-3.5" aria-hidden /> Default profile address
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setAddressMode("new")}
+                              className="text-xs font-semibold text-shop-accent hover:underline"
+                            >
+                              Deliver elsewhere
+                            </button>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-shop-ink">
+                              {me.defaultShippingAddress.fullName ||
+                                [me.firstName, me.lastName].filter(Boolean).join(" ") ||
+                                "Saved Customer"}
+                            </p>
+                            <p className="mt-0.5 text-xs text-black/75">
+                              {me.defaultShippingAddress.line1}
+                              {me.defaultShippingAddress.line2 ? `, ${me.defaultShippingAddress.line2}` : ""}
+                            </p>
+                            <p className="text-xs text-black/75">
+                              {me.defaultShippingAddress.city}
+                              {me.defaultShippingAddress.state ? `, ${me.defaultShippingAddress.state}` : ""}
+                              {me.defaultShippingAddress.postalCode ? ` ${me.defaultShippingAddress.postalCode}` : ""}
+                              {me.defaultShippingAddress.country ? `, ${me.defaultShippingAddress.country}` : ""}
+                            </p>
+                            {(me.defaultShippingAddress.phone || me.phone) && (
+                              <p className="mt-1 text-xs font-medium text-shop-muted">
+                                Phone: {me.defaultShippingAddress.phone || me.phone}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-shop-ink">Enter new shipping details</span>
+                            <button
+                              type="button"
+                              onClick={() => setAddressMode("saved")}
+                              className="text-xs font-medium text-shop-accent hover:underline"
+                            >
+                              ← Use saved address
+                            </button>
+                          </div>
+                          <Field
+                            label="Full name"
+                            name="fullName"
+                            placeholder="Jane Doe"
+                            required
+                            defaultValue={me?.firstName && me?.lastName ? `${me.firstName} ${me.lastName}` : (me?.defaultShippingAddress?.fullName ?? "")}
+                          />
+                          <Field label="Address line 1" name="line1" placeholder="Street, building, unit" required />
+                          <Field label="Address line 2 (optional)" name="line2" placeholder="Apartment, suite, etc." />
+                          <div className="flex w-full gap-4">
+                            <Field label="City" name="city" placeholder="Lagos" required />
+                            <Field label="State / region" name="state" placeholder="Lagos" />
+                          </div>
+                          <div className="flex w-full gap-4">
+                            <Field label="Country" name="country" placeholder="Nigeria" defaultValue="NG" />
+                            <Field label="Postal code" name="postalCode" placeholder="100001" />
+                          </div>
+                          <Field label="Phone" name="phone" type="tel" placeholder="+234 …" defaultValue={me?.phone ?? ""} />
+
+                          <label className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-shop-border bg-(--background) p-3.5 transition hover:bg-black/5">
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={saveToProfile}
+                              onChange={(e) => setSaveToProfile(e.target.checked)}
+                            />
+                            <span
+                              className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-[5px]"
+                              style={
+                                saveToProfile
+                                  ? { background: "var(--shop-primary)" }
+                                  : { border: "1.5px solid var(--shop-border)", background: "#FFFFFF" }
+                              }
+                            >
+                              {saveToProfile && <Check className="h-3 w-3 text-white" aria-hidden />}
+                            </span>
+                            <span className="flex flex-col gap-0.5">
+                              <span className="text-xs font-semibold text-shop-ink">Save as default address in my profile</span>
+                              <span className="text-[11px] leading-relaxed text-shop-muted">
+                                {saveToProfile
+                                  ? "Updates your profile address for 1-click checkout on future orders."
+                                  : "Temporary address — this won't overwrite your saved profile address."}
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <Field
+                        label="Full name"
+                        name="fullName"
+                        placeholder="Jane Doe"
+                        required
+                        defaultValue={me?.firstName && me?.lastName ? `${me.firstName} ${me.lastName}` : (me?.defaultShippingAddress?.fullName ?? "")}
+                      />
+                      <Field label="Address line 1" name="line1" placeholder="Street, building, unit" required defaultValue={me?.defaultShippingAddress?.line1 ?? ""} />
+                      <Field label="Address line 2 (optional)" name="line2" placeholder="Apartment, suite, etc." defaultValue={me?.defaultShippingAddress?.line2 ?? ""} />
+                      <div className="flex w-full gap-4">
+                        <Field label="City" name="city" placeholder="Lagos" required defaultValue={me?.defaultShippingAddress?.city ?? ""} />
+                        <Field label="State / region" name="state" placeholder="Lagos" defaultValue={me?.defaultShippingAddress?.state ?? ""} />
+                      </div>
+                      <div className="flex w-full gap-4">
+                        <Field label="Country" name="country" placeholder="Nigeria" defaultValue={me?.defaultShippingAddress?.country ?? "NG"} />
+                        <Field label="Postal code" name="postalCode" placeholder="100001" defaultValue={me?.defaultShippingAddress?.postalCode ?? ""} />
+                      </div>
+                      <Field label="Phone" name="phone" type="tel" placeholder="+234 …" defaultValue={me?.defaultShippingAddress?.phone ?? me?.phone ?? ""} />
+
+                      <label className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-shop-border bg-(--background) p-3.5 transition hover:bg-black/5">
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={saveToProfile}
+                          onChange={(e) => setSaveToProfile(e.target.checked)}
+                        />
+                        <span
+                          className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-[5px]"
+                          style={
+                            saveToProfile
+                              ? { background: "var(--shop-primary)" }
+                              : { border: "1.5px solid var(--shop-border)", background: "#FFFFFF" }
+                          }
+                        >
+                          {saveToProfile && <Check className="h-3 w-3 text-white" aria-hidden />}
+                        </span>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="text-xs font-semibold text-shop-ink">Save this address to my profile</span>
+                          <span className="text-[11px] leading-relaxed text-shop-muted">
+                            {saveToProfile
+                              ? "Saved to your profile so you don't have to enter it again on future orders."
+                              : "Use as a temporary address for this order only."}
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </SectionCard>
 
                 <SectionCard icon={Truck} title="Delivery options">
@@ -748,6 +974,22 @@ export function CheckoutClient() {
                 <p className="text-xs text-black/60">
                   Review the estimated landed cost below. Once you place the order, your cart is cleared.
                 </p>
+                {pendingFormData && (
+                  <div className="rounded-xl border border-shop-border bg-(--background) p-3 text-xs">
+                    <div className="flex items-center justify-between font-medium text-shop-ink">
+                      <span>Ship to</span>
+                      <span className="text-[11px] text-shop-muted">
+                        {addressMode === "saved" ? "Saved Profile Address" : saveToProfile ? "Saving as Default" : "Temporary Address"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-black/80">
+                      <span className="font-semibold">{pendingFormData.fullName}</span> — {pendingFormData.line1}
+                      {pendingFormData.line2 ? `, ${pendingFormData.line2}` : ""}, {pendingFormData.city}
+                      {pendingFormData.state ? `, ${pendingFormData.state}` : ""} ({pendingFormData.country})
+                      {pendingFormData.phone ? ` • Tel: ${pendingFormData.phone}` : ""}
+                    </p>
+                  </div>
+                )}
                 {landedCostQuote ? (
                   <div className="space-y-2 rounded-xl border border-shop-border bg-(--background) p-4">
                     <p className="text-sm font-medium text-shop-ink">Estimated landed cost</p>

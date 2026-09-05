@@ -576,6 +576,7 @@ export interface LandedCostInput {
 
 export interface CreateOrderRequest {
   shippingAddress?: ShippingAddress;
+  saveAddressToProfile?: boolean;
   /** Required. Use the same destination/shippingService/category shown in `POST /landed-cost/quote`. */
   landedCost: LandedCostInput;
 }
