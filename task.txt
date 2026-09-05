@@ -1,0 +1,30 @@
+8.25 % of Product price (250) = 20.625
+
+-----
+
+Product (COGS) - 250 + 20.625 = 270.625
+Shipping (Include Tax) - 29.5
+Service - 10% of product = 25
+Total  -                 = 325.125
+
+
+
+
+
+-----------------------
+
+Product: $250.00
+Import & Delivery (Lagos): $29.50
+  incl. intl cargo: $11.00
+  incl. box/handling fee: $6.00
+  incl. cargo insurance: $7.50
+Service Fee: $25.00
+
+
+
+how we handle cart and pending payments
+
+
+
+
+https://www.keyassistco.com/checkout/success?order_id=26df8331-addf-4c3a-b097-cc08bdea9765&session_id=cs_test_b1yBEVDNwOYTOH51KWSfTz6FoelEyZ09Jw2vmPtFo3fPTdlCUtR6ZLXewT
