@@ -928,6 +928,7 @@ export interface LandedCostQuoteResponse {
   marketplaceConfidence?: "high" | "medium" | "low";
   productSubtotalUsd: number;
   marketplaceTaxUsd: number;
+  itemCostUsd?: number;
   marketplaceShippingUsd: number;
   /** Box / warehouse packaging & handling fee. */
   domesticHandlingUsd: number;

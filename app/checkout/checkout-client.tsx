@@ -116,9 +116,9 @@ function SectionCard({
 function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
   const cur = summary.currency;
   const rows: [string, number, boolean?][] = [
-    ["Product", Number(summary.product)],
+    ["Product (COGS)", Number(summary.product)],
     ["Shipping", Number(summary.importAndDelivery)],
-    ["Service fee", Number(summary.serviceFee)],
+    ["Service", Number(summary.serviceFee)],
   ];
   if (summary.insurance && Number(summary.insurance) > 0) {
     rows.push(["Insurance", Number(summary.insurance)]);
@@ -147,6 +147,63 @@ function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
         <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{formatApiMoney(Number(summary.total), cur)}</span>
       </div>
     </>
+  );
+}
+
+function LandedCostQuoteDisplay({ quote }: { quote: LandedCostQuoteResponse }) {
+  const itemCost = quote.itemCostUsd ?? (coerceNumber(quote.productSubtotalUsd, 0) + coerceNumber(quote.marketplaceTaxUsd, 0));
+  const shipping = coerceNumber(quote.importAndDeliveryUsd, 0) > 0
+    ? coerceNumber(quote.importAndDeliveryUsd, 0)
+    : (coerceNumber(quote.marketplaceShippingUsd, 0) + coerceNumber(quote.domesticHandlingUsd, 0) + coerceNumber(quote.internationalShippingUsd, 0));
+  const service = coerceNumber(quote.serviceChargeUsd, 0);
+  const insurance = coerceNumber(quote.insuranceUsd, 0);
+  const discount = coerceNumber(quote.discountUsd, 0);
+  const totalUsd = coerceNumber(quote.totalUsd, 0);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-[11px] text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-shop-muted">Product (COGS)</span>
+          <span className="font-semibold tabular-nums text-shop-ink">${itemCost.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-shop-muted">Shipping</span>
+          <span className="font-semibold tabular-nums text-shop-ink">${shipping.toFixed(2)}</span>
+        </div>
+        {service > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-shop-muted">Service</span>
+            <span className="font-semibold tabular-nums text-shop-ink">${service.toFixed(2)}</span>
+          </div>
+        )}
+        {insurance > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-shop-muted">Insurance</span>
+            <span className="font-semibold tabular-nums text-shop-ink">${insurance.toFixed(2)}</span>
+          </div>
+        )}
+        {discount > 0 && (
+          <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
+            <span>Discount</span>
+            <span className="font-semibold tabular-nums">-${discount.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+      <div className="h-px w-full bg-shop-border" />
+      <div className="flex items-center justify-between">
+        <span className="text-[15px] font-bold text-shop-ink">Estimated total (USD)</span>
+        <span className="text-xl font-extrabold tabular-nums text-shop-ink">${totalUsd.toFixed(2)}</span>
+      </div>
+      {quote.displayCurrency && quote.displayCurrency !== "USD" && coerceNumber(quote.totalDisplay, 0) > 0 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-shop-muted">Estimated total ({quote.displayCurrency})</span>
+          <span className="font-bold tabular-nums text-shop-ink">
+            {quote.displayCurrency} {Number(quote.totalDisplay).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -994,23 +1051,14 @@ export function CheckoutClient() {
                   </div>
                 )}
                 {landedCostQuote ? (
-                  <div className="space-y-2 rounded-xl border border-shop-border bg-(--background) p-4">
+                  <div className="space-y-4 rounded-xl border border-shop-border bg-(--background) p-4">
                     <p className="text-sm font-medium text-shop-ink">Estimated landed cost</p>
                     {landedCostQuote.marketplaceConfidence === "low" && (
                       <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
                         Marketplace estimates are approximate. Final cost may vary slightly.
                       </p>
                     )}
-                    <ul className="space-y-1 text-xs text-black/70 font-mono">
-                      {landedCostQuote.breakdown.map((line, i) => (
-                        <li key={i} className="whitespace-pre-wrap">{line}</li>
-                      ))}
-                    </ul>
-                    {landedCostQuote.totalDisplay && landedCostQuote.displayCurrency && (
-                      <p className="pt-2 text-sm font-semibold text-shop-ink border-t border-shop-border">
-                        Estimated total: {landedCostQuote.displayCurrency} {landedCostQuote.totalDisplay.toLocaleString()}
-                      </p>
-                    )}
+                    <LandedCostQuoteDisplay quote={landedCostQuote} />
                   </div>
                 ) : quoteError ? (
                   <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{quoteError}</p>
@@ -1126,36 +1174,34 @@ export function CheckoutClient() {
                 ) : null}
 
                 {showQuoteConfirm && landedCostQuote ? (
-                  <ul className="space-y-1 text-xs text-black/70 font-mono">
-                    {landedCostQuote.breakdown.map((line, i) => (
-                      <li key={i} className="whitespace-pre-wrap">{line}</li>
-                    ))}
-                  </ul>
+                  <LandedCostQuoteDisplay quote={landedCostQuote} />
                 ) : (
-                  <div className="flex flex-col gap-[11px] text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-shop-muted">Product</span>
-                      <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiSubtotal.toFixed(2)}</span>
-                    </div>
-                    {apiServiceCharge > 0 && (
+                  <>
+                    <div className="flex flex-col gap-[11px] text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-shop-muted">Service charge</span>
-                        <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiServiceCharge.toFixed(2)}</span>
+                        <span className="text-shop-muted">Product</span>
+                        <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiSubtotal.toFixed(2)}</span>
                       </div>
-                    )}
-                    {apiDiscount > 0 && (
-                      <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
-                        <span>Discount</span>
-                        <span className="font-semibold tabular-nums">-{apiCurrency} {apiDiscount.toFixed(2)}</span>
-                      </div>
-                    )}
-                  </div>
+                      {apiServiceCharge > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-shop-muted">Service charge</span>
+                          <span className="font-semibold tabular-nums text-shop-ink">{apiCurrency} {apiServiceCharge.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {apiDiscount > 0 && (
+                        <div className="flex items-center justify-between" style={{ color: "var(--shop-primary)" }}>
+                          <span>Discount</span>
+                          <span className="font-semibold tabular-nums">-{apiCurrency} {apiDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-px w-full bg-shop-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-bold text-shop-ink">Total</span>
+                      <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{totalLabel}</span>
+                    </div>
+                  </>
                 )}
-                <div className="h-px w-full bg-shop-border" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-bold text-shop-ink">Total</span>
-                  <span className="text-2xl font-extrabold tabular-nums text-shop-ink">{totalLabel}</span>
-                </div>
                 {localItems.length > 0 ? (
                   <p className="text-xs text-shop-muted">
                     On-device only: USD {localSubtotal.toFixed(2)}
