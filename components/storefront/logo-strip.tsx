@@ -16,8 +16,8 @@ export function LogoStrip() {
       style={{ background: "var(--background)", borderTop: "1px solid var(--shop-border)", borderBottom: "1px solid var(--shop-border)" }}
     >
       <div className="mx-auto flex max-w-(--shop-layout-max) flex-col items-center gap-5 px-4 sm:px-8 lg:px-24">
-        <p className="text-xs font-semibold tracking-[1.5px] text-shop-muted">
-          SHOP FROM 12+ TRUSTED US MARKETPLACES
+        <p className="text-xs font-semibold tracking-[1.5px] text-shop-muted uppercase">
+          Shop from major trusted US marketplaces
         </p>
         <div className="flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-4 sm:justify-between">
           {MARKETPLACES.map(({ id, label, url }) => (
