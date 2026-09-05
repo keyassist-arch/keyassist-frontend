@@ -496,6 +496,8 @@ export interface OrderDisplaySummary {
   importAndDelivery: string;
   /** Service charge (10% of product subtotal). */
   serviceFee: string;
+  /** Optional cargo insurance (3% of item cost). */
+  insurance?: string;
   /** Loyalty discount (20% when subtotal > $1000, else "0.00"). */
   discount: string;
   /** Grand total. */

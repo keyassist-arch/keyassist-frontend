@@ -117,9 +117,12 @@ function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
   const cur = summary.currency;
   const rows: [string, number, boolean?][] = [
     ["Product", Number(summary.product)],
-    ["Import & delivery", Number(summary.importAndDelivery)],
+    ["Shipping", Number(summary.importAndDelivery)],
     ["Service fee", Number(summary.serviceFee)],
   ];
+  if (summary.insurance && Number(summary.insurance) > 0) {
+    rows.push(["Insurance", Number(summary.insurance)]);
+  }
   if (Number(summary.discount) > 0) rows.push(["Discount", Number(summary.discount), true]);
 
   return (
@@ -1078,6 +1081,12 @@ export function CheckoutClient() {
                         <div className="flex items-center justify-between">
                           <span className="text-shop-muted">Service charge</span>
                           <span className="font-semibold tabular-nums text-shop-ink">{orderCurrency} {oSvc.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {coerceNumber(displayOrder.insurance, 0) > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-shop-muted">Insurance</span>
+                          <span className="font-semibold tabular-nums text-shop-ink">{orderCurrency} {coerceNumber(displayOrder.insurance, 0).toFixed(2)}</span>
                         </div>
                       )}
                       {oDisc > 0 && (
