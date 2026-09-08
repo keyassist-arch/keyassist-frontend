@@ -88,7 +88,7 @@ function OrderTotalsSummary({
 export function CheckoutSuccessClient() {
   const searchParams = useSearchParams();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const user = useAppSelector((s) => s.auth.user);
+  const userEmail = useAppSelector((s) => s.auth.email);
 
   const [copied, setCopied] = useState(false);
 
@@ -330,7 +330,7 @@ export function CheckoutSuccessClient() {
     ? { amount: Number(order.displaySummary.total), currency: order.displaySummary.currency }
     : orderTotal(order);
 
-  const customerEmail = order.userEmail || user?.email;
+  const customerEmail = order.userEmail || userEmail;
 
   return (
     <InnerShell>
