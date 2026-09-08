@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   HelpCircle,
   Sparkles,
+  Truck,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
