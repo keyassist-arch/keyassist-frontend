@@ -27,7 +27,7 @@ import { useAppSelector } from "@/store/hooks";
 import { useGetOrderQuery, useVerifyPaymentMutation } from "@/store/routes/unified-commerce-api";
 import { ErrorState } from "@/components/feedback/query-state";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
 import { clearPendingCheckoutOrderId } from "@/lib/pending-checkout-order";
 import { formatApiMoney } from "@/lib/format-price";
@@ -103,7 +103,7 @@ export function CheckoutSuccessClient() {
   const stripeSessionId = useMemo(() => searchParams.get("session_id")?.trim() ?? "", [searchParams]);
   const paystackReference = useMemo(() => searchParams.get("reference")?.trim() ?? "", [searchParams]);
 
-  const validId = orderId && isUuid(orderId);
+  const validId = isValidOrderIdentifier(orderId);
 
   const { data: order, isLoading, isError, error, refetch } = useGetOrderQuery(orderId, {
     skip: !token || !validId,
@@ -176,11 +176,12 @@ export function CheckoutSuccessClient() {
   };
 
   const handleCopyId = async () => {
-    if (!orderId) return;
+    const idToCopy = order?.orderNumber || orderId;
+    if (!idToCopy) return;
     try {
-      await navigator.clipboard.writeText(orderId);
+      await navigator.clipboard.writeText(idToCopy);
       setCopied(true);
-      toast.success("Order ID copied to clipboard");
+      toast.success("Order reference copied to clipboard");
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error("Could not copy Order ID");
@@ -392,8 +393,10 @@ export function CheckoutSuccessClient() {
             {/* Order Reference Badge & Copy Action */}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <div className="inline-flex items-center gap-2 rounded-xl border border-shop-border bg-(--background) px-3.5 py-1.5 text-xs text-shop-ink">
-                <span className="text-shop-muted">Order ID:</span>
-                <span className="font-mono font-medium">{order.id}</span>
+                <span className="text-shop-muted">Order:</span>
+                <span className="font-mono font-bold text-shop-ink">
+                  {order.orderNumber ? `#${order.orderNumber}` : order.id}
+                </span>
                 <button
                   type="button"
                   onClick={handleCopyId}
@@ -630,13 +633,21 @@ export function CheckoutSuccessClient() {
               </Link>
             </div>
 
-            <div className="text-center pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-shop-muted pt-1">
+              <Link
+                href={`/track?order=${order.orderNumber || order.id}`}
+                className="inline-flex items-center gap-1 font-medium text-shop-primary hover:underline"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                Open public tracking page
+              </Link>
+              <span className="hidden sm:inline text-shop-border">•</span>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-1 text-xs text-shop-muted hover:text-shop-ink transition"
+                className="inline-flex items-center gap-1 hover:text-shop-ink transition"
               >
                 <HelpCircle className="h-3.5 w-3.5" />
-                Have questions about your order? Contact our support team
+                Contact support
               </Link>
             </div>
           </div>

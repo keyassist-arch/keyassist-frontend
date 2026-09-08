@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { formatApiMoney } from "@/lib/format-price";
 import { orderLineTotal, orderTotal } from "@/lib/dashboard-orders";
 import { orderCanInitializePayment } from "@/lib/order-checkout";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 import { useGetOrderQuery, useCancelOrderMutation } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
@@ -145,7 +145,7 @@ export default function DashboardOrderDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const token = useAppSelector((s) => s.auth.accessToken);
-  const valid = Boolean(id && isUuid(id));
+  const valid = isValidOrderIdentifier(id);
 
   const { data: order, isLoading, isError, error, refetch } = useGetOrderQuery(id, {
     skip: !token || !valid,
@@ -212,8 +212,10 @@ export default function DashboardOrderDetailPage() {
       <div className="rounded-2xl border border-shop-border bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-shop-muted">Order ID</p>
-            <p className="mt-1 break-all font-mono text-lg font-semibold text-shop-ink">{order.id}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-shop-muted">Order reference</p>
+            <p className="mt-1 break-all font-mono text-lg font-bold text-shop-ink">
+              {order.orderNumber ? `#${order.orderNumber}` : order.id}
+            </p>
           </div>
           <StatusBadge status={order.status} />
         </div>
@@ -398,7 +400,7 @@ export default function DashboardOrderDetailPage() {
         <Link href="/dashboard/orders" className="btn-secondary inline-block">
           All orders
         </Link>
-        <Link href={`/checkout/success?order_id=${order.id}`} className="btn-secondary inline-block">
+        <Link href={`/checkout/success?order_id=${order.orderNumber || order.id}`} className="btn-secondary inline-block">
           View receipt
         </Link>
       </div>

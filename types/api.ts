@@ -507,6 +507,7 @@ export interface OrderDisplaySummary {
 
 export interface OrderResponse {
   id: string;
+  orderNumber?: string;
   status: OrderStatus;
   items: OrderItemSnapshot[];
   /** Next checkout action; present on `GET /orders/:id` (and related order payloads). */
@@ -704,6 +705,28 @@ export interface TrackingEntry {
   status?: string;
   message?: string | null;
   createdAt: string;
+}
+
+export interface PublicOrderTrackingItem {
+  title: string;
+  quantity: number;
+  images?: string[];
+  variant?: Record<string, string> | null;
+}
+
+export interface PublicOrderTrackingResponse {
+  id: string;
+  orderNumber?: string;
+  status: OrderStatus;
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  destinationCity?: string | null;
+  destinationCountry?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: PublicOrderTrackingItem[];
+  itemCount: number;
+  tracking: TrackingEntry[];
 }
 
 // ─── Reconciliation (admin only) ─────────────────────────────────────────────

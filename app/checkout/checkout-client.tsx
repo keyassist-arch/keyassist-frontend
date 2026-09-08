@@ -42,7 +42,7 @@ import {
   setPendingCheckoutOrderId,
 } from "@/lib/pending-checkout-order";
 import { orderCanInitializePayment } from "@/lib/order-checkout";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 import { loginUrl } from "@/lib/auth-redirect";
 import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 
@@ -267,7 +267,7 @@ export function CheckoutClient() {
   const displayOrder = orderFetched ?? orderSnapshot;
 
   const resumeParam = (searchParams.get("resume") ?? "").trim();
-  const resumeId = resumeParam && isUuid(resumeParam) ? resumeParam : null;
+  const resumeId = resumeParam && isValidOrderIdentifier(resumeParam) ? resumeParam : null;
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -290,7 +290,7 @@ export function CheckoutClient() {
       return;
     }
     const stored = getPendingCheckoutOrderId();
-    if (stored && isUuid(stored)) {
+    if (stored && isValidOrderIdentifier(stored)) {
       setActiveOrderId(stored);
     }
   }, [resumeId]);

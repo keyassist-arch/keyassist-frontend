@@ -21,7 +21,7 @@ export function OrderCard({ order, href, compact }: Props) {
       ? firstItem?.title ?? "Order"
       : `${firstItem?.title ?? "Items"} +${order.items.length - 1} more`;
 
-  const shortId = `${order.id.slice(0, 8)}…${order.id.slice(-4)}`;
+  const shortId = order.orderNumber ? `#${order.orderNumber}` : `${order.id.slice(0, 8)}…${order.id.slice(-4)}`;
 
   return (
     <Link

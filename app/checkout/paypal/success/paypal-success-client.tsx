@@ -9,7 +9,7 @@ import { useCapturePaypalMutation } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
 import { ErrorState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 
 const PAYPAL_KEY = "uc_paypal_checkout";
 
@@ -37,7 +37,7 @@ export function PaypalSuccessClient() {
   const started = useRef(false);
 
   const orderIdParam = (searchParams.get("order_id") ?? "").trim();
-  const orderId = orderIdParam && isUuid(orderIdParam) ? orderIdParam : null;
+  const orderId = orderIdParam && isValidOrderIdentifier(orderIdParam) ? orderIdParam : null;
 
   const runCapture = useCallback(async () => {
     const stored = readStored();

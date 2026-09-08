@@ -40,6 +40,7 @@ import type {
   VerifyPhoneOtpRequest,
   VerifyPhoneOtpResponse,
   OrderResponse,
+  PublicOrderTrackingResponse,
   OrderStatus,
   PasskeyCredential,
   PasskeyRegisterFinishRequest,
@@ -430,6 +431,12 @@ export const unifiedCommerceApi = createApi({
       providesTags: (_r, _e, id) => [{ type: "Order", id }],
     }),
 
+    /** Public order tracking lookup (no authentication required). Accepts UUID or KAO-XXXXXX order number. */
+    trackOrder: builder.query<PublicOrderTrackingResponse, string>({
+      query: (idOrCode) => ({ url: `/orders/track/${encodeURIComponent(idOrCode.trim())}`, method: "GET" }),
+      providesTags: (_r, _e, idOrCode) => [{ type: "Order", id: idOrCode }],
+    }),
+
     /** Only valid while the order is still PENDING (unpaid). */
     cancelOrder: builder.mutation<OrderResponse, string>({
       query: (id) => ({ url: `/orders/${id}/cancel`, method: "POST" }),
@@ -812,6 +819,8 @@ export const {
   useGetPendingPaymentQuery,
   useGetOrderQuery,
   useLazyGetOrderQuery,
+  useTrackOrderQuery,
+  useLazyTrackOrderQuery,
   useCancelOrderMutation,
   useGetPaymentMethodsQuery,
   useInitializePaymentMutation,

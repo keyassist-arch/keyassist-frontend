@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { InnerShell } from "@/components/layout/inner-shell";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 
 export function PaypalCancelClient() {
   const searchParams = useSearchParams();
   const orderId = useMemo(() => {
     const r = (searchParams.get("order_id") ?? "").trim();
-    return r && isUuid(r) ? r : "";
+    return r && isValidOrderIdentifier(r) ? r : "";
   }, [searchParams]);
 
   return (

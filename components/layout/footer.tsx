@@ -13,7 +13,7 @@ const SHOP_COL = [
 const COMPANY_COL = [
   { label: "How it works", href: "/#how" },
   { label: "About us", href: "/" },
-  { label: "Track order", href: "/dashboard/orders" },
+  { label: "Track order", href: "/track" },
   { label: "Contact", href: "/contact" },
 ];
 

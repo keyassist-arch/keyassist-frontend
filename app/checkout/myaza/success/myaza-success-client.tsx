@@ -5,13 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
-import { isUuid } from "@/lib/uuid";
+import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 
 export function MyazaSuccessClient() {
   const searchParams = useSearchParams();
   const orderId = useMemo(() => {
     const r = (searchParams.get("order_id") ?? "").trim();
-    return r && isUuid(r) ? r : "";
+    return r && isValidOrderIdentifier(r) ? r : "";
   }, [searchParams]);
 
   return (

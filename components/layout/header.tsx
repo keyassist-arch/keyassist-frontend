@@ -14,7 +14,7 @@ import { loginUrl } from "@/lib/auth-redirect";
 const NAV_LINKS = [
   { label: "Shop", href: "/shop" },
   { label: "How it works", href: "/#how" },
-  { label: "Track order", href: "/dashboard/orders" },
+  { label: "Track order", href: "/track" },
   { label: "Support", href: "/contact" },
 ];
 
