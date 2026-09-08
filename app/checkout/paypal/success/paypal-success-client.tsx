@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RefreshCw, AlertCircle, Lock, ArrowRight } from "lucide-react";
 import { InnerShell } from "@/components/layout/inner-shell";
 import { useCapturePaypalMutation } from "@/store/routes/unified-commerce-api";
 import { useAppSelector } from "@/store/hooks";
-import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { ErrorState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { isUuid } from "@/lib/uuid";
 
@@ -64,12 +65,22 @@ export function PaypalSuccessClient() {
   if (!token) {
     return (
       <InnerShell>
-        <div className="card max-w-lg space-y-3">
-          <h1 className="text-lg font-semibold">Sign in required</h1>
-          <p className="text-sm text-black/70">Sign in to complete your PayPal payment.</p>
-          <Link className="btn-primary inline-block" href="/auth/login">
-            Sign in
-          </Link>
+        <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center py-8 text-center">
+          <div className="card w-full space-y-5 p-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-8 ring-amber-50/50">
+              <Lock className="h-7 w-7" />
+            </div>
+            <div className="space-y-1.5">
+              <h1 className="text-xl font-bold tracking-tight text-shop-ink">Sign in required</h1>
+              <p className="text-sm text-shop-muted leading-relaxed">
+                Sign in to verify and complete your PayPal payment confirmation.
+              </p>
+            </div>
+            <Link className="btn-primary inline-flex items-center justify-center gap-2 w-full py-3" href="/auth/login">
+              Sign in
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </InnerShell>
     );
@@ -78,7 +89,17 @@ export function PaypalSuccessClient() {
   if (isLoading && !err) {
     return (
       <InnerShell>
-        <LoadingState label="Confirming PayPal payment…" />
+        <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center py-8 text-center">
+          <div className="card w-full space-y-4 p-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/50">
+              <RefreshCw className="h-7 w-7 animate-spin" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-shop-ink">Confirming PayPal payment…</h2>
+              <p className="text-xs text-shop-muted">Please hold on while we capture your transaction</p>
+            </div>
+          </div>
+        </div>
       </InnerShell>
     );
   }
@@ -86,11 +107,16 @@ export function PaypalSuccessClient() {
   if (err) {
     return (
       <InnerShell>
-        <div className="card max-w-lg space-y-4">
-          <ErrorState error={err} title="Payment not confirmed" />
-          <Link className="btn-secondary inline-block" href="/checkout">
-            Back to checkout
-          </Link>
+        <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center py-8 text-center">
+          <div className="card w-full space-y-5 p-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-8 ring-red-50/50">
+              <AlertCircle className="h-7 w-7" />
+            </div>
+            <ErrorState error={err} title="Payment not confirmed" />
+            <Link className="btn-secondary inline-block w-full py-2.5" href="/checkout">
+              Back to checkout
+            </Link>
+          </div>
         </div>
       </InnerShell>
     );
@@ -98,7 +124,17 @@ export function PaypalSuccessClient() {
 
   return (
     <InnerShell>
-      <LoadingState label="Redirecting…" />
+      <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center py-8 text-center">
+        <div className="card w-full space-y-4 p-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-shop-accent-soft text-shop-primary">
+            <RefreshCw className="h-7 w-7 animate-spin" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-shop-ink">Finalizing order…</h2>
+            <p className="text-xs text-shop-muted">Redirecting to order confirmation</p>
+          </div>
+        </div>
+      </div>
     </InnerShell>
   );
 }
