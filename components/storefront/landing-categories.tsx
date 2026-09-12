@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const CATEGORIES = [
+export const FEATURED_CATEGORIES = [
   {
     name: "Sneakers",
     imageUrl:
@@ -36,7 +36,7 @@ export function LandingCategories() {
         <h2 className="text-[32px] font-extrabold tracking-[-0.6px] text-shop-ink">Shop by category</h2>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {CATEGORIES.map(({ name, imageUrl }) => (
+          {FEATURED_CATEGORIES.map(({ name, imageUrl }) => (
             <Link
               key={name}
               href={`/shop?category=${encodeURIComponent(name)}`}
