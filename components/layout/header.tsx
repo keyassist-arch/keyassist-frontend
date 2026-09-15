@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { KeyRound, Menu, Search, ShoppingBag, Sparkles, X } from "lucide-react";
+import { KeyRound, Menu, Search, ShoppingBag, Sparkles, X, ShieldCheck } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import { useCart } from "@/context/cart-context";
-import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
+import { useGetCartQuery, useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 import { loginUrl } from "@/lib/auth-redirect";
 
@@ -21,11 +21,14 @@ const NAV_LINKS = [
 export function Header() {
   const pathname = usePathname();
   const token = useAppSelector((s) => s.auth.accessToken);
+  const { data: me } = useGetMeQuery(undefined, { skip: !token });
   const { items: localCartItems } = useCart();
   const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
   const cartCount = token
     ? (apiCart?.items ?? []).reduce((sum, i) => sum + i.quantity, 0)
     : localCartItems.reduce((sum, i) => sum + i.quantity, 0);
+
+  const isAdmin = me?.role === "ADMIN_SUPER" || me?.role === "ADMIN_STAFF";
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -111,13 +114,24 @@ export function Header() {
             </OpenCartTrigger>
 
             {token ? (
-              <Link
-                href="/dashboard"
-                className="hidden shrink-0 items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:inline-flex"
-                style={{ background: "var(--shop-primary)" }}
-              >
-                My account
-              </Link>
+              <div className="hidden items-center gap-2 sm:inline-flex">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-shop-border bg-shop-surface px-4 py-2.5 text-sm font-semibold text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-primary"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-shop-primary" />
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href="/dashboard"
+                  className="inline-flex shrink-0 items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                  style={{ background: "var(--shop-primary)" }}
+                >
+                  My account
+                </Link>
+              </div>
             ) : (
               <Link
                 href={loginUrl(pathname)}
@@ -187,13 +201,34 @@ export function Header() {
                   {l.label}
                 </Link>
               ))}
-              <Link
-                href={token ? "/dashboard" : loginUrl(pathname)}
-                className="mt-3 inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white"
-                style={{ background: "var(--shop-primary)" }}
-              >
-                {token ? "My account" : "Sign in"}
-              </Link>
+              {token ? (
+                <div className="mt-3 flex flex-col gap-2 border-t border-shop-border pt-3">
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center justify-center gap-2 rounded-full border border-shop-border bg-shop-surface px-5 py-3 text-sm font-semibold text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-primary"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-shop-primary" />
+                      Admin Console
+                    </Link>
+                  )}
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white"
+                    style={{ background: "var(--shop-primary)" }}
+                  >
+                    My account
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href={loginUrl(pathname)}
+                  className="mt-3 inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white"
+                  style={{ background: "var(--shop-primary)" }}
+                >
+                  Sign in
+                </Link>
+              )}
             </motion.div>
           </>
         )}

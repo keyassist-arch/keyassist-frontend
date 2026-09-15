@@ -1,12 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { BadgeCheck, CreditCard, Mail, Phone, Shield, Truck, User } from "lucide-react";
-import {
-  MOCK_PERSONAL,
-  MOCK_SHIPPING_ALT,
-  MOCK_SHIPPING_DEFAULT,
-} from "@/lib/mock-profile";
+import { BadgeCheck, CreditCard, Mail, MapPin, Phone, Shield, Truck, User } from "lucide-react";
 import { PaymentMethodsSkeleton } from "@/components/dashboard/payment-methods-skeleton";
 import { ErrorState } from "@/components/feedback/query-state";
 import { useGetSavedPaymentMethodsQuery } from "@/store/routes/unified-commerce-api";
@@ -29,7 +22,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
       </span>
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-        <p className="mt-0.5 text-sm font-medium text-gray-900">{value ?? "—"}</p>
+        <p className="mt-0.5 text-sm font-medium text-gray-900">{value ?? "Not provided"}</p>
       </div>
     </div>
   );
@@ -47,8 +40,8 @@ function AddressCard({ address, label, isDefault }: { address: ShippingAddress; 
         )}
       </div>
       <address className="mt-3 text-sm not-italic leading-relaxed text-gray-600">
-        <span className="font-medium text-gray-900">{address.fullName}</span>
-        <br />{address.line1}
+        {address.fullName && <><span className="font-medium text-gray-900">{address.fullName}</span><br /></>}
+        {address.line1}
         {address.line2 ? <><br />{address.line2}</> : null}
         <br />{address.city}{address.state ? `, ${address.state}` : ""} {address.postalCode}
         <br />{address.country}
@@ -137,18 +130,9 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
     skip: !token,
   });
 
-  const personal = {
-    firstName:     me?.firstName     ?? MOCK_PERSONAL.firstName,
-    lastName:      me?.lastName      ?? MOCK_PERSONAL.lastName,
-    email:         me?.email         ?? MOCK_PERSONAL.email,
-    phone:         me?.phone         ?? MOCK_PERSONAL.phone,
-    emailVerified: me?.emailVerified ?? MOCK_PERSONAL.emailVerified,
-  };
-  const fullName = [personal.firstName, personal.lastName].filter(Boolean).join(" ") ||
-    [MOCK_PERSONAL.firstName, MOCK_PERSONAL.lastName].join(" ");
-  const initials = (personal.firstName?.[0] ?? "") + (personal.lastName?.[0] ?? "") || "?";
-
-  const defaultShip: ShippingAddress = me?.defaultShippingAddress ?? MOCK_SHIPPING_DEFAULT;
+  const fullName = [me?.firstName, me?.lastName].filter(Boolean).join(" ") || me?.email || "Account";
+  const initials = (me?.firstName?.[0] ?? "") + (me?.lastName?.[0] ?? "") || me?.email?.slice(0, 2).toUpperCase() || "?";
+  const hasShippingAddress = !!(me?.defaultShippingAddress && (me.defaultShippingAddress.line1 || me.defaultShippingAddress.city));
 
   return (
     <>
@@ -171,7 +155,7 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
           <div>
             <p className="text-lg font-bold text-gray-900">{fullName}</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {personal.emailVerified ? (
+              {me?.emailVerified ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                   <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
                   Verified
@@ -193,8 +177,8 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
 
         <div className="grid gap-3 sm:grid-cols-2">
           <InfoRow icon={User}  label="Full name" value={fullName} />
-          <InfoRow icon={Mail}  label="Email"     value={personal.email} />
-          <InfoRow icon={Phone} label="Phone"     value={personal.phone} />
+          <InfoRow icon={Mail}  label="Email"     value={me?.email} />
+          <InfoRow icon={Phone} label="Phone"     value={me?.phone || "Not provided"} />
         </div>
 
         <Link
@@ -218,11 +202,22 @@ export function ProfileTabPanels({ me, active }: { me: MeResponse | undefined; a
           <Truck className="h-4 w-4 text-gray-400" aria-hidden />
           <h2 className="text-sm font-semibold text-gray-900">Saved addresses</h2>
         </div>
-        <AddressCard address={defaultShip} label="Home" isDefault />
-        <AddressCard address={MOCK_SHIPPING_ALT} label="Work" />
-        <p className="text-[11px] text-gray-400">
-          Second address is preview data. Multi-address editing coming soon.
-        </p>
+        {hasShippingAddress && me?.defaultShippingAddress ? (
+          <AddressCard address={me.defaultShippingAddress} label="Default shipping address" isDefault />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 py-10 text-center">
+            <MapPin className="mx-auto h-8 w-8 text-gray-300" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-gray-700">No default shipping address saved</p>
+            <p className="mt-1 text-xs text-gray-500">Add an address in settings for faster checkout.</p>
+            <Link
+              href="/dashboard/settings"
+              className="mt-4 inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ background: "#059669" }}
+            >
+              Add shipping address
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* Payments */}

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { loginUrl, registerUrl } from "@/lib/auth-redirect";
 import { ClipboardEvent, FormEvent, useEffect, useId, useMemo, useState } from "react";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, ShieldCheck } from "lucide-react";
 import { siteContext } from "@/lib/site-context";
 import { STORE_NAV_LINKS } from "@/lib/store-nav-links";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loggedOut } from "@/store/slices/authSlice";
-import { useGetCartQuery } from "@/store/routes/unified-commerce-api";
+import { useGetCartQuery, useGetMeQuery } from "@/store/routes/unified-commerce-api";
 import { useCart } from "@/context/cart-context";
 import { OpenCartTrigger } from "@/components/cart/open-cart-trigger";
 import { IconUser } from "@/components/storefront/header-icons";
@@ -30,9 +30,19 @@ const MARKET_CHIPS = [
 const iconBtn =
   "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-accent";
 
-function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount: number }) {
+function CartUserIcons({ cartLabel, cartCount, isAdmin }: { cartLabel: string; cartCount: number; isAdmin?: boolean }) {
   return (
     <>
+      {isAdmin && (
+        <Link
+          href="/admin"
+          className={iconBtn}
+          aria-label="Admin Console"
+          title="Admin Console"
+        >
+          <ShieldCheck className="h-[18px] w-[18px] text-shop-primary" />
+        </Link>
+      )}
       <Link href="/dashboard" className={iconBtn} aria-label="Account" title="Account">
         <IconUser className="h-[18px] w-[18px]" />
       </Link>
@@ -51,6 +61,7 @@ function CartUserIcons({ cartLabel, cartCount }: { cartLabel: string; cartCount:
 export function StoreMainHeader() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.accessToken);
+  const { data: me } = useGetMeQuery(undefined, { skip: !token });
   const { data: apiCart } = useGetCartQuery(undefined, { skip: !token });
   const { items: localCartItems } = useCart();
   const router = useRouter();
@@ -58,6 +69,8 @@ export function StoreMainHeader() {
   const [q, setQ] = useState("");
   const [navOpen, setNavOpen] = useState(false);
   const navPanelId = useId();
+
+  const isAdmin = me?.role === "ADMIN_SUPER" || me?.role === "ADMIN_STAFF";
 
   useEffect(() => {
     if (!navOpen) return;
@@ -191,7 +204,7 @@ export function StoreMainHeader() {
                 </Link>
               </div>
             )}
-            <CartUserIcons cartLabel={cartLabel} cartCount={cartCount} />
+            <CartUserIcons cartLabel={cartLabel} cartCount={cartCount} isAdmin={isAdmin} />
             <button
               type="button"
               className={`${iconBtn} lg:hidden`}
@@ -335,13 +348,32 @@ export function StoreMainHeader() {
               style={{ borderColor: "var(--shop-border)" }}
             >
               {token ? (
-                <button
-                  type="button"
-                  className="btn-secondary w-full text-sm"
-                  onClick={() => { dispatch(loggedOut()); setNavOpen(false); }}
-                >
-                  Sign out
-                </button>
+                <div className="flex flex-col gap-2">
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center justify-center gap-2 rounded-full border border-shop-border bg-shop-surface px-4 py-2.5 text-sm font-semibold text-shop-ink transition hover:bg-shop-accent-soft hover:text-shop-primary"
+                      onClick={() => setNavOpen(false)}
+                    >
+                      <ShieldCheck className="h-4 w-4 text-shop-primary" />
+                      Admin Console
+                    </Link>
+                  )}
+                  <Link
+                    href="/dashboard"
+                    className="btn-primary w-full text-center text-sm"
+                    onClick={() => setNavOpen(false)}
+                  >
+                    My account
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn-secondary w-full text-sm"
+                    onClick={() => { dispatch(loggedOut()); setNavOpen(false); }}
+                  >
+                    Sign out
+                  </button>
+                </div>
               ) : (
                 <div className="flex flex-col gap-2">
                   <Link
