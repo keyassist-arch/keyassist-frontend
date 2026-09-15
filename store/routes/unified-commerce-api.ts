@@ -55,6 +55,7 @@ import type {
   AdminPlaceManualImportOrderRequest,
   AdminDismissManualImportRequest,
   PatchMeRequest,
+  ChangePasswordRequest,
   PaymentInitResponse,
   PaymentMethodsResponse,
   PaymentProvider,
@@ -253,6 +254,10 @@ export const unifiedCommerceApi = createApi({
     patchMe: builder.mutation<MeResponse, PatchMeRequest>({
       query: (body) => ({ url: "/me", method: "PATCH", body }),
       invalidatesTags: ["Me"],
+    }),
+
+    changePassword: builder.mutation<{ message: string }, ChangePasswordRequest>({
+      query: (body) => ({ url: "/me/password", method: "PATCH", body }),
     }),
 
     getMe2fa: builder.query<Me2faStatusResponse, void>({
@@ -793,6 +798,7 @@ export const {
   useGetMeQuery,
   useLazyGetMeQuery,
   usePatchMeMutation,
+  useChangePasswordMutation,
   useGetMe2faQuery,
   usePostMe2faSetupMutation,
   usePostMe2faEnableMutation,

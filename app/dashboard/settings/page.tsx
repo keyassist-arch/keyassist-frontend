@@ -10,6 +10,7 @@ import {
   useGetMeQuery,
   useGetPasskeyCredentialsQuery,
   usePatchMeMutation,
+  useChangePasswordMutation,
   usePatchPasskeyCredentialMutation,
   usePasskeyRegisterFinishMutation,
   usePasskeyRegisterStartMutation,
@@ -25,7 +26,7 @@ import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import type { PatchMeRequest, ShippingAddress } from "@/types/api";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { passkeyPref } from "@/lib/passkey-pref";
-import { Fingerprint, MessageCircle, Pencil, Shield, Trash2 } from "lucide-react";
+import { Fingerprint, KeyRound, MessageCircle, Pencil, Shield, Trash2 } from "lucide-react";
 
 function emptyAddress(): ShippingAddress {
   return { fullName: "", line1: "", line2: "", city: "", state: "", country: "", postalCode: "", phone: "" };
@@ -70,6 +71,7 @@ export default function DashboardSettingsPage() {
   const [passkeyRegisterFinish] = usePasskeyRegisterFinishMutation();
   const [patchPasskey] = usePatchPasskeyCredentialMutation();
   const [deletePasskey] = useDeletePasskeyCredentialMutation();
+  const [changePassword, { isLoading: changingPassword }] = useChangePasswordMutation();
   const { data: passkeys, refetch: refetchPasskeys } = useGetPasskeyCredentialsQuery(undefined, { skip: !token });
 
   const [passkeyRegistering, setPasskeyRegistering] = useState(false);
@@ -92,6 +94,10 @@ export default function DashboardSettingsPage() {
   const [totpDisable, setTotpDisable] = useState("");
   const [pwDisable,   setPwDisable]   = useState("");
   const [qr, setQr] = useState<{ dataUrl: string; secret: string } | null>(null);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword,     setNewPassword]     = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!me) return;
@@ -265,6 +271,35 @@ export default function DashboardSettingsPage() {
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
+  const onChangePassword = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error("Enter your current password.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      toast.error("New password must be different from current password.");
+      return;
+    }
+    try {
+      const res = await changePassword({ currentPassword, newPassword }).unwrap();
+      toast.success(res.message || "Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -389,6 +424,56 @@ export default function DashboardSettingsPage() {
           {saving ? "Saving…" : "Save changes"}
         </button>
       </form>
+
+      {/* Change password */}
+      <SectionCard
+        title="Change password"
+        description="Update your account password. Must be at least 8 characters long."
+      >
+        <form onSubmit={onChangePassword} className="space-y-4">
+          <Field label="Current password">
+            <input
+              className={inputCls}
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="Enter current password"
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="New password">
+              <input
+                className={inputCls}
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+              />
+            </Field>
+            <Field label="Confirm new password">
+              <input
+                className={inputCls}
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                placeholder="Re-enter new password"
+              />
+            </Field>
+          </div>
+          <button
+            type="submit"
+            disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            style={{ background: "#059669" }}
+          >
+            <KeyRound className="h-4 w-4" aria-hidden />
+            {changingPassword ? "Updating password…" : "Update password"}
+          </button>
+        </form>
+      </SectionCard>
 
       {/* Passkeys */}
       <SectionCard

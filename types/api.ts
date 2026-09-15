@@ -191,6 +191,12 @@ export interface PatchMeRequest {
   defaultShippingAddress?: ShippingAddress;
 }
 
+/** `PATCH /me/password` */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 /** `POST /me/phone/send-otp` */
 export interface SendPhoneOtpRequest {
   phone?: string;
