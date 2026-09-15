@@ -5,6 +5,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { PasswordField } from "@/components/ui/password-field";
 import {
   useDeletePasskeyCredentialMutation,
   useGetMeQuery,
@@ -431,37 +432,28 @@ export default function DashboardSettingsPage() {
         description="Update your account password. Must be at least 8 characters long."
       >
         <form onSubmit={onChangePassword} className="space-y-4">
-          <Field label="Current password">
-            <input
-              className={inputCls}
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="Enter current password"
-            />
-          </Field>
+          <PasswordField
+            label="Current password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="Enter current password"
+          />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="New password">
-              <input
-                className={inputCls}
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-                placeholder="At least 8 characters"
-              />
-            </Field>
-            <Field label="Confirm new password">
-              <input
-                className={inputCls}
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                placeholder="Re-enter new password"
-              />
-            </Field>
+            <PasswordField
+              label="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+            />
+            <PasswordField
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder="Re-enter new password"
+            />
           </div>
           <button
             type="submit"
@@ -615,9 +607,12 @@ export default function DashboardSettingsPage() {
 
         {tf?.enabled ? (
           <div className="mt-4 space-y-3">
-            <Field label="Current password">
-              <input className={inputCls} type="password" value={pwDisable} onChange={(e) => setPwDisable(e.target.value)} autoComplete="current-password" />
-            </Field>
+            <PasswordField
+              label="Current password"
+              value={pwDisable}
+              onChange={(e) => setPwDisable(e.target.value)}
+              autoComplete="current-password"
+            />
             <Field label="Authenticator code">
               <input className={`${inputCls} font-mono`} value={totpDisable} onChange={(e) => setTotpDisable(e.target.value)} inputMode="numeric" autoComplete="one-time-code" />
             </Field>
