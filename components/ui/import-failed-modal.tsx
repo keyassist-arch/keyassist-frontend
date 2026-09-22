@@ -6,30 +6,27 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onRetry: () => void;
+  onRetry?: () => void;
   onManualImport: () => void;
   errorMessage?: string | null;
 }
 
-export function ImportFailedModal({ open, onClose, onRetry, onManualImport, errorMessage }: Props) {
+export function ImportFailedModal({ open, onClose, onManualImport, errorMessage }: Props) {
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
       <DialogContent role="alertdialog" showCloseButton className="max-w-sm text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
-          <AlertTriangle className="h-6 w-6 text-red-500" />
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+          <AlertTriangle className="h-6 w-6 text-emerald-600" />
         </div>
 
-        <DialogTitle className="text-xl font-bold text-shop-ink">Import failed</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-shop-ink">Submit Link Manually</DialogTitle>
         <p className="mt-2 text-sm leading-relaxed text-shop-muted">
-          {errorMessage ?? "We couldn't import that product. It may not be supported or the link may be invalid."}
+          {errorMessage || "We couldn't scrape this link automatically."} Paste the link manually and we will get back to you with an estimate within 24 hours.
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
-          <button type="button" onClick={onRetry} className="btn-primary w-full">
-            Try again
-          </button>
-          <button type="button" onClick={onManualImport} className="btn-secondary w-full">
-            Enter details manually
+          <button type="button" onClick={onManualImport} className="btn-primary w-full">
+            Paste link manually
           </button>
         </div>
 

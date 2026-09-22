@@ -1,11 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import authReducer from "@/store/slices/authSlice";
 import cartReducer from "@/store/slices/cartSlice";
 import savesReducer from "@/store/slices/savesSlice";
 import { unifiedCommerceApi } from "@/store/routes/unified-commerce-api";
 
 export function makeStore() {
-  return configureStore({
+  const store = configureStore({
     reducer: {
       auth: authReducer,
       cart: cartReducer,
@@ -15,6 +16,8 @@ export function makeStore() {
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ serializableCheck: false }).concat(unifiedCommerceApi.middleware),
   });
+  setupListeners(store.dispatch);
+  return store;
 }
 
 export type AppStore = ReturnType<typeof makeStore>;

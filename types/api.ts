@@ -407,9 +407,9 @@ export interface ProductImportResponse {
 }
 
 export interface ManualProductImportRequest {
-  title: string;
-  price: number;
-  currency: string;
+  title?: string;
+  price?: number;
+  currency?: string;
   brand?: string;
   description?: string;
   imageUrls?: string[];
@@ -864,7 +864,7 @@ export interface ShippingQuoteRequest {
   length?: number;
   width?: number;
   height?: number;
-  destination: "lagos" | "outside_lagos";
+  destination: "lagos_pickup" | "lagos" | "outside_lagos";
   service: "air" | "ocean_small";
   bulkCommercial?: boolean;
   isTV?: boolean;
@@ -883,7 +883,7 @@ export interface ShippingQuoteResponse {
 
 // ─── Landed cost quote ─────────────────────────────────────────────────────────
 
-export type LandedCostDestination = "lagos" | "outside_lagos";
+export type LandedCostDestination = "lagos_pickup" | "lagos" | "outside_lagos";
 export type LandedCostService = "air" | "ocean_small";
 export type LandedCostCategory =
   | "sneakers"

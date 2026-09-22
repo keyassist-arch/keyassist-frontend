@@ -10,7 +10,7 @@ export const siteContext = {
   },
   hero: {
     /** Small uppercase promo line (Woodisa-style rail). */
-    promoTag: "FLAT 10% OFF ALL ITEMS",
+    promoTag: "50% OFF YOUR FIRST ORDER",
     /** Text-only carousel slides (no product image). */
     slides: [
       {

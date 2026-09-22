@@ -181,43 +181,56 @@ function PageItemCard({
 
   return (
     <>
-      <article className="flex gap-[18px] rounded-[18px] border border-shop-border bg-white p-[18px]">
-        {/* Image */}
-        <div className="relative h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[14px] bg-(--background)">
-          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-2" sizes="110px" unoptimized />
+      <article className="flex flex-col sm:flex-row gap-3 sm:gap-[18px] rounded-[18px] border border-shop-border bg-white p-3.5 sm:p-[18px]">
+        <div className="flex items-start gap-3 sm:gap-[18px] min-w-0 flex-1">
+          {/* Image */}
+          <div className="relative h-[84px] w-[84px] sm:h-[110px] sm:w-[110px] shrink-0 overflow-hidden rounded-[14px] bg-(--background)">
+            <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-2" sizes="110px" unoptimized />
+          </div>
+
+          {/* Info */}
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
+              <p className="text-xs font-semibold text-shop-muted">{brand}</p>
+            </div>
+            <p className="line-clamp-2 text-sm sm:text-base font-semibold leading-[1.3] text-shop-ink">{title}</p>
+            {variantLine && <p className="text-xs sm:text-[13px] text-shop-muted">{variantLine}</p>}
+
+            {/* Mobile-only Price */}
+            <div className="mt-1 flex items-baseline gap-2 sm:hidden">
+              <p className="text-base font-bold tabular-nums text-shop-ink">{fmtMoney(lineTotal, currency)}</p>
+              {quantity > 1 && (
+                <p className="text-[11px] tabular-nums text-shop-muted">({fmtMoney(unitPrice, currency)} ea)</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Info */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
-            <p className="text-xs font-semibold text-shop-muted">{brand}</p>
+        {/* Controls & Desktop Price */}
+        <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-between gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5">
+          {/* Desktop Price */}
+          <div className="hidden sm:flex shrink-0 flex-col items-end gap-0.5">
+            <p className="text-lg font-bold tabular-nums text-shop-ink">{fmtMoney(lineTotal, currency)}</p>
+            {quantity > 1 && (
+              <p className="text-[11px] tabular-nums text-shop-muted">{fmtMoney(unitPrice, currency)} each</p>
+            )}
           </div>
-          <p className="line-clamp-2 text-base font-semibold leading-[1.3] text-shop-ink">{title}</p>
-          {variantLine && <p className="text-[13px] text-shop-muted">{variantLine}</p>}
 
-          <div className="mt-auto flex flex-wrap items-center gap-4 pt-2">
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-3 sm:gap-4">
             <ProductQuantityStepper
               value={quantity} onChange={onQuantityChange}
               min={1} max={maxQty} disabled={disabled} size="sm"
             />
             <button
               type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
-              className="flex items-center gap-1.5 text-[13px] font-medium text-shop-muted transition hover:text-red-500 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-[13px] font-medium text-shop-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
               aria-label="Remove item"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden />
-              Remove
+              <span>Remove</span>
             </button>
           </div>
-        </div>
-
-        {/* Price */}
-        <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <p className="text-lg font-bold tabular-nums text-shop-ink">{fmtMoney(lineTotal, currency)}</p>
-          {quantity > 1 && (
-            <p className="text-[11px] tabular-nums text-shop-muted">{fmtMoney(unitPrice, currency)} each</p>
-          )}
         </div>
       </article>
 
@@ -551,7 +564,12 @@ export function CartPanelBody({
   const token = useAppSelector((s) => s.auth.accessToken);
   const { items: localItems, removeItem, updateQuantity, subtotal: localSubtotal } = useCart();
 
-  const { data: apiCart, isLoading, isError, error, isFetching } = useGetCartQuery(undefined, { skip: !token });
+  const { data: apiCart, isLoading, isError, error, isFetching } = useGetCartQuery(undefined, {
+    skip: !token,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMountOrArgChange: true,
+  });
   const [patchItem, { isLoading: isPatching }] = usePatchCartItemMutation();
   const [deleteItem, { isLoading: isDeleting }] = useDeleteCartItemMutation();
 

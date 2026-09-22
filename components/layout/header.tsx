@@ -54,9 +54,9 @@ export function Header() {
       >
         <Sparkles className="h-[15px] w-[15px] shrink-0" style={{ color: "#34D399" }} aria-hidden />
         <span className="hidden font-medium text-white sm:inline">
-          Flat 10% off all items this week — paste any product link to import it instantly
+          50% off your first order — paste any product link to import it instantly
         </span>
-        <span className="font-medium text-white sm:hidden">Flat 10% off all items this week</span>
+        <span className="font-medium text-white sm:hidden">50% off your first order</span>
         <Link href="/shop" className="shrink-0 font-semibold" style={{ color: "#34D399" }}>
           Shop now →
         </Link>

@@ -20,7 +20,7 @@ export function LandingCtaBand() {
             style={{ background: "#2B4A3E", color: "#34D399" }}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
-            Flat 10% off your first order
+            50% off your first order
           </span>
 
           <h2 className="relative z-10 mt-6 max-w-[760px] text-[32px] font-extrabold leading-[1.1] tracking-[-1px] text-white sm:text-[46px]">

@@ -24,6 +24,13 @@ const SUPPORT_COL = [
   { label: "FAQ", href: "/faq" },
 ];
 
+const OTHER_SERVICES = [
+  "Business broker",
+  "B2B service",
+  "Logistics",
+  "General contractor",
+];
+
 const SOCIALS = [
   { label: "Instagram", slug: "instagram" },
   { label: "X (Twitter)", slug: "x" },
@@ -77,14 +84,15 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:flex lg:gap-16">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:flex lg:gap-14">
           <FooterCol title="Shop" links={SHOP_COL} />
           <FooterCol title="Company" links={COMPANY_COL} />
           <FooterCol title="Support" links={SUPPORT_COL} />
+          <FooterReadOnlyCol title="Other Services" items={OTHER_SERVICES} />
         </div>
 
         <div className="flex w-full max-w-[280px] flex-col gap-[14px]">
-          <p className="text-[13px] font-bold text-white">Get 10% off your first order</p>
+          <p className="text-[13px] font-bold text-white">Get 50% off your first order</p>
           <p className="text-[13px] leading-[1.5]" style={{ color: "#9C968F" }}>
             Deals and drops, straight to your inbox.
           </p>
@@ -118,6 +126,19 @@ function FooterCol({ title, links }: { title: string; links: { label: string; hr
         <Link key={l.label} href={l.href} className="text-sm transition hover:text-white" style={{ color: "#9C968F" }}>
           {l.label}
         </Link>
+      ))}
+    </div>
+  );
+}
+
+function FooterReadOnlyCol({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="flex flex-col gap-[14px]">
+      <p className="text-[13px] font-bold tracking-[0.5px] text-white">{title}</p>
+      {items.map((item) => (
+        <span key={item} className="text-sm select-none" style={{ color: "#9C968F" }}>
+          {item}
+        </span>
       ))}
     </div>
   );

@@ -115,7 +115,7 @@ export function HomeShopHero() {
           </h1>
 
           <p className="max-w-[520px] text-lg leading-[1.55] text-shop-muted">
-            Shop Amazon, Apple, Nike, GOAT, Zara, eBay and StockX — or paste any product link. We buy it in the US,
+            Shop Amazon, Apple, Nike, Walmart, Back Market, Reebelo, GOAT, Zara, eBay and StockX — or paste any product link. We buy it in the US,
             verify it, and air-freight it to your door in Lagos and nationwide.
           </p>
 
