@@ -32,6 +32,8 @@ import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
 import { useOrderRealtime } from "@/hooks/use-order-realtime";
 import { clearPendingCheckoutOrderId } from "@/lib/pending-checkout-order";
 import { formatApiMoney } from "@/lib/format-price";
+import { orderSummaryRows } from "@/lib/order-summary";
+import { OrderReceipt } from "@/components/orders/order-receipt";
 import { orderLineTotal, orderTotal } from "@/lib/dashboard-orders";
 import type { OrderDisplaySummary } from "@/types/api";
 
@@ -48,23 +50,18 @@ function OrderTotalsSummary({
     const cur = summary.currency;
     return (
       <div className="space-y-2.5 text-sm">
-        <div className="flex justify-between text-shop-muted">
-          <span>Items subtotal</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.product), cur)}</span>
-        </div>
-        <div className="flex justify-between text-shop-muted">
-          <span>Import &amp; delivery</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
-        </div>
-        <div className="flex justify-between text-shop-muted">
-          <span>Service charge</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
-        </div>
-        {Number(summary.discount) > 0 && (
-          <div className="flex justify-between text-emerald-600">
-            <span>Special discount</span>
-            <span className="font-medium">−{formatApiMoney(Number(summary.discount), cur)}</span>
-          </div>
+        {orderSummaryRows(summary).map(({ label, amount, discount }) =>
+          discount ? (
+            <div key={label} className="flex justify-between text-emerald-600">
+              <span>{label}</span>
+              <span className="font-medium">−{formatApiMoney(amount, cur)}</span>
+            </div>
+          ) : (
+            <div key={label} className="flex justify-between text-shop-muted">
+              <span>{label}</span>
+              <span className="font-medium text-shop-ink">{formatApiMoney(amount, cur)}</span>
+            </div>
+          ),
         )}
         <div className="flex items-baseline justify-between border-t border-shop-border pt-3">
           <span className="text-base font-semibold text-shop-ink">Total paid</span>
@@ -336,6 +333,7 @@ export function CheckoutSuccessClient() {
 
   return (
     <InnerShell>
+      <OrderReceipt order={order} fallbackEmail={userEmail} />
       <div className="mx-auto max-w-2xl py-4 sm:py-8">
         {/* Main Centered Card */}
         <div className="card overflow-hidden p-6 sm:p-10 space-y-8">
@@ -505,7 +503,7 @@ export function CheckoutSuccessClient() {
               <button
                 type="button"
                 onClick={handlePrint}
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-shop-muted hover:text-shop-ink transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-shop-muted hover:text-shop-ink transition cursor-pointer"
               >
                 <Printer className="h-3.5 w-3.5" />
                 Print receipt

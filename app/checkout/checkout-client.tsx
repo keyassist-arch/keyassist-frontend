@@ -33,6 +33,7 @@ import type {
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { coerceNumber } from "@/lib/coerce-number";
+import { orderSummaryRows } from "@/lib/order-summary";
 import { formatApiMoney } from "@/lib/format-price";
 import { orderLineTotal } from "@/lib/dashboard-orders";
 import { lineImage, lineTitle } from "@/lib/cart-item-helpers";
@@ -115,20 +116,12 @@ function SectionCard({
 
 function CheckoutDisplaySummary({ summary }: { summary: OrderDisplaySummary }) {
   const cur = summary.currency;
-  const rows: [string, number, boolean?][] = [
-    ["Product (COGS)", Number(summary.product)],
-    ["Shipping", Number(summary.importAndDelivery)],
-    ["Service", Number(summary.serviceFee)],
-  ];
-  if (summary.insurance && Number(summary.insurance) > 0) {
-    rows.push(["Insurance", Number(summary.insurance)]);
-  }
-  if (Number(summary.discount) > 0) rows.push(["Discount", Number(summary.discount), true]);
+  const rows = orderSummaryRows(summary);
 
   return (
     <>
       <div className="flex flex-col gap-[11px]">
-        {rows.map(([label, amount, isDiscount]) => (
+        {rows.map(({ label, amount, discount: isDiscount }) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <span style={isDiscount ? { color: "var(--shop-primary)" } : { color: "var(--shop-muted)" }}>{label}</span>
             <span

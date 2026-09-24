@@ -496,11 +496,11 @@ export interface OrderCheckoutHint {
  * `importAndDelivery` bundles marketplace tax, domestic/international shipping, customs, FX and risk buffers.
  */
 export interface OrderDisplaySummary {
-  /** Product price × quantity total. */
+  /** Product (COGS): goods + US sales tax + any retailer COGS surcharge (e.g. Zara $6). */
   product: string;
-  /** All import and delivery costs combined (shipping, customs, buffers). */
+  /** Shipping: all import and delivery costs combined (marketplace shipping, handling, freight, customs). */
   importAndDelivery: string;
-  /** Service charge (10% of product subtotal). */
+  /** Service charge. */
   serviceFee: string;
   /** Optional cargo insurance (3% of item cost). */
   insurance?: string;
@@ -562,6 +562,7 @@ export interface OrderResponse {
   };
   tracking?: TrackingEntry[];
   userEmail?: string;
+  createdAt?: string;
 }
 
 /** `GET /orders/pending-payment` — most recent unpaid order for banners / resume checkout. */

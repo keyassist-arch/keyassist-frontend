@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertCircle, ArrowLeft, CheckCircle2, CreditCard, MapPin, Package } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, CreditCard, MapPin, Package, Printer } from "lucide-react";
 import { useParams } from "next/navigation";
 import { TrackingSection } from "@/components/dashboard/tracking-section";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatApiMoney } from "@/lib/format-price";
+import { orderSummaryRows } from "@/lib/order-summary";
+import { OrderReceipt } from "@/components/orders/order-receipt";
 import { orderLineTotal, orderTotal } from "@/lib/dashboard-orders";
 import { orderCanInitializePayment } from "@/lib/order-checkout";
 import { isUuid, isValidOrderIdentifier } from "@/lib/uuid";
@@ -32,24 +34,15 @@ function OrderTotals({
     const cur = summary.currency;
     return (
       <>
-        <div className="flex justify-between text-sm">
-          <span className="text-shop-muted">Product</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.product), cur)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-shop-muted">Import &amp; delivery</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.importAndDelivery), cur)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-shop-muted">Service fee</span>
-          <span className="font-medium text-shop-ink">{formatApiMoney(Number(summary.serviceFee), cur)}</span>
-        </div>
-        {Number(summary.discount) > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-shop-muted">Discount</span>
-            <span className="font-medium text-emerald-600">−{formatApiMoney(Number(summary.discount), cur)}</span>
+        {orderSummaryRows(summary).map(({ label, amount, discount }) => (
+          <div key={label} className="flex justify-between text-sm">
+            <span className="text-shop-muted">{label}</span>
+            <span className={`font-medium ${discount ? "text-emerald-600" : "text-shop-ink"}`}>
+              {discount ? "−" : ""}
+              {formatApiMoney(amount, cur)}
+            </span>
           </div>
-        )}
+        ))}
         <div className="flex justify-between border-t border-shop-border pt-3 text-sm font-semibold">
           <span className="text-shop-ink">Total</span>
           <span className="text-shop-ink">{formatApiMoney(Number(summary.total), cur)}</span>
@@ -145,6 +138,7 @@ export default function DashboardOrderDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const token = useAppSelector((s) => s.auth.accessToken);
+  const userEmail = useAppSelector((s) => s.auth.email);
   const valid = isValidOrderIdentifier(id);
 
   const { data: order, isLoading, isError, error, refetch } = useGetOrderQuery(id, {
@@ -198,6 +192,7 @@ export default function DashboardOrderDetailPage() {
 
   return (
     <>
+    <OrderReceipt order={order} fallbackEmail={userEmail} />
     <div className="space-y-6">
       {/* Back nav */}
       <Link
@@ -400,9 +395,14 @@ export default function DashboardOrderDetailPage() {
         <Link href="/dashboard/orders" className="btn-secondary inline-block">
           All orders
         </Link>
-        <Link href={`/checkout/success?order_id=${order.orderNumber || order.id}`} className="btn-secondary inline-block">
-          View receipt
-        </Link>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="btn-secondary inline-flex items-center gap-2"
+        >
+          <Printer className="h-4 w-4" aria-hidden />
+          Print receipt
+        </button>
       </div>
     </div>
 

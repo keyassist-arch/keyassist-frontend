@@ -240,3 +240,149 @@ textarea.input {
     animation: none;
   }
 }
+
+/* ── Printed order receipt (components/orders/order-receipt.tsx) ─────────── */
+.print-receipt {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Print only the receipt, not the site chrome or the on-screen page. */
+  body > *:not(.print-receipt) {
+    display: none !important;
+  }
+
+  .print-receipt {
+    display: block;
+    color: #111;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  .print-receipt p {
+    margin: 0;
+  }
+
+  .print-receipt .pr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 10pt;
+    border-bottom: 2px solid #111;
+  }
+
+  .print-receipt .pr-brand {
+    font-size: 18pt;
+    font-weight: 800;
+  }
+
+  .print-receipt .pr-title {
+    font-size: 16pt;
+    font-weight: 700;
+  }
+
+  .print-receipt .pr-right {
+    text-align: right;
+  }
+
+  .print-receipt .pr-muted,
+  .print-receipt .pr-label {
+    color: #555;
+  }
+
+  .print-receipt .pr-label {
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2pt;
+  }
+
+  .print-receipt .pr-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+  }
+
+  .print-receipt .pr-meta {
+    display: flex;
+    gap: 24pt;
+    margin-top: 14pt;
+  }
+
+  .print-receipt .pr-meta > div {
+    flex: 1;
+  }
+
+  .print-receipt .pr-items {
+    width: 100%;
+    margin-top: 18pt;
+    border-collapse: collapse;
+  }
+
+  .print-receipt .pr-items th {
+    text-align: left;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    border-bottom: 1px solid #111;
+    padding: 4pt 0;
+  }
+
+  .print-receipt .pr-items td {
+    padding: 6pt 0;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+  }
+
+  .print-receipt .pr-items tr {
+    break-inside: avoid;
+  }
+
+  .print-receipt .pr-num {
+    text-align: right;
+    white-space: nowrap;
+    padding-left: 12pt !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .print-receipt .pr-totals {
+    margin-left: auto;
+    margin-top: 12pt;
+    width: 55%;
+    break-inside: avoid;
+  }
+
+  .print-receipt .pr-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2pt 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .print-receipt .pr-total {
+    margin-top: 4pt;
+    padding-top: 6pt;
+    border-top: 2px solid #111;
+    font-size: 13pt;
+    font-weight: 700;
+  }
+
+  .print-receipt .pr-footer {
+    margin-top: 28pt;
+    padding-top: 8pt;
+    border-top: 1px solid #ddd;
+    font-size: 9pt;
+    color: #555;
+  }
+}
