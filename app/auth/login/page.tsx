@@ -12,6 +12,7 @@ import {
   useLogin2faMutation,
   useLoginMutation,
   usePasskeyLoginFinishMutation,
+  useSyncCartMutation,
   usePasskeyLoginStartMutation,
   useResendVerificationMutation,
 } from "@/store/routes/unified-commerce-api";
@@ -90,7 +91,7 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
   const dispatch = useAppDispatch();
-  const { items } = useCart();
+  const { items, clearCart } = useCart();
 
   const [login, { isLoading, isError, error, isSuccess, data: loginData }] =
     useLoginMutation();
@@ -99,6 +100,7 @@ function LoginPageInner() {
   const [resend, { isLoading: resendLoading }] = useResendVerificationMutation();
   const [passkeyStart] = usePasskeyLoginStartMutation();
   const [passkeyFinish] = usePasskeyLoginFinishMutation();
+  const [syncCart] = useSyncCartMutation();
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -110,6 +112,9 @@ function LoginPageInner() {
 
   const preAuthTokenRef = useRef<string | null>(null);
   const localLinesRef = useRef<LocalCartLine[]>([]);
+  // Read by the passkey callback, which is memoised on `redirect` only.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   const verificationToastShown = useRef(false);
 
   const notVerified = isError ? getEmailNotVerifiedPayload(error) : null;
@@ -117,16 +122,22 @@ function LoginPageInner() {
 
   useEffect(() => {
     if (step === "password" && isSuccess && isTokenLoginResult(loginData)) {
+      // The server merged the guest cart during login — drop the local copy so it
+      // isn't merged a second time on the next sign-in.
+      if (localLinesRef.current.length) clearCart();
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
       router.replace(redirect);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, isSuccess, loginData, dispatch, router]);
 
   useEffect(() => {
     if (step === "totp" && success2fa) {
+      if (localLinesRef.current.length) clearCart();
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
       router.replace(redirect);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, success2fa, dispatch, router]);
 
   useEffect(() => {
@@ -212,6 +223,16 @@ function LoginPageInner() {
       const options = await passkeyStart().unwrap();
       const authResponse = await startAuthentication({ optionsJSON: options, useBrowserAutofill });
       await passkeyFinish(authResponse).unwrap();
+      // Passkey login has no localCart field — merge the guest cart separately.
+      const lines = mapCartItemsToLocalCart(itemsRef.current);
+      if (lines.length) {
+        try {
+          await syncCart({ items: lines }).unwrap();
+          clearCart();
+        } catch {
+          toast.error("Signed in, but we couldn't move your bag items to your account.");
+        }
+      }
       dispatch(unifiedCommerceApi.util.invalidateTags(["Me", "Cart"]));
       router.replace(redirect);
     } catch (err: unknown) {
