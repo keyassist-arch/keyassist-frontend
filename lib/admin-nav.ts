@@ -6,6 +6,7 @@ import {
   Box,
   Users,
   Inbox,
+  Percent,
   type LucideIcon,
 } from "lucide-react";
 import type { AdminPermission, MeResponse } from "@/types/api";
@@ -27,6 +28,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { href: "/admin/products", label: "Products",  icon: Box,            end: false, permission: "PRODUCTS",   description: "Manage the catalog" },
   { href: "/admin/manual-imports", label: "Manual requests", icon: Inbox, end: false, permission: "PRODUCTS", description: "Fulfill customer-submitted manual product requests" },
   { href: "/admin/refunds",  label: "Refunds",   icon: Banknote,       end: false, permission: "REFUNDS",    description: "Issue and track refunds" },
+  { href: "/admin/discounts", label: "Discounts", icon: Percent,       end: false, permission: "DISCOUNTS",  description: "Configure customer discounts" },
   { href: "/admin/issues",   label: "Issues",    icon: AlertCircle,    end: false, permission: "ISSUES",     description: "Resolve customer disputes" },
   { href: "/admin/users",    label: "Team",      icon: Users,          end: false, permission: "SUPER_ONLY", description: "Manage staff access" },
 ];

@@ -10,7 +10,8 @@ export type AdminPermission =
   | "PRODUCTS"
   | "REFUNDS"
   | "ISSUES"
-  | "SHIPPING_RATES";
+  | "SHIPPING_RATES"
+  | "DISCOUNTS";
 
 export interface Category {
   id: string;
@@ -1077,3 +1078,19 @@ export interface ShippingRatesResponse {
 }
 
 export type PatchShippingRatesRequest = Partial<ShippingRatesResponse>;
+
+// ─── Admin discount settings ───────────────────────────────────────────────────
+
+/** Postgres decimals arrive as strings. Rates are fractions (0.5 = 50%). */
+export interface DiscountSettingsResponse {
+  firstOrderDiscountRate: string | number;
+  volumeDiscountRate: string | number;
+  volumeDiscountThresholdUsd: string | number;
+  updatedAt?: string;
+}
+
+export interface PatchDiscountSettingsRequest {
+  firstOrderDiscountRate?: number;
+  volumeDiscountRate?: number;
+  volumeDiscountThresholdUsd?: number;
+}

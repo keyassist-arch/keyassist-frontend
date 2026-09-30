@@ -19,6 +19,7 @@ const PERMISSION_OPTIONS: { value: AdminPermission; label: string }[] = [
   { value: "REFUNDS", label: "Refunds" },
   { value: "ISSUES", label: "Issues" },
   { value: "SHIPPING_RATES", label: "Shipping rates" },
+  { value: "DISCOUNTS", label: "Discounts" },
 ];
 
 function PermissionCheckboxes({

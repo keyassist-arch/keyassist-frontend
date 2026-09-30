@@ -48,6 +48,8 @@ import type {
   PasskeyLoginFinishResponse,
   PatchIssueRequest,
   PatchShippingRatesRequest,
+  PatchDiscountSettingsRequest,
+  DiscountSettingsResponse,
   PendingPaymentResponse,
   PatchAdminOrderRequest,
   ManualImportFulfillmentStatus,
@@ -110,7 +112,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "MyIssues", "Categories", "PaymentMethods", "AdminUsers", "AdminManualImports"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "DiscountSettings", "MyIssues", "Categories", "PaymentMethods", "AdminUsers", "AdminManualImports"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -745,6 +747,17 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["ShippingRates"],
     }),
 
+    /* ---------- Admin discount settings ---------- */
+    getAdminDiscountSettings: builder.query<DiscountSettingsResponse, void>({
+      query: () => ({ url: "/admin/discount-settings", method: "GET" }),
+      providesTags: ["DiscountSettings"],
+    }),
+
+    patchAdminDiscountSettings: builder.mutation<DiscountSettingsResponse, PatchDiscountSettingsRequest>({
+      query: (body) => ({ url: "/admin/discount-settings", method: "PATCH", body }),
+      invalidatesTags: ["DiscountSettings", "Cart"],
+    }),
+
     /* ---------- Saved payment methods (protected) ---------- */
     getSavedPaymentMethods: builder.query<SavedPaymentMethod[], void>({
       query: () => ({ url: "/payments/saved-methods", method: "GET" }),
@@ -880,6 +893,8 @@ export const {
   // Admin shipping rates
   useGetAdminShippingRatesQuery,
   usePatchAdminShippingRatesMutation,
+  useGetAdminDiscountSettingsQuery,
+  usePatchAdminDiscountSettingsMutation,
   // Saved payment methods
   useGetSavedPaymentMethodsQuery,
   useCreateStripeSetupIntentMutation,
