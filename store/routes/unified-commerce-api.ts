@@ -14,6 +14,7 @@ import type {
   Category,
   UploadedProductImage,
   CreateAdminUserRequest,
+  CreateAdminUserResponse,
   PatchAdminUserRequest,
   PaginatedApiProducts,
   CreateOrderRequest,
@@ -537,7 +538,7 @@ export const unifiedCommerceApi = createApi({
       providesTags: ["AdminUsers"],
     }),
 
-    createAdminUser: builder.mutation<AdminUserResponse, CreateAdminUserRequest>({
+    createAdminUser: builder.mutation<CreateAdminUserResponse, CreateAdminUserRequest>({
       query: (body) => ({ url: "/admin/users", method: "POST", body }),
       invalidatesTags: ["AdminUsers"],
     }),
@@ -545,6 +546,10 @@ export const unifiedCommerceApi = createApi({
     patchAdminUser: builder.mutation<AdminUserResponse, { id: string; body: PatchAdminUserRequest }>({
       query: ({ id, body }) => ({ url: `/admin/users/${id}`, method: "PATCH", body }),
       invalidatesTags: ["AdminUsers"],
+    }),
+
+    resendAdminInvite: builder.mutation<{ inviteEmailSent: boolean }, string>({
+      query: (id) => ({ url: `/admin/users/${id}/resend-invite`, method: "POST" }),
     }),
 
     /* ---------- Reconciliation — refunds (admin) ---------- */
@@ -859,6 +864,7 @@ export const {
   useGetAdminUsersQuery,
   useCreateAdminUserMutation,
   usePatchAdminUserMutation,
+  useResendAdminInviteMutation,
   useCreateRefundMutation,
   useGetRefundsQuery,
   useGetRefundQuery,

@@ -171,18 +171,31 @@ export interface AdminUserResponse {
   createdAt: string;
 }
 
-/** `POST /admin/users` — always creates an ADMIN_STAFF account. */
+/** Roles a super admin can assign through `/admin/users`. */
+export type AssignableAdminRole = "ADMIN_STAFF" | "ADMIN_SUPER";
+
+/** `POST /admin/users` — creates ADMIN_STAFF unless `role` says otherwise. */
 export interface CreateAdminUserRequest {
   email: string;
   firstName: string;
   lastName: string;
   permissions: AdminPermission[];
+  role?: AssignableAdminRole;
 }
 
-/** `PATCH /admin/users/:id` */
+/** `POST /admin/users` response — `inviteEmailSent` is false if the email failed. */
+export interface CreateAdminUserResponse extends AdminUserResponse {
+  inviteEmailSent: boolean;
+}
+
+/**
+ * `PATCH /admin/users/:id` — `role` works on any admin except yourself;
+ * `permissions` / `disabled` only on ADMIN_STAFF.
+ */
 export interface PatchAdminUserRequest {
   permissions?: AdminPermission[];
   disabled?: boolean;
+  role?: AssignableAdminRole;
 }
 
 export interface PatchMeRequest {
