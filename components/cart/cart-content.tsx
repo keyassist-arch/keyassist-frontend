@@ -11,7 +11,7 @@ import {
   useGetCartQuery,
   usePatchCartItemMutation,
 } from "@/store/routes/unified-commerce-api";
-import type { CartItemResponse } from "@/types/api";
+import type { ApiProduct, CartItemResponse } from "@/types/api";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { coerceNumber } from "@/lib/coerce-number";
 import { ProductQuantityStepper } from "@/components/product/product-quantity-stepper";
@@ -38,15 +38,23 @@ export type CartContentLayout = "page" | "drawer";
    DRAWER — unchanged visual
 ══════════════════════════════════════════ */
 
+function isManualLine(item: CartItemResponse): boolean {
+  if (typeof item.product === "object" && item.product !== null) {
+    const p = item.product as ApiProduct;
+    return Boolean(p.isManual || p.source === "GENERIC");
+  }
+  return false;
+}
+
 function DrawerLineItem({
   imageSrc, imageAlt, brand, title, variantLine,
   unitLabel, lineTotalLabel, quantity,
-  onQuantityChange, onRemove, maxQty, disabled,
+  onQuantityChange, onRemove, maxQty, disabled, isManual,
 }: {
   imageSrc: string; imageAlt: string; brand: string; title: string;
   variantLine?: string; unitLabel: string; lineTotalLabel: string;
   quantity: number; onQuantityChange: (q: number) => void;
-  onRemove: () => void; maxQty?: number; disabled?: boolean;
+  onRemove: () => void; maxQty?: number; disabled?: boolean; isManual?: boolean;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -58,24 +66,43 @@ function DrawerLineItem({
             <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="64px" unoptimized />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-black/50">{brand}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-xs text-black/50">{brand}</p>
+              {isManual && (
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 border border-emerald-200">
+                  Custom Quote
+                </span>
+              )}
+            </div>
             <h3 className="mt-0.5 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
             {variantLine ? <p className="mt-1 text-xs text-black/50">{variantLine}</p> : null}
             <p className="mt-1 text-xs text-black/50 tabular-nums">{unitLabel}</p>
             <div className="mt-3 flex flex-wrap items-end gap-2">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-black/60">Quantity</span>
-                <ProductQuantityStepper
-                  value={quantity} onChange={onQuantityChange}
-                  min={1} max={maxQty} disabled={disabled}
-                />
-              </div>
+              {isManual ? (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-black/50">Quantity</span>
+                  <div
+                    className="flex h-[38px] items-center justify-center rounded-lg bg-gray-100 px-3 text-xs font-semibold text-gray-700 border border-black/5"
+                    title="Price is locked to verified request quantity"
+                  >
+                    Qty: {quantity} (Fixed quote)
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-black/60">Quantity</span>
+                  <ProductQuantityStepper
+                    value={quantity} onChange={onQuantityChange}
+                    min={1} max={maxQty} disabled={disabled}
+                  />
+                </div>
+              )}
               <button
                 type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
+                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
                 aria-label="Remove item"
               >
-                <Trash2 size={18} strokeWidth={1.75} aria-hidden />
+                <Trash2 size={16} strokeWidth={1.75} aria-hidden />
               </button>
             </div>
           </div>
@@ -170,12 +197,12 @@ function DrawerFooter({
 
 function PageItemCard({
   imageSrc, imageAlt, brand, title, variantLine, unitPrice,
-  lineTotal, currency, quantity, onQuantityChange, onRemove, maxQty, disabled,
+  lineTotal, currency, quantity, onQuantityChange, onRemove, maxQty, disabled, isManual,
 }: {
   imageSrc: string; imageAlt: string; brand: string; title: string;
   variantLine?: string; unitPrice: number; lineTotal: number; currency: string;
   quantity: number; onQuantityChange: (q: number) => void;
-  onRemove: () => void; maxQty?: number; disabled?: boolean;
+  onRemove: () => void; maxQty?: number; disabled?: boolean; isManual?: boolean;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -190,9 +217,14 @@ function PageItemCard({
 
           {/* Info */}
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--shop-primary)" }} aria-hidden />
               <p className="text-xs font-semibold text-shop-muted">{brand}</p>
+              {isManual && (
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 border border-emerald-200">
+                  Manual Import Quote
+                </span>
+              )}
             </div>
             <p className="line-clamp-2 text-sm sm:text-base font-semibold leading-[1.3] text-shop-ink">{title}</p>
             {variantLine && <p className="text-xs sm:text-[13px] text-shop-muted">{variantLine}</p>}
@@ -218,10 +250,19 @@ function PageItemCard({
           </div>
 
           <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-3 sm:gap-4">
-            <ProductQuantityStepper
-              value={quantity} onChange={onQuantityChange}
-              min={1} max={maxQty} disabled={disabled} size="sm"
-            />
+            {isManual ? (
+              <div
+                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 border border-black/5"
+                title="Price is locked to verified request quantity"
+              >
+                Qty: {quantity} (Fixed quote)
+              </div>
+            ) : (
+              <ProductQuantityStepper
+                value={quantity} onChange={onQuantityChange}
+                min={1} max={maxQty} disabled={disabled} size="sm"
+              />
+            )}
             <button
               type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-[13px] font-medium text-shop-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
@@ -474,6 +515,7 @@ function ApiCartSection({
                 onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
                 onRemove={() => onRemove(item.id)}
                 disabled={busy}
+                isManual={isManualLine(item)}
               />
             );
           })}
@@ -516,6 +558,7 @@ function ApiCartSection({
                   onQuantityChange={(q) => onQuantityChange(item.id, q, item.variantSelection)}
                   onRemove={() => onRemove(item.id)}
                   disabled={busy}
+                  isManual={isManualLine(item)}
                 />
               );
             })}

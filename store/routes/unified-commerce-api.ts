@@ -56,6 +56,7 @@ import type {
   ManualImportFulfillmentStatus,
   ManualImportRequestSummary,
   AdminPlaceManualImportOrderRequest,
+  AdminApproveManualImportToCartRequest,
   AdminDismissManualImportRequest,
   PatchMeRequest,
   ChangePasswordRequest,
@@ -495,6 +496,11 @@ export const unifiedCommerceApi = createApi({
       invalidatesTags: ["AdminManualImports", "AdminOrders"],
     }),
 
+    approveAdminManualImportToCart: builder.mutation<{ ok: boolean; message: string; productId: string }, { id: string; body: AdminApproveManualImportToCartRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/manual-imports/${id}/approve-to-cart`, method: "POST", body }),
+      invalidatesTags: ["AdminManualImports", "Cart", "CatalogProducts"],
+    }),
+
     dismissAdminManualImport: builder.mutation<{ ok: boolean }, { id: string; body: AdminDismissManualImportRequest }>({
       query: ({ id, body }) => ({ url: `/admin/manual-imports/${id}/dismiss`, method: "POST", body }),
       invalidatesTags: ["AdminManualImports"],
@@ -862,6 +868,7 @@ export const {
   usePatchAdminOrderMutation,
   useGetAdminManualImportsQuery,
   usePlaceAdminManualImportOrderMutation,
+  useApproveAdminManualImportToCartMutation,
   useDismissAdminManualImportMutation,
   useGetAdminProductsQuery,
   usePostAdminScrapePreviewMutation,

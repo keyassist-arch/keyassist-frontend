@@ -14,6 +14,7 @@ import { ErrorState, SuccessState } from "@/components/feedback/query-state";
 import { AdminListSkeleton } from "@/components/dashboard/admin-list-skeleton";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { AdminManualImportOrderModal } from "@/components/dashboard/admin-manual-import-order-modal";
+import { AdminManualImportApproveModal } from "@/components/dashboard/admin-manual-import-approve-modal";
 import { productDetailPath } from "@/lib/product-detail-path";
 import { getErrorMessage } from "@/lib/rtk-error";
 
@@ -35,6 +36,7 @@ export default function AdminManualImportsPage() {
   const { data: requests, isLoading, isError, error } = useGetAdminManualImportsQuery(status, { skip: !token });
   const [dismissImport, { isLoading: dismissing }] = useDismissAdminManualImportMutation();
 
+  const [approveTarget, setApproveTarget] = useState<ManualImportRequestSummary | null>(null);
   const [orderTarget, setOrderTarget] = useState<ManualImportRequestSummary | null>(null);
   const [dismissTarget, setDismissTarget] = useState<ManualImportRequestSummary | null>(null);
   const [dismissReason, setDismissReason] = useState("");
@@ -206,16 +208,24 @@ export default function AdminManualImportsPage() {
                       <>
                         <button
                           type="button"
+                          onClick={() => setApproveTarget(row)}
+                          disabled={!row.product}
+                          className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          Approve & Add to Cart
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setOrderTarget(row)}
                           disabled={!row.product}
-                          className="inline-flex items-center justify-center rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-900 transition hover:bg-gray-50 disabled:opacity-50"
                         >
-                          Place order
+                          Place order on behalf
                         </button>
                         <button
                           type="button"
                           onClick={() => setDismissTarget(row)}
-                          className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-800 transition hover:bg-gray-50"
+                          className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
                         >
                           Dismiss
                         </button>
@@ -236,6 +246,12 @@ export default function AdminManualImportsPage() {
           })}
         </div>
       )}
+
+      <AdminManualImportApproveModal
+        request={approveTarget}
+        onClose={() => setApproveTarget(null)}
+        onApproved={() => setNotice({ ok: true, text: "Quote approved, added to customer's cart, and notification email sent." })}
+      />
 
       <AdminManualImportOrderModal
         request={orderTarget}

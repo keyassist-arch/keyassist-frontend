@@ -320,6 +320,7 @@ export interface ApiProduct {
   /** Same as `sourceUrl`; scrape / rescrape target. */
   scrapeUrl?: string;
   rescrapeEnabled?: boolean;
+  isManual?: boolean;
   /** Supplier / list price from last scrape (decimal string). */
   originalPrice?: string | number;
   /** Customer-facing price including platform markup (decimal string). */
@@ -712,6 +713,12 @@ export interface ManualImportRequestSummary {
 export interface AdminPlaceManualImportOrderRequest {
   shippingAddress?: ShippingAddress;
   landedCost: LandedCostInput;
+}
+
+export interface AdminApproveManualImportToCartRequest {
+  price: number;
+  currency?: string;
+  title?: string;
 }
 
 export interface AdminDismissManualImportRequest {
