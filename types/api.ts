@@ -694,6 +694,7 @@ export interface ManualImportRequestSummary {
     slug: string | null;
     title: string;
     images: string[];
+    description?: string | null;
     salePrice?: string;
     currency?: string;
   } | null;

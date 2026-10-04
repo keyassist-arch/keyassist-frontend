@@ -532,6 +532,14 @@ export const unifiedCommerceApi = createApi({
       },
     }),
 
+    uploadImage: builder.mutation<UploadedProductImage, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return { url: "/uploads", method: "POST", body: formData };
+      },
+    }),
+
     /* ---------- Admin team (ADMIN_SUPER only) ---------- */
     getAdminUsers: builder.query<AdminUserResponse[], void>({
       query: () => ({ url: "/admin/users", method: "GET" }),
@@ -861,6 +869,7 @@ export const {
   useCreateAdminProductMutation,
   useUpdateAdminProductMutation,
   useUploadProductImageMutation,
+  useUploadImageMutation,
   useGetAdminUsersQuery,
   useCreateAdminUserMutation,
   usePatchAdminUserMutation,

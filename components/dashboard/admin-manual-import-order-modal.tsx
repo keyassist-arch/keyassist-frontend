@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import toast from "react-hot-toast";
+import { ExternalLink, Package } from "lucide-react";
 import {
   useGetLandedCostQuoteMutation,
   usePlaceAdminManualImportOrderMutation,
@@ -37,6 +39,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
   const [overrideAddress, setOverrideAddress] = useState(false);
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [placeError, setPlaceError] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [getLandedCostQuote, { isLoading: quoting }] = useGetLandedCostQuoteMutation();
   const [placeOrder, { isLoading: placing }] = usePlaceAdminManualImportOrderMutation();
@@ -48,6 +51,7 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
     setOverrideAddress(false);
     setAddress(EMPTY_ADDRESS);
     setInsurance(false);
+    setSelectedImage(null);
   };
 
   const close = () => {
@@ -103,17 +107,93 @@ export function AdminManualImportOrderModal({ request, onClose, onPlaced }: Prop
     }
   };
 
+  const productImages = request?.product?.images ?? [];
+
   return (
     <Dialog open={request != null} onOpenChange={(next) => { if (!next) close(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Place order for customer</DialogTitle>
           <DialogDescription>
-            {request?.product?.title ?? "Manual import"} — for {request?.requestedByUser?.email ?? "unknown customer"}
+            For {request?.requestedByUser?.email ?? "unknown customer"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* Product & Images Preview Box */}
+        {request && (
+          <div className="rounded-2xl border border-black/10 bg-gray-50/80 p-3.5 space-y-3">
+            <div className="flex gap-3 items-start">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-white">
+                {productImages[0] ? (
+                  <Image
+                    src={productImages[0]}
+                    alt=""
+                    fill
+                    unoptimized
+                    className="object-contain p-1"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-gray-400">
+                    <Package className="h-6 w-6" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+                  {request.product?.title || "Product Request"}
+                </p>
+                <a
+                  href={request.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 hover:underline max-w-full truncate font-medium"
+                >
+                  <span>Open product link</span>
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                </a>
+              </div>
+            </div>
+
+            {/* Uploaded Images Gallery Strip */}
+            {productImages.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-black/5">
+                <p className="text-xs font-medium text-gray-600">
+                  Uploaded Photos ({productImages.length})
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {productImages.map((img, i) => (
+                    <a
+                      key={i}
+                      href={img}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-black/10 bg-white hover:ring-2 hover:ring-emerald-500 transition"
+                      title="Click to view full image"
+                    >
+                      <Image
+                        src={img}
+                        alt={`Photo ${i + 1}`}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes / Description */}
+            {request.product?.description && (
+              <div className="rounded-lg bg-white p-2.5 text-xs text-gray-700 border border-black/5">
+                <span className="font-semibold text-gray-900">Customer notes: </span>
+                {request.product.description}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-4 pt-1">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1 text-sm">
               <span className="text-shop-muted">Destination</span>
