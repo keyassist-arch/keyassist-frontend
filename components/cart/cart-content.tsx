@@ -60,53 +60,49 @@ function DrawerLineItem({
 
   return (
     <>
-      <article className="border-b border-black/10 py-4 last:border-b-0">
-        <div className="grid grid-cols-[4rem_1fr_minmax(4rem,auto)] gap-3">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
-            <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="64px" unoptimized />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <p className="text-xs text-black/50">{brand}</p>
-              {isManual && (
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 border border-emerald-200">
-                  Custom Quote
-                </span>
-              )}
+      <article className="flex gap-3 border-b border-black/10 py-4 last:border-b-0">
+        <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
+          <Image src={imageSrc} alt={imageAlt} fill className="object-contain p-1" sizes="72px" unoptimized />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <p className="truncate text-xs text-black/50">{brand}</p>
+                {isManual && (
+                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
+                    Custom quote
+                  </span>
+                )}
+              </div>
+              <h3 className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
+              {variantLine ? <p className="mt-0.5 truncate text-xs text-black/50">{variantLine}</p> : null}
+              {quantity > 1 ? <p className="mt-0.5 text-xs tabular-nums text-black/50">{unitLabel} each</p> : null}
             </div>
-            <h3 className="mt-0.5 text-sm font-medium leading-snug text-shop-ink">{title}</h3>
-            {variantLine ? <p className="mt-1 text-xs text-black/50">{variantLine}</p> : null}
-            <p className="mt-1 text-xs text-black/50 tabular-nums">{unitLabel}</p>
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              {isManual ? (
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] text-black/50">Quantity</span>
-                  <div
-                    className="flex h-[38px] items-center justify-center rounded-lg bg-gray-100 px-3 text-xs font-semibold text-gray-700 border border-black/5"
-                    title="Price is locked to verified request quantity"
-                  >
-                    Qty: {quantity} (Fixed quote)
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-black/60">Quantity</span>
-                  <ProductQuantityStepper
-                    value={quantity} onChange={onQuantityChange}
-                    min={1} max={maxQty} disabled={disabled}
-                  />
-                </div>
-              )}
-              <button
-                type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
-                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-black/85 disabled:opacity-40"
-                aria-label="Remove item"
+            <p className="shrink-0 text-sm font-semibold tabular-nums text-shop-ink">{lineTotalLabel}</p>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {isManual ? (
+              <span
+                className="rounded-lg border border-black/5 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700"
+                title="Price is locked to the quoted quantity"
               >
-                <Trash2 size={16} strokeWidth={1.75} aria-hidden />
-              </button>
-            </div>
+                Qty {quantity} · Fixed quote
+              </span>
+            ) : (
+              <ProductQuantityStepper
+                value={quantity} onChange={onQuantityChange}
+                min={1} max={maxQty} disabled={disabled} size="sm"
+              />
+            )}
+            <button
+              type="button" onClick={() => setConfirmOpen(true)} disabled={disabled}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-shop-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+              aria-label="Remove item"
+            >
+              <Trash2 size={17} strokeWidth={1.75} aria-hidden />
+            </button>
           </div>
-          <p className="text-right text-sm font-semibold tabular-nums text-shop-ink">{lineTotalLabel}</p>
         </div>
       </article>
 
@@ -134,7 +130,7 @@ function DrawerFooter({
   const fmt = (n: number) => fmtMoney(n, currencyLabel);
 
   return (
-    <div className="shrink-0 border-t border-black/10 bg-white px-4 py-4">
+    <div className="shrink-0 border-t border-black/10 bg-white px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
       {signInHint && (
         <p className="mb-3 text-center text-xs text-black/55">
           <Link href={loginUrl("/cart")} className="font-medium underline" style={{ color: "#059669" }}>Sign in</Link>{" "}
@@ -151,7 +147,7 @@ function DrawerFooter({
       {open && (
         <textarea className="input mt-1 min-h-22 resize-y" rows={3} placeholder="Gift message, delivery notes…" aria-label="Order special instructions" />
       )}
-      <div className="mt-4 flex items-baseline justify-between gap-3">
+      <div className="mt-3 flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium text-shop-ink">Subtotal</span>
         <span className="text-sm font-bold tabular-nums text-shop-ink">{fmt(totals.subtotal)}</span>
       </div>
@@ -171,16 +167,16 @@ function DrawerFooter({
         </div>
       </div>
       <p className="mt-2 text-xs text-black/50">Taxes and shipping calculated at checkout</p>
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <Link
           href="/cart" onClick={onCheckoutNavigate}
-          className="rounded-full border border-gray-200 py-3 text-center text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+          className="rounded-full border border-gray-200 py-3.5 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
         >
           View bag
         </Link>
         <Link
           href="/checkout" aria-disabled={ctaDisabled}
-          className={`rounded-full py-3 text-center text-xs font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "cursor-not-allowed opacity-40" : ""}`}
+          className={`rounded-full py-3.5 text-center text-sm font-semibold text-white transition hover:opacity-90 ${ctaDisabled ? "cursor-not-allowed opacity-40" : ""}`}
           style={{ background: "#059669" }}
           onClick={(e) => { if (ctaDisabled) e.preventDefault(); else onCheckoutNavigate?.(); }}
         >
@@ -410,7 +406,16 @@ function GuestCartSection({
       <>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
           {items.length === 0 ? (
-            <p className="py-8 text-center text-sm text-black/55">Your bag is empty.</p>
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <p className="text-sm text-black/55">Your bag is empty.</p>
+              <p className="text-xs text-black/55">Already have an account? Sign in to see your saved cart.</p>
+              <Link
+                href={loginUrl("/cart")} onClick={onCheckoutNavigate}
+                className="btn-primary rounded-full px-6 py-2.5 text-sm"
+              >
+                Sign in
+              </Link>
+            </div>
           ) : items.map((item) => (
             <DrawerLineItem
               key={item.id}
@@ -443,7 +448,7 @@ function GuestCartSection({
     <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
       <div className="flex flex-col gap-4">
         {items.length === 0 ? (
-          <EmptyBag />
+          <EmptyBag signIn />
         ) : (
           <>
             {items.map((item) => (
@@ -577,18 +582,35 @@ function ApiCartSection({
   );
 }
 
-function EmptyBag() {
+function EmptyBag({ signIn }: { signIn?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-shop-border bg-white py-20 text-center">
+    <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-shop-border bg-white px-4 py-16 text-center sm:py-20">
       <p className="text-base font-semibold text-shop-ink">Your bag is empty</p>
-      <p className="mt-1 text-sm text-shop-muted">Browse the shop and add something you love.</p>
-      <Link
-        href="/shop"
-        className="mt-5 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-        style={{ background: "var(--shop-primary)" }}
-      >
-        Browse shop
-      </Link>
+      <p className="mt-1 text-sm text-shop-muted">
+        {signIn
+          ? "Signed in on another device or from an email link? Sign in to see your saved cart."
+          : "Browse the shop and add something you love."}
+      </p>
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        {signIn && (
+          <Link
+            href={loginUrl("/cart")}
+            className="rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            style={{ background: "var(--shop-primary)" }}
+          >
+            Sign in
+          </Link>
+        )}
+        <Link
+          href="/shop"
+          className={signIn
+            ? "rounded-full border border-shop-border px-6 py-2.5 text-sm font-semibold text-shop-ink transition hover:bg-black/5"
+            : "rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"}
+          style={signIn ? undefined : { background: "var(--shop-primary)" }}
+        >
+          Browse shop
+        </Link>
+      </div>
     </div>
   );
 }
@@ -605,6 +627,7 @@ export function CartPanelBody({
   onCheckoutNavigate?: () => void;
 }) {
   const token = useAppSelector((s) => s.auth.accessToken);
+  const authHydrated = useAppSelector((s) => s.auth.hydrated);
   const { items: localItems, removeItem, updateQuantity, subtotal: localSubtotal } = useCart();
 
   const { data: apiCart, isLoading, isError, error, isFetching } = useGetCartQuery(undefined, {
@@ -624,6 +647,16 @@ export function CartPanelBody({
   const apiFees        = coerceNumber(apiCart?.fees,          apiServiceCharge - apiDiscount);
   const apiTotal       = coerceNumber(apiCart?.total,         apiSubtotal + apiFees);
 
+  // Until the stored session is read, a signed-in user looks like a guest — don't flash an empty bag.
+  // After that, only the first load shows a spinner; background refetches keep the list on screen.
+  if (!authHydrated || (token && isLoading)) {
+    return layout === "drawer" ? (
+      <div className="flex flex-1 items-center justify-center p-8">
+        <LoadingState label="Loading cart…" />
+      </div>
+    ) : <LoadingState label="Loading cart…" />;
+  }
+
   if (!token) {
     return (
       <GuestCartSection
@@ -637,14 +670,6 @@ export function CartPanelBody({
     );
   }
 
-  if (isLoading || isFetching) {
-    return layout === "drawer" ? (
-      <div className="flex flex-1 items-center justify-center p-8">
-        <LoadingState label="Loading cart…" />
-      </div>
-    ) : <LoadingState label="Loading cart…" />;
-  }
-
   if (isError) return <ErrorState error={error} title="Could not load cart" />;
 
   return (
@@ -654,7 +679,7 @@ export function CartPanelBody({
       currency={apiCurrency}
       onQuantityChange={(itemId, qty, variantSelection) => patchItem({ itemId, quantity: qty, variantSelection })}
       onRemove={(itemId) => deleteItem(itemId)}
-      busy={isPatching || isDeleting}
+      busy={isPatching || isDeleting || isFetching}
       layout={layout}
       onCheckoutNavigate={onCheckoutNavigate}
     />

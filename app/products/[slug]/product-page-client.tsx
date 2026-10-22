@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Heart, Share2, Loader2, ShoppingBag } from "lucide-react";
+import { Check, Clock, Heart, Share2, Loader2, ShoppingBag } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
@@ -368,6 +368,8 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   const originalNum = api ? coerceNumber(api.originalPrice, 0) : 0;
   const saleNum     = api ? coerceNumber(api.salePrice ?? api.originalPrice ?? 0, 0) : 0;
+  // Manual requests stay at 0.00 until admin quotes them; admin approval adds them to the cart.
+  const awaitingQuote = !!api?.isManual && saleNum <= 0;
 
   // Adapter compareAtPrice (crossed-out list price from API)
   const adapterCompareAtNum = api?.compareAtPrice ? coerceNumber(api.compareAtPrice, 0) : 0;
@@ -1363,6 +1365,19 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
               : "Get live price"}
           </button>
         </div>
+      ) : awaitingQuote ? (
+        <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+            <Clock className="h-4 w-4 shrink-0" aria-hidden /> Quote pending
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-800">
+            Our team is verifying the price and availability. Once it&apos;s priced, we&apos;ll add it to your cart
+            automatically and email you — no need to add it yourself.
+          </p>
+          <Link href="/dashboard" className="mt-3 inline-block text-xs font-semibold text-emerald-800 underline">
+            Back to my account
+          </Link>
+        </div>
       ) : (
         <>
           <button type="button" disabled={!inStock || submitting || (dimensions.length > 0 && !allAxesSelected)} onClick={onAdd}
@@ -1414,7 +1429,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
           headline={api.title}
           images={images}
           imageAlt={api.title}
-          priceCurrent={displayedPriceStr}
+          priceCurrent={awaitingQuote ? "Quote pending" : displayedPriceStr}
           priceCompareAt={priceCompareAtStr}
           discountPercent={discountPercent}
           discountLabel={discountLabel}

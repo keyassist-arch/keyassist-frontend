@@ -10,6 +10,8 @@ export interface AuthState {
   email: string | null;
   userId: string | null;
   role: JwtRole | null;
+  /** True once the persisted session has been read on the client (never persisted). */
+  hydrated: boolean;
 }
 
 const emptyState: AuthState = {
@@ -19,16 +21,17 @@ const emptyState: AuthState = {
   email: null,
   userId: null,
   role: null,
+  hydrated: false,
 };
 
 function readPersisted(): AuthState {
   if (typeof window === "undefined") return { ...emptyState };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...emptyState };
-    return { ...emptyState, ...JSON.parse(raw) };
+    if (!raw) return { ...emptyState, hydrated: true };
+    return { ...emptyState, ...JSON.parse(raw), hydrated: true };
   } catch {
-    return { ...emptyState };
+    return { ...emptyState, hydrated: true };
   }
 }
 
@@ -82,7 +85,7 @@ const authSlice = createSlice({
     },
     loggedOut: () => {
       if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
-      return { ...emptyState };
+      return { ...emptyState, hydrated: true };
     },
     rehydrateFromStorage: () => readPersisted(),
   },

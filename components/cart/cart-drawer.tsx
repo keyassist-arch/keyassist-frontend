@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { CartPanelBody } from "@/components/cart/cart-content";
 import { useAppSelector } from "@/store/hooks";
@@ -47,7 +48,7 @@ export function CartDrawer() {
   if (!present) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+    <div className="fixed inset-0 z-[100] flex justify-end overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
       <button
         type="button"
         className={`absolute inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-300 ease-out ${
@@ -57,33 +58,28 @@ export function CartDrawer() {
         onClick={closeCartDrawer}
       />
       <aside
-        className={`relative flex h-full w-full max-w-[400px] flex-col bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out will-change-transform ${
+        className={`relative flex h-dvh w-full flex-col bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out will-change-transform sm:max-w-[420px] sm:rounded-l-2xl ${
           enter ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="shrink-0 border-b border-black/10 px-4 pt-5 pb-0">
-          <div className="flex items-start justify-between gap-3 pb-3">
+        <header className="shrink-0 border-b border-black/10 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <h2 id="cart-drawer-title" className="text-base font-bold uppercase tracking-wide text-shop-ink">
                 Your cart
               </h2>
               {token ? (
-                <p className="mt-1 text-xs text-black/50">Synced with your account</p>
+                <p className="mt-0.5 text-xs text-black/50">Synced with your account</p>
               ) : null}
             </div>
             <button
               type="button"
-              className="flex h-9 w-9 shrink-0 items-center justify-center text-2xl leading-none text-shop-ink transition hover:bg-black/5"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-shop-ink transition hover:bg-black/5"
               aria-label="Close cart"
               onClick={closeCartDrawer}
             >
-              <span aria-hidden>×</span>
+              <X className="h-5 w-5" aria-hidden />
             </button>
-          </div>
-          <div className="grid grid-cols-[4rem_1fr_minmax(4rem,auto)] gap-3 border-t border-black/10 py-2.5 text-xs text-black/50">
-            <span />
-            <span>Product</span>
-            <span className="text-right">Total</span>
           </div>
         </header>
 
