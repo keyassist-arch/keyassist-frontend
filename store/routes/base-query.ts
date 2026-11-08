@@ -27,11 +27,13 @@ function missingBaseError(): { error: FetchBaseQueryError } {
 const rawFetch = apiBase
   ? fetchBaseQuery({
       baseUrl: apiBase,
-      prepareHeaders: (headers, { getState, endpoint }) => {
+      prepareHeaders: (headers, { getState, arg }) => {
         const token = (getState() as StateWithAuth).auth.accessToken;
         if (token) headers.set("Authorization", `Bearer ${token}`);
-        // Multipart uploads (FormData body) need the browser-set boundary — leave Content-Type unset.
-        if (endpoint !== "uploadProductImage") {
+        // Multipart uploads need the browser-set boundary. Forcing application/json
+        // makes the API body parser throw, which surfaces as "An unexpected error occurred".
+        const body = typeof arg === "object" && arg !== null && "body" in arg ? arg.body : undefined;
+        if (!(typeof FormData !== "undefined" && body instanceof FormData)) {
           headers.set("Content-Type", "application/json");
         }
         return headers;
