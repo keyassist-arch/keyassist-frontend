@@ -274,7 +274,14 @@ function formatFreshLine(api: ApiProduct): string | null {
 function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const router = useRouter();
   const token = useAppSelector((s) => s.auth.accessToken);
-  const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
+  const hydrated = useAppSelector((s) => s.auth.hydrated);
+  const { data: api, isLoading, isError, error, isUninitialized } = useGetProductQuery(idOrSlug, {
+    skip: !hydrated,
+  });
+  useEffect(() => {
+    if (!api?.title) return;
+    document.title = `${api.title} | Key Assist`;
+  }, [api?.title]);
   const {
     triggerImport: triggerFitImport,
     reset: resetFitImport,
@@ -1160,6 +1167,14 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const availabilitySlot = useMemo((): ReactNode => {
     const parts: ReactNode[] = [];
 
+    if (api?.manualImport) {
+      parts.push(
+        <span key="manual-import" className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+          Manual import
+        </span>
+      );
+    }
+
     if (dealType) {
       parts.push(
         <span key="deal" className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
@@ -1231,7 +1246,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     }
 
     return parts.length ? <div className="flex flex-wrap gap-2">{parts}</div> : null;
-  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity, inStock]);
+  }, [dealType, ebayCondition, stockNum, adapterZara, api, backMarketCondition, backMarketWarranty, etsyScarcity, inStock, api?.manualImport]);
 
   // ─── Price meta (below price row) ────────────────────────────────────────────
 
@@ -1389,7 +1404,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   // ─── Loading / error states ──────────────────────────────────────────────────
 
-  if (isLoading) return <InnerShell><ProductDetailSkeleton /></InnerShell>;
+  if (!hydrated || isLoading || isUninitialized) return <InnerShell><ProductDetailSkeleton /></InnerShell>;
   if (isError || !api) return (
     <InnerShell>
       <ErrorState error={error} title="Product unavailable" />

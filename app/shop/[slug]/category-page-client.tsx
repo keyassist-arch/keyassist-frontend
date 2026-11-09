@@ -6,8 +6,8 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import {
-  useGetCategoryQuery,
   useGetCategoryProductsQuery,
+  useGetCategoryQuery,
 } from "@/store/routes/unified-commerce-api";
 import { apiProductToProduct } from "@/lib/map-api-product-to-product";
 import { StoreProductCard, StoreProductCardSkeleton } from "@/components/storefront/store-product-card";

@@ -321,6 +321,8 @@ export interface ApiProduct {
   scrapeUrl?: string;
   rescrapeEnabled?: boolean;
   isManual?: boolean;
+  /** Customer manual import. Present on the public shop only after an admin sets the price. */
+  manualImport?: boolean;
   /** Supplier / list price from last scrape (decimal string). */
   originalPrice?: string | number;
   /** Customer-facing price including platform markup (decimal string). */

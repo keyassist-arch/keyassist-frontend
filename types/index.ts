@@ -51,6 +51,10 @@ export interface Product {
   compareAtPrice?: number;
   /** Integer percent off when compareAtPrice > shelf price. */
   discountPercent?: number;
+  /** Customer manual request still waiting on an admin price. */
+  quotePending?: boolean;
+  /** Priced customer manual import, shown on the public shop. */
+  manualImport?: boolean;
   /** Optional PDP zones (same semantics as API product). */
   highlights?: string[];
   attributes?: ProductAttribute[];

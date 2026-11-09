@@ -92,16 +92,25 @@ function ProductCarousel({ products }: { products: Product[] }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1], delay: 0.15 }}
         >
-          {product.marketplace && (
-            <span className="mb-2 w-fit rounded-full bg-white/15 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
-              {product.marketplace}
-            </span>
+          {(product.marketplace || product.manualImport) && (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              {product.marketplace && (
+                <span className="w-fit rounded-full bg-white/15 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+                  {product.marketplace}
+                </span>
+              )}
+              {product.manualImport && (
+                <span className="w-fit rounded-full bg-white px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-gray-900">
+                  Manual import
+                </span>
+              )}
+            </div>
           )}
           <h2 className="line-clamp-2 max-w-lg text-xl font-bold leading-snug text-white sm:text-2xl">
             {product.title}
           </h2>
           <p className="mt-1.5 text-base font-semibold text-white/90 tabular-nums">
-            {formatApiMoney(product.price, product.currency)}
+            {product.quotePending ? "Quote pending" : formatApiMoney(product.price, product.currency)}
           </p>
           <Link
             href={productDetailPath(product)}

@@ -114,7 +114,7 @@ async function postAuthJson<TBody>(
 export const unifiedCommerceApi = createApi({
   reducerPath: "unifiedCommerceApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "DiscountSettings", "MyIssues", "Categories", "PaymentMethods", "AdminUsers", "AdminManualImports"],
+  tagTypes: ["Me", "Cart", "Orders", "Order", "Product", "CatalogProducts", "MyProductRequests", "Import", "AdminOrders", "AdminProducts", "Refunds", "Issues", "Saves", "PasskeyCredentials", "ShippingRates", "DiscountSettings", "MyIssues", "Categories", "PaymentMethods", "AdminUsers", "AdminManualImports"],
   endpoints: (builder) => ({
     /* ---------- Public / health ---------- */
     getHealth: builder.query<Record<string, unknown>, void>({
@@ -307,7 +307,7 @@ export const unifiedCommerceApi = createApi({
 
     createManualProduct: builder.mutation<ManualProductImportResponse, ManualProductImportRequest>({
       query: (body) => ({ url: "/products/manual", method: "POST", body }),
-      invalidatesTags: ["CatalogProducts"],
+      invalidatesTags: ["CatalogProducts", "MyProductRequests"],
     }),
 
     getImportStatus: builder.query<ProductImportResponse, string>({
@@ -348,6 +348,12 @@ export const unifiedCommerceApi = createApi({
         };
       },
       providesTags: (_r, _e, { idOrSlug }) => [{ type: "Product", id: `related-${idOrSlug}` }],
+    }),
+
+    /** The signed-in user's manual product requests (`GET /products/mine`). */
+    getMyProductRequests: builder.query<ApiProduct[], void>({
+      query: () => ({ url: "/products/mine", method: "GET" }),
+      providesTags: ["MyProductRequests"],
     }),
 
     /** Public catalog list (`GET /products` or `GET /products?limit=`). */
@@ -847,6 +853,7 @@ export const {
   useGetVariantPriceQuery,
   useGetRelatedProductsQuery,
   useGetCatalogProductsQuery,
+  useGetMyProductRequestsQuery,
   useGetCartQuery,
   useAddCartItemMutation,
   usePatchCartItemMutation,

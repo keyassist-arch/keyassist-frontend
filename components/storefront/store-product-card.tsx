@@ -180,7 +180,7 @@ export function StoreProductCard({ product }: { product: Product }) {
           onClick={onAdd}
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
           aria-label="Add to cart"
-          disabled={adding}
+          disabled={adding || product.quotePending}
         >
           <ShoppingBag className="h-4 w-4 text-gray-700" aria-hidden />
         </button>
@@ -188,7 +188,14 @@ export function StoreProductCard({ product }: { product: Product }) {
 
       {/* Info */}
       <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
-        <p className="truncate text-[11px] text-gray-400">{brandLine}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="truncate text-[11px] text-gray-400">{brandLine}</p>
+          {product.manualImport && (
+            <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
+              Manual import
+            </span>
+          )}
+        </div>
 
         <Link
           href={pdpHref}
@@ -201,7 +208,7 @@ export function StoreProductCard({ product }: { product: Product }) {
 
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 pt-0.5">
           <span className="text-[15px] font-bold tabular-nums text-gray-900">
-            {formatApiMoney(product.price, product.currency)}
+            {product.quotePending ? "Quote pending" : formatApiMoney(product.price, product.currency)}
           </span>
           {onSale && (
             <span className="text-[12px] tabular-nums text-gray-400 line-through">

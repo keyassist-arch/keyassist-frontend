@@ -64,6 +64,8 @@ export function apiProductToProduct(api: ApiProduct): Product {
     compareAtPrice,
     discountPercent,
     deliveryEstimate: "Set at checkout",
+    quotePending: !!api.isManual && price <= 0,
+    manualImport: !!api.manualImport,
     highlights: api.highlights,
     attributes: api.attributes,
     compliance: api.compliance,
