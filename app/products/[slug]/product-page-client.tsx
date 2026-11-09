@@ -12,7 +12,9 @@ import { loginUrl } from "@/lib/auth-redirect";
 import { normalizeImageUrls } from "@/lib/normalize-image-urls";
 import { getVariantDimensions } from "@/lib/api-product-variants";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
+import { ImportFailedModal } from "@/components/ui/import-failed-modal";
 import { getErrorMessage } from "@/lib/rtk-error";
+import { useProductImportFromUrl } from "@/hooks/use-product-import-from-url";
 import { coerceNumber } from "@/lib/coerce-number";
 import { splitProductDescription } from "@/lib/product-description-sections";
 import { buildProductDetailZonesFromApi } from "@/lib/build-product-detail-zones";
@@ -65,6 +67,20 @@ function isEtsy(source?: string | null)      { return source === "etsy"; }
 function isReebelo(source?: string | null)   { return source === "reebelo"; }
 function isWalmart(source?: string | null)   { return source === "walmart"; }
 function isBackMarket(source?: string | null) { return source === "backmarket"; }
+
+/** Absolute http(s) URL on another site. Storefront paths stay in-app. */
+function externalListingUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed || (trimmed.startsWith("/") && !trimmed.startsWith("//"))) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    if (typeof window !== "undefined" && parsed.origin === window.location.origin) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
 
 // ─── eBay description helpers ─────────────────────────────────────────────────
 
@@ -258,6 +274,17 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
   const router = useRouter();
   const token = useAppSelector((s) => s.auth.accessToken);
   const { data: api, isLoading, isError, error } = useGetProductQuery(idOrSlug);
+  const {
+    triggerImport: triggerFitImport,
+    reset: resetFitImport,
+    lastAttemptedUrl: fitImportUrl,
+    importErr: fitImportErr,
+    importError: fitImportError,
+    effective: fitImportEffective,
+    failed: fitImportFailed,
+    waitCopy: fitImportWaitCopy,
+    isImportBlocking: fitImportBlocking,
+  } = useProductImportFromUrl();
   const [addCartItem, { isLoading: submitting }] = useAddCartItemMutation();
   const { openCartDrawer } = useCart();
   const [selection, setSelection] = useState<Record<string, string>>({});
@@ -272,6 +299,15 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     setSelection({});
     setStockxLivePrice(null);
   }, [api]);
+
+  useEffect(() => {
+    if (!fitImportBlocking) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [fitImportBlocking]);
 
   // ─── Adapter detection ──────────────────────────────────────────────────────
 
@@ -792,7 +828,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
     // ── Nike: Fit (segmented control), Width, Size ──────────────────────────
     if (adNike) {
       return dimensions.map((dim) => {
-        // Type A — Fit group selector with prices; non-current group = navigation
+        // Fit groups are separate Nike PDPs. Import that listing here instead of leaving the site.
         if (dim.name === "Fit") {
           return {
             title: "Fit",
@@ -802,22 +838,36 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
                   const row = api?.configurationPrices?.find(
                     (r) => r.variantSelections?.["Fit"] === opt || (r.variantAxis === "Fit" && r.optionValue === opt)
                   );
-                  const isCurrentGroup = row?.metadata?.isSelectedGroup === true;
-                  const pdpUrl  = row?.metadata?.pdpUrl as string | undefined;
+                  const pdpUrl = typeof row?.metadata?.pdpUrl === "string" ? row.metadata.pdpUrl : undefined;
+                  const externalUrl = pdpUrl ? externalListingUrl(pdpUrl) : null;
+                  const currentListing = externalListingUrl(api?.sourceUrl || api?.scrapeUrl || "");
+                  const isCurrentGroup = row?.metadata?.isSelectedGroup === true
+                    || (!!externalUrl && externalUrl === currentListing);
+                  const importingThis = fitImportBlocking && !!externalUrl && fitImportUrl === externalUrl;
                   const priceStr = row?.salePrice != null ? formatApiMoney(row.salePrice, row.currency?.trim() || currency) : null;
                   return (
                     <button key={opt} type="button"
+                      disabled={fitImportBlocking}
                       onClick={() => {
-                        if (!isCurrentGroup && pdpUrl) router.push(pdpUrl);
+                        if (isCurrentGroup || !pdpUrl || fitImportBlocking) return;
+                        if (externalUrl) {
+                          triggerFitImport(externalUrl);
+                          return;
+                        }
+                        if (pdpUrl.startsWith("/products/")) router.push(pdpUrl);
                       }}
-                      title={!isCurrentGroup && pdpUrl ? "Navigates to separate product" : undefined}
+                      title={isCurrentGroup ? undefined : "Opens this fit here"}
                       className={[
                         "flex flex-col items-center rounded-xl border px-4 py-2 text-sm transition",
                         isCurrentGroup ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
+                        fitImportBlocking ? "disabled:cursor-wait disabled:opacity-70" : "",
                       ].join(" ")}
                       aria-pressed={isCurrentGroup}
                     >
-                      <span className="font-medium">{opt}</span>
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        {importingThis ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
+                        {opt}
+                      </span>
                       {priceStr ? <span className={`text-[11px] leading-tight ${isCurrentGroup ? "text-white/75" : "text-gray-500"}`}>{priceStr}</span> : null}
                     </button>
                   );
@@ -1095,7 +1145,7 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
     // ── Default (generic / Amazon / eBay) ───────────────────────────────────
     return dimensions.map(makeDefault);
-  }, [dimensions, selection, api, currency, variantSelection]);
+  }, [dimensions, selection, api, currency, variantSelection, fitImportBlocking, fitImportUrl, router, triggerFitImport]);
 
   // ─── Availability slot (stock + deal badges + condition) ─────────────────────
 
@@ -1420,8 +1470,41 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
+  const fitImportFailedOpen = Boolean(fitImportErr || fitImportFailed);
+  const fitImportFailedMessage = fitImportFailed
+    ? (fitImportEffective?.message ?? fitImportEffective?.errorMessage)
+    : fitImportErr
+      ? getErrorMessage(fitImportError)
+      : null;
+
   return (
     <>
+      {fitImportBlocking ? (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/60 px-6 py-10 backdrop-blur-sm"
+          role="alertdialog"
+          aria-busy="true"
+          aria-live="polite"
+          aria-label="Opening this fit"
+        >
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
+          <div className="max-w-md text-center">
+            <p className="text-base font-semibold text-white">
+              {fitImportEffective?.userMessage ?? "Opening that fit here"}
+            </p>
+            <p className="mt-3 text-sm text-white/75">{fitImportWaitCopy}</p>
+          </div>
+        </div>
+      ) : null}
+      <ImportFailedModal
+        open={fitImportFailedOpen}
+        onClose={resetFitImport}
+        onRetry={() => { if (fitImportUrl) triggerFitImport(fitImportUrl); }}
+        onManualImport={() => {
+          router.push(`/products/add-manual?url=${encodeURIComponent(fitImportUrl)}`);
+        }}
+        errorMessage={fitImportFailedMessage}
+      />
       <InnerShell>
         <ProductDetailLayout
           crumbs={crumbs}
