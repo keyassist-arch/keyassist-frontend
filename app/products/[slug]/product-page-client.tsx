@@ -24,6 +24,7 @@ import { RelatedProducts } from "@/components/product/related-products";
 import { ProductDetailSkeleton } from "@/components/product/product-detail-skeleton";
 import { formatApiMoney, pricesAreEqual } from "@/lib/format-price";
 import { retailerLabelFromSource } from "@/lib/product-source";
+import { isSameNikeListing, nikeFitListingUrl } from "@/lib/nike-fit-url";
 import type { ApiConfigurationPrice, ApiProduct } from "@/types/api";
 import type { ProductDetailCrumb, ProductDetailDescriptionBlock, ProductDetailVariantSlot } from "@/types/product-detail";
 
@@ -839,22 +840,29 @@ function ApiProductDetail({ idOrSlug }: { idOrSlug: string }) {
                     (r) => r.variantSelections?.["Fit"] === opt || (r.variantAxis === "Fit" && r.optionValue === opt)
                   );
                   const pdpUrl = typeof row?.metadata?.pdpUrl === "string" ? row.metadata.pdpUrl : undefined;
-                  const externalUrl = pdpUrl ? externalListingUrl(pdpUrl) : null;
-                  const currentListing = externalListingUrl(api?.sourceUrl || api?.scrapeUrl || "");
+                  const styleColor = typeof row?.metadata?.styleColor === "string" ? row.metadata.styleColor : undefined;
+                  const sourceListing = api?.sourceUrl || api?.scrapeUrl || "";
+                  const listingUrl = nikeFitListingUrl({
+                    sourceUrl: sourceListing,
+                    fitLabel: opt,
+                    styleColor,
+                    storedPdpUrl: pdpUrl,
+                  });
+                  const externalUrl = listingUrl ? externalListingUrl(listingUrl) : null;
                   const isCurrentGroup = row?.metadata?.isSelectedGroup === true
-                    || (!!externalUrl && externalUrl === currentListing);
+                    || (!!listingUrl && isSameNikeListing(listingUrl, sourceListing));
                   const importingThis = fitImportBlocking && !!externalUrl && fitImportUrl === externalUrl;
                   const priceStr = row?.salePrice != null ? formatApiMoney(row.salePrice, row.currency?.trim() || currency) : null;
                   return (
                     <button key={opt} type="button"
                       disabled={fitImportBlocking}
                       onClick={() => {
-                        if (isCurrentGroup || !pdpUrl || fitImportBlocking) return;
+                        if (isCurrentGroup || !listingUrl || fitImportBlocking) return;
                         if (externalUrl) {
                           triggerFitImport(externalUrl);
                           return;
                         }
-                        if (pdpUrl.startsWith("/products/")) router.push(pdpUrl);
+                        if (listingUrl.startsWith("/products/")) router.push(listingUrl);
                       }}
                       title={isCurrentGroup ? undefined : "Opens this fit here"}
                       className={[
