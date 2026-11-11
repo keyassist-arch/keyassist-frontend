@@ -614,7 +614,12 @@ export interface PaymentMethodEntry {
   provider: PaymentProvider;
   available: boolean;
   reason: PaymentMethodReason;
+  /** Stripe only: stablecoin checkout enabled (USD orders ≤ STRIPE_STABLECOIN_MAX_USD). */
+  stablecoinAvailable?: boolean;
 }
+
+/** Stripe caps stablecoin payments at 10,000 USD per transaction. */
+export const STRIPE_STABLECOIN_MAX_USD = 10_000;
 
 export interface PaymentMethodsResponse {
   methods: PaymentMethodEntry[];

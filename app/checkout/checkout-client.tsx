@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, Check, CreditCard, MapPin, ShieldCheck, Truck } from "lucide-react";
+import { ChevronDown, Check, CircleDollarSign, CreditCard, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { Steps } from "@/components/ui/steps";
 import { InnerShell } from "@/components/layout/inner-shell";
@@ -30,6 +30,7 @@ import type {
   PaymentMethodEntry,
   PaymentProvider,
 } from "@/types/api";
+import { STRIPE_STABLECOIN_MAX_USD } from "@/types/api";
 import { ErrorState, LoadingState } from "@/components/feedback/query-state";
 import { getErrorMessage } from "@/lib/rtk-error";
 import { coerceNumber } from "@/lib/coerce-number";
@@ -202,6 +203,42 @@ function LandedCostQuoteDisplay({ quote }: { quote: LandedCostQuoteResponse }) {
 
 const DEFAULT_METHODS: PaymentMethodEntry[] = [{ provider: "stripe", available: true, reason: null }];
 
+type StripeMethod = "card" | "stablecoin";
+
+function PaymentOption({
+  selected, onSelect, icon: Icon, title, subtitle, disabled,
+}: {
+  selected: boolean; onSelect: () => void; icon: typeof CreditCard; title: string; subtitle: string; disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      disabled={disabled}
+      onClick={onSelect}
+      className="flex w-full items-center gap-3 rounded-xl p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
+      style={
+        selected
+          ? { background: "var(--shop-accent-soft)", border: "1.5px solid var(--shop-primary)" }
+          : { background: "#FFFFFF", border: "1.5px solid var(--shop-border)" }
+      }
+    >
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+        style={{ border: `2px solid ${selected ? "var(--shop-primary)" : "var(--shop-border)"}`, background: "#FFFFFF" }}
+      >
+        {selected ? <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--shop-primary)" }} /> : null}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-shop-ink">{title}</p>
+        <p className="text-xs text-shop-muted">{subtitle}</p>
+      </div>
+      <Icon className="h-[18px] w-[18px] shrink-0 text-shop-muted" aria-hidden />
+    </button>
+  );
+}
+
 function isPaymentProvider(p: string | undefined | null): p is PaymentProvider {
   return p === "paystack" || p === "stripe" || p === "paypal" || p === "myaza";
 }
@@ -235,6 +272,7 @@ export function CheckoutClient() {
   const [formError, setFormError] = useState("");
   const [payInitError, setPayInitError] = useState(false);
   const [provider, setProvider] = useState<PaymentProvider>("stripe");
+  const [stripeMethod, setStripeMethod] = useState<StripeMethod>("card");
   const [placeOrderBusy, setPlaceOrderBusy] = useState(false);
   const [myazaSession, setMyazaSession] = useState<Extract<PaymentInitResponse, { provider: "myaza" }> | null>(null);
   const [myazaOrderId, setMyazaOrderId] = useState<string | null>(null);
@@ -341,6 +379,21 @@ export function CheckoutClient() {
 
   const availableProviders = useMemo(() => methodRows.filter((x) => x.available).map((x) => x.provider), [methodRows]);
 
+  // Stablecoins (via Stripe): enabled server-side, USD orders only, ≤ 10,000 USD.
+  const stablecoinEnabled = Boolean(methodRows.find((m) => m.provider === "stripe" && m.available)?.stablecoinAvailable);
+  const stablecoinCurrencyOk = (displayOrder?.currency ?? orderCurrency).toUpperCase() === "USD";
+  const stablecoinAmountOk = oTotal > 0 && oTotal <= STRIPE_STABLECOIN_MAX_USD;
+  const stablecoinPayable = stablecoinEnabled && stablecoinCurrencyOk && stablecoinAmountOk;
+  const stablecoinHint = !stablecoinCurrencyOk
+    ? "Available for USD orders only"
+    : !stablecoinAmountOk
+      ? `Available for orders up to $${STRIPE_STABLECOIN_MAX_USD.toLocaleString("en-US")}`
+      : "Pay with USDC and other stablecoins from your wallet";
+
+  useEffect(() => {
+    if (stripeMethod === "stablecoin" && !stablecoinPayable) setStripeMethod("card");
+  }, [stripeMethod, stablecoinPayable]);
+
   useEffect(() => {
     if (availableProviders.length === 0) return;
     if (!availableProviders.includes(provider)) {
@@ -364,6 +417,7 @@ export function CheckoutClient() {
                   ? `${origin}/checkout/success?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`
                   : undefined,
                 stripeCancelUrl: origin ? `${origin}/checkout` : undefined,
+                ...(stripeMethod === "stablecoin" ? { stripePaymentMethodTypes: ["crypto"] } : {}),
               }
             : {}),
           ...(provider === "paypal"
@@ -409,7 +463,7 @@ export function CheckoutClient() {
         setFormError(getErrorMessage(err));
       }
     },
-    [provider, initPayment, resetPayError, refetchOrder]
+    [provider, stripeMethod, initPayment, resetPayError, refetchOrder]
   );
 
   const onGetQuote = async (e: FormEvent<HTMLFormElement>) => {
@@ -728,20 +782,24 @@ export function CheckoutClient() {
                   <p className="text-xs text-black/50">Couldn&apos;t check payment options — Stripe is shown by default.</p>
                 ) : null}
 
-                <div
-                  className="flex items-center gap-3 rounded-xl p-4"
-                  style={{ background: "var(--shop-accent-soft)", border: "1.5px solid var(--shop-primary)" }}
-                >
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                    style={{ border: "2px solid var(--shop-primary)", background: "#FFFFFF" }}
-                  >
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--shop-primary)" }} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-shop-ink">Stripe Checkout</p>
-                    <p className="text-xs text-shop-muted">International cards</p>
-                  </div>
+                <div role="radiogroup" aria-label="Payment method" className="flex flex-col gap-2.5">
+                  <PaymentOption
+                    selected={stripeMethod === "card"}
+                    onSelect={() => setStripeMethod("card")}
+                    icon={CreditCard}
+                    title="Card"
+                    subtitle="International cards via Stripe Checkout"
+                  />
+                  {stablecoinEnabled ? (
+                    <PaymentOption
+                      selected={stripeMethod === "stablecoin"}
+                      onSelect={() => setStripeMethod("stablecoin")}
+                      icon={CircleDollarSign}
+                      title="Stablecoin"
+                      subtitle={stablecoinHint}
+                      disabled={!stablecoinPayable}
+                    />
+                  ) : null}
                 </div>
 
                 {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
