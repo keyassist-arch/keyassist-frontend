@@ -342,6 +342,28 @@ export default function DashboardOrderDetailPage() {
               <p className="text-xs text-shop-muted">Provider</p>
               <p className="mt-0.5 font-medium capitalize text-shop-ink">{order.payment.provider}</p>
             </div>
+            {typeof order.payment.methodDetails?.label === "string" && order.payment.methodDetails.label && (
+              <div>
+                <p className="text-xs text-shop-muted">Method</p>
+                <p className="mt-0.5 font-medium text-shop-ink">{order.payment.methodDetails.label}</p>
+              </div>
+            )}
+            {typeof order.payment.methodDetails?.transactionHash === "string" && (
+              <div>
+                <p className="text-xs text-shop-muted">Transaction hash</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-shop-muted">
+                  {order.payment.methodDetails.transactionHash}
+                </p>
+              </div>
+            )}
+            {typeof order.payment.methodDetails?.walletAddress === "string" && (
+              <div>
+                <p className="text-xs text-shop-muted">Paid from wallet</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-shop-muted">
+                  {order.payment.methodDetails.walletAddress}
+                </p>
+              </div>
+            )}
             {order.payment.methodDetails?.checkoutId && (
               <div>
                 <p className="text-xs text-shop-muted">Reference</p>
